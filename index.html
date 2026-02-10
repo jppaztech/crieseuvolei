@@ -32,8 +32,20 @@
   @media (max-width:720px){ .row.cols-2, .row.cols-3{grid-template-columns:1fr} }
   
   label{font-size:var(--small);color:var(--muted)}
+  
   input, select{width:100%;padding:10px;background:#0e121a;border:1px solid #293042;border-radius:10px;color:var(--text);font-size:1rem}
   input[type="number"]{text-align:center}
+  
+  /* CORREÇÃO DA COR DE AUTOFILL DO NAVEGADOR */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:active {
+      -webkit-box-shadow: 0 0 0 30px #0e121a inset !important;
+      -webkit-text-fill-color: var(--text) !important;
+      transition: background-color 5000s ease-in-out 0s;
+  }
+  ::placeholder { color: #475569; opacity: 1; }
   
   button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#08140c;font-weight:700;font-size:1rem;cursor:pointer; transition: opacity 0.2s;}
   button:hover{opacity:0.9;}
@@ -100,9 +112,9 @@
 
     <div id="stepParams">
       <div class="row cols-3">
-        <div><label>Jogadores</label><input id="numPlayers" type="number" min="2" placeholder="12" /></div>
-        <div><label>Times</label><input id="numTeams" type="number" min="3" placeholder="4" /></div>
-        <div><label>Rodadas</label><input id="numRounds" type="number" min="1" placeholder="4" /></div>
+        <div><label>Jogadores</label><input id="numPlayers" type="number" min="2" placeholder="12" autocomplete="off" /></div>
+        <div><label>Times</label><input id="numTeams" type="number" min="3" placeholder="4" autocomplete="off" /></div>
+        <div><label>Rodadas</label><input id="numRounds" type="number" min="1" placeholder="4" autocomplete="off" /></div>
       </div>
       <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
         <button id="resetParamsBtn" class="warn">Limpar</button>
@@ -218,8 +230,8 @@
     <div id="login-box">
         <h2 style="margin-top:0">Acesso Admin</h2>
         <div class="row">
-            <input type="email" id="email" placeholder="Email" />
-            <input type="password" id="password" placeholder="Senha" />
+            <input type="email" id="email" placeholder="Email" autocomplete="off" />
+            <input type="password" id="password" placeholder="Senha" autocomplete="off" />
             <button id="doLoginBtn">Entrar</button>
             <button id="cancelLoginBtn" class="secondary">Cancelar</button>
         </div>
@@ -230,7 +242,6 @@
 <script>
 (function(){
   // --- CONFIGURAÇÃO SUPABASE ---
-  // Substitua as strings abaixo pelas suas chaves do Supabase
   const SUPABASE_URL = 'https://cymkeazbvhxtstaxaqdc.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_Nd_pwhW8NPXYTPqMMgycCA_XcKAZCDA';
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -243,7 +254,7 @@
     players:[], teams:[], schedule:[], 
     currentIndex:0, finals:[], finalsIndex:0, 
     _rankingSnapshot: null,
-    uiStep: 'stepParams', // Controla qual tela está visível
+    uiStep: 'stepParams',
     uiSection: 'setup'
   };
 
@@ -290,10 +301,8 @@
   }
 
   // --- SINCRONIZAÇÃO (REALTIME) ---
-  // Função principal para salvar no Supabase (apenas Admin)
   async function saveStateToCloud() {
     if (!isAdmin) return; 
-    // Captura estado da UI atual para quem abrir o app cair na mesma tela
     state.uiSection = document.querySelector('main > section:not(.hidden)').id;
     const visibleStep = document.querySelector('#setup > div[id]:not(.hidden)');
     if (visibleStep) state.uiStep = visibleStep.id;
@@ -301,7 +310,6 @@
     await supabase.from('app_state').upsert({ id: 1, game_data: state });
   }
 
-  // Carrega estado inicial
   async function loadStateFromCloud() {
     const { data, error } = await supabase.from('app_state').select('game_data').eq('id', 1).single();
     if (data && data.game_data && Object.keys(data.game_data).length > 0) {
@@ -310,10 +318,8 @@
     }
   }
 
-  // Escuta mudanças no banco (Realtime)
   supabase.channel('public:app_state')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
-        console.log('Update recebido!', payload);
         if (payload.new && payload.new.game_data) {
             state = payload.new.game_data;
             refreshUI();
@@ -323,18 +329,15 @@
 
   // --- REGRAS DE UI ---
   function refreshUI() {
-    // 1. Navegação de Seções
     document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
     const section = el(state.uiSection) || el('setup');
     section.classList.remove('hidden');
 
-    // 2. Navegação do Setup
     if (state.uiSection === 'setup') {
         document.querySelectorAll('#setup > div[id]').forEach(d => d.classList.add('hidden'));
         const step = el(state.uiStep) || el('stepParams');
         step.classList.remove('hidden');
         
-        // Preenche campos
         if(state.numPlayers) el('numPlayers').value = state.numPlayers;
         if(state.numTeams) el('numTeams').value = state.numTeams;
         if(state.numRounds) el('numRounds').value = state.numRounds;
@@ -344,7 +347,6 @@
         if(state.uiStep === 'stepTeamPreview') renderTeamPreview();
     }
     
-    // 3. Renderiza telas de jogo se necessário
     if (state.uiSection === 'matches') {
         atualizarClassificacao();
         renderAgenda();
@@ -356,181 +358,96 @@
     }
   }
 
- // --- LÓGICA DO APP (Setup Navegação - MODO OTIMISTA) ---
-  
-  // 1. Botão "Próximo" (De Configuração para Jogadores)
+  // --- NAVEGAÇÃO ---
   el("toPlayersBtn").addEventListener("click", () => {
     const p = parseInt(el("numPlayers").value, 10);
     const t = parseInt(el("numTeams").value, 10);
     const r = parseInt(el("numRounds").value, 10);
     
-    // Validação
     if (!p || !t || !r) { alert("Preencha todos os números."); return; }
     if (p < 2) { alert("Mínimo 2 jogadores."); return; }
     if (t < 3) { alert("Mínimo 3 times."); return; }
     
-    // Atualiza Estado Local
-    state.numPlayers = p;
-    state.numTeams = t;
-    state.numRounds = r;
+    state.numPlayers = p; state.numTeams = t; state.numRounds = r;
     state.uiStep = 'stepPlayers';
     
-    // Renderiza e Muda a Tela IMEDIATAMENTE
-    renderPlayersForm();
-    refreshUI(); 
-    
-    // Salva no banco em segundo plano
-    saveStateToCloud();
+    renderPlayersForm(); refreshUI(); saveStateToCloud();
   });
 
-  // 2. Botão "Próximo" (De Jogadores para Times)
   el("toTeamsBtn").addEventListener("click", () => {
     state.players = [];
     let erro = false;
     for (let i = 0; i < state.numPlayers; i++) {
         const elName = el(`pl_name_${i}`);
         const elSkill = el(`pl_skill_${i}`);
-        
-        // Garante que o input existe
         if(!elName || !elSkill) continue;
-        
         const name = elName.value.trim();
         if(!name) erro = true;
         state.players.push({ name: name || `Jogador ${i+1}`, skill: parseInt(elSkill.value, 10) });
     }
-
     if(erro && !confirm("Alguns jogadores estão sem nome. Continuar assim mesmo?")) return;
 
     state.uiStep = 'stepTeams';
-    renderTeamsForm();
-    refreshUI(); // Muda a tela na hora
-    saveStateToCloud();
+    renderTeamsForm(); refreshUI(); saveStateToCloud();
   });
 
-  // 3. Botão "Próximo" (De Times para Preview)
   el("toPreviewBtn").addEventListener("click", () => {
     state.teams = [];
     for (let t = 0; t < state.numTeams; t++) {
         const elTeam = el(`teamName_${t}`);
         const name = elTeam ? elTeam.value.trim() : `Time ${t + 1}`;
-        state.teams.push({ 
-            name: name || `Time ${t + 1}`, 
-            color: TEAM_COLORS[t % TEAM_COLORS.length], 
-            players: [], 
-            stats: {} 
-        });
+        state.teams.push({ name: name || `Time ${t + 1}`, color: TEAM_COLORS[t % TEAM_COLORS.length], players: [], stats: {} });
     }
-    
     distribuirPorSomaEquilibrada();
     state.uiStep = 'stepTeamPreview';
-    renderTeamPreview();
-    refreshUI(); // Muda a tela na hora
-    saveStateToCloud();
+    renderTeamPreview(); refreshUI(); saveStateToCloud();
   });
 
-  // 4. Botão "Iniciar Jogos"
   el("startMatchesBtn").addEventListener("click", () => {
     gerarAgendaRoundRobinRespeitandoRodadas();
     state.uiSection = 'matches';
-    refreshUI(); // Muda a tela na hora
-    saveStateToCloud();
+    refreshUI(); saveStateToCloud();
   });
 
-// --- NAVEGAÇÃO: BOTÕES DE VOLTAR (CORRIGIDOS) ---
-  el("backToParamsBtn").addEventListener("click", () => { 
-      state.uiStep = 'stepParams'; 
-      refreshUI(); // Atualiza a tela na hora
-      saveStateToCloud(); 
-  });
-
-  el("backToPlayersBtn").addEventListener("click", () => { 
-      state.uiStep = 'stepPlayers'; 
-      refreshUI(); 
-      saveStateToCloud(); 
-  });
-
-  el("backToTeamsFromPreviewBtn").addEventListener("click", () => { 
-      state.uiStep = 'stepTeams'; 
-      refreshUI(); 
-      saveStateToCloud(); 
-  });
-
-  el("backToPreviewBtn").addEventListener("click", () => { 
-      state.uiSection = 'setup'; 
-      state.uiStep = 'stepTeamPreview'; 
-      refreshUI(); 
-      saveStateToCloud(); 
-  });
-
-  el("backToMatchesBtn").addEventListener("click", () => { 
-      state.uiSection = 'matches'; 
-      refreshUI(); 
-      saveStateToCloud(); 
-  });
-
-  el("backToFinalsBtn").addEventListener("click", () => { 
-      state.uiSection = 'finals'; 
-      refreshUI(); 
-      saveStateToCloud(); 
-  });
+  el("backToParamsBtn").addEventListener("click", () => { state.uiStep = 'stepParams'; refreshUI(); saveStateToCloud(); });
+  el("backToPlayersBtn").addEventListener("click", () => { state.uiStep = 'stepPlayers'; refreshUI(); saveStateToCloud(); });
+  el("backToTeamsFromPreviewBtn").addEventListener("click", () => { state.uiStep = 'stepTeams'; refreshUI(); saveStateToCloud(); });
+  el("backToPreviewBtn").addEventListener("click", () => { state.uiSection = 'setup'; state.uiStep = 'stepTeamPreview'; refreshUI(); saveStateToCloud(); });
+  el("backToMatchesBtn").addEventListener("click", () => { state.uiSection = 'matches'; refreshUI(); saveStateToCloud(); });
+  el("backToFinalsBtn").addEventListener("click", () => { state.uiSection = 'finals'; refreshUI(); saveStateToCloud(); });
   
-  // --- RESETS E NOVO TORNEIO (CORRIGIDOS) ---
   el("resetParamsBtn").addEventListener("click", () => { 
-      // Limpa inputs visuais
-      el("numPlayers").value = ""; 
-      el("numTeams").value = ""; 
-      el("numRounds").value = ""; 
-      // Limpa dados do estado para evitar bugs
-      state.numPlayers = 0;
-      state.numTeams = 0;
-      state.numRounds = 0;
+      el("numPlayers").value = ""; el("numTeams").value = ""; el("numRounds").value = ""; 
+      state.numPlayers = 0; state.numTeams = 0; state.numRounds = 0;
   });
-
   el("resetPlayersBtn").addEventListener("click", () => {
-      // Reinicia lista de jogadores mantendo a quantidade
       state.players = Array.from({length:state.numPlayers}, (_,i)=>({name:'', skill:3}));
-      renderPlayersForm();
-      saveStateToCloud();
+      renderPlayersForm(); saveStateToCloud();
   });
-
   el("resetTeamsBtn").addEventListener("click", () => {
-     // Recria os times vazios
      state.teams = [];
-     for(let t=0; t<state.numTeams; t++){
-        state.teams.push({ name: `Time ${t + 1}`, color: TEAM_COLORS[t % TEAM_COLORS.length], players: [], stats: {} });
-     }
-     renderTeamsForm();
-     saveStateToCloud();
+     for(let t=0; t<state.numTeams; t++){ state.teams.push({ name: `Time ${t + 1}`, color: TEAM_COLORS[t % TEAM_COLORS.length], players: [], stats: {} }); }
+     renderTeamsForm(); saveStateToCloud();
   });
-
-  // Botão "Resetar Tudo" (Na tela de Rodadas)
   el("goToHomeBtn").addEventListener("click", () => { 
     if(confirm("Tem certeza? Isso apagará todo o progresso atual.")) { 
-        // Reseta o objeto state inteiro
         state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
-        refreshUI(); // Força a volta para a tela inicial
-        saveStateToCloud(); 
+        refreshUI(); saveStateToCloud(); 
     }
   });
-
-  // Botão "Novo Torneio" (Na tela de Pódio)
   el("newTournamentBtn").addEventListener("click", () => {
       if(confirm("Começar novo torneio apagará os dados do atual. Confirmar?")) {
         state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
-        refreshUI();
-        saveStateToCloud();
+        refreshUI(); saveStateToCloud();
       }
   });
 
-  // Funções Auxiliares de Render
   function renderPlayersForm() {
     const pf = el("playersForm"); pf.innerHTML = "";
-    // Se já existem jogadores salvos, usa eles. Se não, cria vazio.
     const saved = state.players.length > 0 ? state.players : Array.from({length:state.numPlayers}, (_,i)=>({name:'', skill:3}));
-    
     for(let i=0; i<state.numPlayers; i++){
       const p = saved[i] || {name:'', skill:3};
-      pf.innerHTML += `<div class="team-block"><div class="row cols-2"><div><label>Jogador ${i+1}</label><input type="text" id="pl_name_${i}" value="${p.name}" placeholder="Nome"/></div><div><label>Habilidade</label><select id="pl_skill_${i}"><option value="1" ${p.skill==1?'selected':''}>1 ⭐</option><option value="2" ${p.skill==2?'selected':''}>2 ⭐</option><option value="3" ${p.skill==3?'selected':''}>3 ⭐</option><option value="4" ${p.skill==4?'selected':''}>4 ⭐</option><option value="5" ${p.skill==5?'selected':''}>5 ⭐</option></select></div></div></div>`;
+      pf.innerHTML += `<div class="team-block"><div class="row cols-2"><div><label>Jogador ${i+1}</label><input type="text" id="pl_name_${i}" value="${p.name}" placeholder="Nome" autocomplete="off"/></div><div><label>Habilidade</label><select id="pl_skill_${i}"><option value="1" ${p.skill==1?'selected':''}>1 ⭐</option><option value="2" ${p.skill==2?'selected':''}>2 ⭐</option><option value="3" ${p.skill==3?'selected':''}>3 ⭐</option><option value="4" ${p.skill==4?'selected':''}>4 ⭐</option><option value="5" ${p.skill==5?'selected':''}>5 ⭐</option></select></div></div></div>`;
     }
   }
   function renderTeamsForm() {
@@ -538,7 +455,7 @@
     for(let t=0; t<state.numTeams; t++){
       const existingName = state.teams[t] ? state.teams[t].name : '';
       const color = TEAM_COLORS[t % TEAM_COLORS.length];
-      tf.innerHTML += `<div class="team-block"><div class="flex"><div class="chip"><span class="dot" style="background:${color}"></span><b>Time ${t+1}</b></div></div><div class="row" style="margin-top:8px"><label>Nome do time</label><input id="teamName_${t}" type="text" value="${existingName}" placeholder="Nome do time"/></div></div>`;
+      tf.innerHTML += `<div class="team-block"><div class="flex"><div class="chip"><span class="dot" style="background:${color}"></span><b>Time ${t+1}</b></div></div><div class="row" style="margin-top:8px"><label>Nome do time</label><input id="teamName_${t}" type="text" value="${existingName}" placeholder="Nome do time" autocomplete="off"/></div></div>`;
     }
   }
   function renderTeamPreview() {
@@ -549,7 +466,6 @@
     });
   }
   
-  // --- LÓGICA DO JOGO ---
   function distribuirPorSomaEquilibrada() {
     const sortedPlayers = [...state.players].sort((a, b) => b.skill - a.skill);
     state.teams.forEach(t => t.players = []);
@@ -580,67 +496,31 @@
     state.currentIndex = 0;
   }
   
-function atualizarClassificacao(){
-    // 1. Zera as estatísticas antes de recalcular
+  function atualizarClassificacao(){
     state.teams.forEach(t => t.stats = {J:0, V:0, D:0, PF:0, PS:0});
-    
-    // 2. Percorre a agenda somando os dados dos jogos realizados
     state.schedule.forEach(g => { 
         if(g.scoreA == null || g.scoreB == null) return; 
         const A = state.teams[g.a], B = state.teams[g.b]; 
-        
-        // Computa Jogos (J) e Pontos (PF/PS)
-        A.stats.J++; 
-        B.stats.J++; 
-        A.stats.PF += g.scoreA; 
-        A.stats.PS += g.scoreB; 
-        B.stats.PF += g.scoreB; 
-        B.stats.PS += g.scoreA; 
-        
-        // Computa Vitórias (V) e Derrotas (D)
-        if(g.scoreA > g.scoreB) { A.stats.V++; B.stats.D++; }
-        else if(g.scoreB > g.scoreA) { B.stats.V++; A.stats.D++; }
+        A.stats.J++; B.stats.J++; A.stats.PF += g.scoreA; A.stats.PS += g.scoreB; B.stats.PF += g.scoreB; B.stats.PS += g.scoreA; 
+        if(g.scoreA > g.scoreB) { A.stats.V++; B.stats.D++; } else if(g.scoreB > g.scoreA) { B.stats.V++; A.stats.D++; }
     });
-
-    // 3. Gera o HTML das linhas da tabela
-    el("standingsTable").querySelector("tbody").innerHTML = state.teams
-      .map(t => { 
-          const saldo = t.stats.PF - t.stats.PS; 
-          return {...t, ...t.stats, saldo}; 
-      })
-      // Ordena por: Vitórias > Saldo > Pontos Feitos
+    el("standingsTable").querySelector("tbody").innerHTML = state.teams.map(t => { const saldo = t.stats.PF - t.stats.PS; return {...t, ...t.stats, saldo}; })
       .sort((a,b) => (b.V - a.V) || (b.saldo - a.saldo) || (b.PF - a.PF))
-      .map(r => `
-        <tr>
-            <td style="color:${r.color}; font-weight:700;">${r.name}</td>
-            <td class="right">${r.J}</td>
-            <td class="right">${r.V}</td>
-            <td class="right">${r.PF}</td>
-            <td class="right">${r.PS}</td>
-            <td class="right">${r.saldo}</td>
-        </tr>`).join("");
+      .map(r => `<tr><td style="color:${r.color}; font-weight:700;">${r.name}</td><td class="right">${r.J}</td><td class="right">${r.V}</td><td class="right">${r.PF}</td><td class="right">${r.PS}</td><td class="right">${r.saldo}</td></tr>`).join("");
   }
 
   function renderCurrentMatch(){
     const g=state.schedule[state.currentIndex]; 
-    if(!g){
-       if(state.schedule.length > 0) iniciarFinais();
-       return;
-    } 
+    if(!g){ if(state.schedule.length > 0) iniciarFinais(); return; } 
     const A=state.teams[g.a], B=state.teams[g.b];
     el("roundInfo").innerText = `Rodada ${g.round} — Jogo ${g.order}`;
-    
-    // Renderiza controles apenas para Admin
     const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="scoreA" type="number" min="0" placeholder="0" value="${g.scoreA ?? ''}"/><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreA ?? '-'}</div>`;
     const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="scoreB" type="number" min="0" placeholder="0" value="${g.scoreB ?? ''}"/><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreB ?? '-'}</div>`;
-
     el("currentMatch").innerHTML = `<div class="score-grid"><div class="team-side"><div>${teamChip(A)}</div>${renderPlayersList(A.players)}</div><div class="vs">vs</div><div class="team-side" style="align-items:flex-end"><div>${teamChip(B)}</div>${renderPlayersList(B.players)}</div></div><div style="margin-top:12px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div>`;
-    
     if(isAdmin) attachScoreButtonListeners('#currentMatch', 'scoreA', 'scoreB');
     el('nextMatchBtn').disabled = g.scoreA === null;
   }
 
-  // --- EVENTOS DO JOGO ---
   el("saveOnlyBtn").addEventListener("click", ()=>{
     const g = state.schedule[state.currentIndex];
     const a=parseInt(el("scoreA").value,10), b=parseInt(el("scoreB").value,10);
@@ -652,14 +532,10 @@ function atualizarClassificacao(){
   });
   el("nextMatchBtn").addEventListener("click", ()=>{
     state.currentIndex++;
-    if (state.currentIndex >= state.schedule.length) { iniciarFinais(); } 
-    else { renderCurrentMatch(); saveStateToCloud(); }
+    if (state.currentIndex >= state.schedule.length) { iniciarFinais(); } else { renderCurrentMatch(); saveStateToCloud(); }
   });
 
-  // --- HELPER FUNCS ---
-  function teamChip(t){
-    return `<span class="chip"><span class="dot" style="background:${t.color}"></span><b style="color:${t.color}">${t.name}</b></span>`;
-  }
+  function teamChip(t){ return `<span class="chip"><span class="dot" style="background:${t.color}"></span><b style="color:${t.color}">${t.name}</b></span>`; }
   function renderPlayersList(players){
     if(!players||!players.length) return `<div class="players-list"><ul><li><em class="mini muted">-</em></li></ul></div>`;
     return `<div class="players-list"><ul>${players.map(p=>`<li>${p.name}</li>`).join("")}</ul></div>`;
@@ -675,131 +551,48 @@ function atualizarClassificacao(){
     });
   };
 
-// --- AGENDA UNIFICADA (Visualização com Jogadores + Edição) ---
   function renderAgenda(){
-    const container = el("agenda"); 
-    container.innerHTML = ""; 
-    const byRound = {}; 
-    
-    // Agrupa preservando o índice original (i) para o botão editar saber qual jogo é
-    state.schedule.forEach((g, i) => {
-        (byRound[g.round] ??= []).push({ ...g, i });
-    });
-    
+    const container = el("agenda"); container.innerHTML = ""; const byRound = {}; 
+    state.schedule.forEach((g, i) => { (byRound[g.round] ??= []).push({ ...g, i }); });
     Object.keys(byRound).sort((a, b) => a - b).forEach(r => {
-        const card = document.createElement('div');
-        card.className = "card";
-        card.style.marginBottom = "8px";
-        
-        // Cabeçalho da Rodada
+        const card = document.createElement('div'); card.className = "card"; card.style.marginBottom = "8px";
         let html = `<b>Rodada ${r}</b>`;
-        
-        // Lista de Jogos
         html += byRound[r].sort((x, y) => (x.order || 0) - (y.order || 0)).map(g => {
-            const A = state.teams[g.a];
-            const B = state.teams[g.b];
-            
-            // Lista de jogadores (O recurso que você pediu)
-            const pA = A.players.map(p => p.name).join(', ');
-            const pB = B.players.map(p => p.name).join(', ');
-            
-            // Botão Editar (Só aparece se for Admin)
-            const editBtn = isAdmin 
-                ? `<div style="text-align:center; margin-top:8px;">
-                     <button class="small secondary" data-edit="${g.i}">Editar Placar</button>
-                   </div>` 
-                : '';
-
-            return `
-            <div class="agenda-game" style="border-bottom:1px solid #2a3242; padding-bottom:10px; margin-bottom:10px;">
+            const A = state.teams[g.a], B = state.teams[g.b];
+            const pA = A.players.map(p => p.name).join(', '), pB = B.players.map(p => p.name).join(', ');
+            const editBtn = isAdmin ? `<div style="text-align:center; margin-top:8px;"><button class="small secondary" data-edit="${g.i}">Editar Placar</button></div>` : '';
+            return `<div class="agenda-game" style="border-bottom:1px solid #2a3242; padding-bottom:10px; margin-bottom:10px;">
               <div class="mini muted" style="text-align:center; margin-bottom:4px">Jogo ${g.order}</div>
-              
               <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
-                
-                <div style="flex:1; text-align:left; overflow:hidden;">
-                    ${teamChip(A)}
-                    <div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pA}">
-                        ${pA}
-                    </div>
-                </div>
-
-                <div style="white-space:nowrap; font-weight:bold; font-size:1.1rem; padding:0 4px;">
-                    ${g.scoreA ?? '-'} x ${g.scoreB ?? '-'}
-                </div>
-
-                <div style="flex:1; text-align:right; overflow:hidden;">
-                    ${teamChip(B)}
-                    <div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pB}">
-                        ${pB}
-                    </div>
-                </div>
-
-              </div>
-              
-              ${editBtn}
-            </div>`;
+                <div style="flex:1; text-align:left; overflow:hidden;">${teamChip(A)}<div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pA}">${pA}</div></div>
+                <div style="white-space:nowrap; font-weight:bold; font-size:1.1rem; padding:0 4px;">${g.scoreA ?? '-'} x ${g.scoreB ?? '-'}</div>
+                <div style="flex:1; text-align:right; overflow:hidden;">${teamChip(B)}<div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pB}">${pB}</div></div>
+              </div>${editBtn}</div>`;
         }).join('');
-        
-        card.innerHTML = html;
-        container.appendChild(card);
+        card.innerHTML = html; container.appendChild(card);
     });
   }
 
-  // --- LÓGICA DE CLIQUE (EDITAR E SALVAR) ---
   el("agenda").addEventListener("click", e => {
     if (!isAdmin) return;
-
-    // 1. Clicou em "Editar Placar"
     if (e.target.matches('button[data-edit]')) { 
         const idx = parseInt(e.target.dataset.edit, 10);
-        
-        // Evita abrir dois editores para o mesmo jogo
         if (document.getElementById(`editor-${idx}`)) return;
-        
         const g = state.schedule[idx]; 
-        
-        // Cria os inputs de edição
-        const editorHtml = `
-            <div class="game-editor" id="editor-${idx}" style="margin-top:8px; padding-top:8px; border-top:1px dashed #444; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center;">
-                <input type="number" value="${g.scoreA ?? 0}" id="ea-${idx}" placeholder="Pts A">
-                <input type="number" value="${g.scoreB ?? 0}" id="eb-${idx}" placeholder="Pts B">
-                <button class="small" data-save="${idx}">Salvar</button>
-            </div>`;
-            
-        // Insere o editor na tela e esconde o botão "Editar"
+        const editorHtml = `<div class="game-editor" id="editor-${idx}" style="margin-top:8px; padding-top:8px; border-top:1px dashed #444; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center;">
+                <input type="number" value="${g.scoreA ?? 0}" id="ea-${idx}" placeholder="Pts A"><input type="number" value="${g.scoreB ?? 0}" id="eb-${idx}" placeholder="Pts B"><button class="small" data-save="${idx}">Salvar</button></div>`;
         e.target.closest('.agenda-game').insertAdjacentHTML('beforeend', editorHtml);
         e.target.parentElement.style.display = 'none';
     }
-
-    // 2. Clicou em "Salvar" (dentro do editor)
     if (e.target.matches('button[data-save]')) { 
         const idx = parseInt(e.target.dataset.save, 10);
-        const g = state.schedule[idx];
-        
-        const valA = document.getElementById(`ea-${idx}`).value;
-        const valB = document.getElementById(`eb-${idx}`).value;
-        
+        const g = state.schedule[idx], valA = document.getElementById(`ea-${idx}`).value, valB = document.getElementById(`eb-${idx}`).value;
         if (valA === '' || valB === '') return alert("Preencha os pontos.");
-
-        // Salva na memória
-        g.scoreA = parseInt(valA, 10);
-        g.scoreB = parseInt(valB, 10);
-        
-        // Atualiza tudo
-        atualizarClassificacao();
-        renderAgenda(); // Redesenha a lista (o editor some e volta o texto normal)
-        
-        // Se este for o jogo em destaque no topo, atualiza ele também
-        if (state.currentIndex === idx && state.uiSection === 'matches') {
-            renderCurrentMatch();
-        }
-        
-        // Manda pro banco
-        saveStateToCloud();
+        g.scoreA = parseInt(valA, 10); g.scoreB = parseInt(valB, 10);
+        atualizarClassificacao(); renderAgenda(); if (state.currentIndex === idx && state.uiSection === 'matches') renderCurrentMatch(); saveStateToCloud();
     }
   });
 
-  // --- FINAIS E PÓDIO ---
   function iniciarFinais(){
     atualizarClassificacao();
     const ranking = state.teams.map((t,i)=>({ i, name:t.name, color:t.color, players:t.players, stats:{...t.stats} })).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
@@ -808,16 +601,12 @@ function atualizarClassificacao(){
     else if (ranking.length >= 2) { state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); } 
     else { alert("Times insuficientes."); buildPodium(); state.uiSection='podium'; refreshUI(); saveStateToCloud(); return; }
     state.finals.forEach(f => { f.scoreA = null; f.scoreB = null; });
-    state._rankingSnapshot = ranking; state.finalsIndex = 0;
-    state.uiSection = 'finals';
-    refreshUI();
-    saveStateToCloud();
+    state._rankingSnapshot = ranking; state.finalsIndex = 0; state.uiSection = 'finals'; refreshUI(); saveStateToCloud();
   }
   function renderFinalMatch(){
     const f=state.finals[state.finalsIndex]; if(!f){buildPodium(); state.uiSection='podium'; refreshUI(); return;} const A=state.teams[f.a], B=state.teams[f.b];
     const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="fscoreA" type="number" min="0" value="${f.scoreA??''}"><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd">${f.scoreA??'-'}</div>`;
     const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="fscoreB" type="number" min="0" value="${f.scoreB??''}"><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd">${f.scoreB??'-'}</div>`;
-    
     el("finalsMatch").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div>${teamChip(A)}</div><div class="mini muted">${f.label}</div><div>${teamChip(B)}</div></div><div style="margin-top:10px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div></div>`;
     if(isAdmin) attachScoreButtonListeners('#finalsMatch', 'fscoreA', 'fscoreB');
   }
@@ -828,20 +617,10 @@ function atualizarClassificacao(){
     if(state.finalsIndex >= state.finals.length){ buildPodium(); state.uiSection='podium'; refreshUI(); } else { renderFinalMatch(); }
     saveStateToCloud();
   });
-  el("backToMatchesBtn").addEventListener("click", () => { state.uiSection = 'matches'; refreshUI(); saveStateToCloud(); });
-  el("backToFinalsBtn").addEventListener("click", () => { state.uiSection = 'finals'; refreshUI(); saveStateToCloud(); });
-  el("newTournamentBtn").addEventListener("click", () => {
-      if(confirm("Começar novo torneio apagará o atual. Confirmar?")) {
-        state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
-        saveStateToCloud();
-      }
-  });
 
   function buildPodium(){
-    let podiumHTML = '';
-    const placed = new Set();
-    const finalG=state.finals.find(x=>x.label==="Final");
-    const thirdG=state.finals.find(x=>x.label.includes("3º"));
+    let podiumHTML = ''; const placed = new Set();
+    const finalG=state.finals.find(x=>x.label==="Final"); const thirdG=state.finals.find(x=>x.label.includes("3º"));
     const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
     const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
     const champ=getW(finalG), vice=getL(finalG), third=getW(thirdG), fourth=getL(thirdG);
@@ -857,155 +636,50 @@ function atualizarClassificacao(){
     el("podiumBox").innerHTML = podiumHTML || '<div class="status">Indisponível.</div>';
   }
 
-  // --- MÓDULO DE EXPORTAÇÃO (CORRIGIDO E COMPLETO) ---
-  
-  // Função Genérica para JPEG
   function exportAsJpeg(htmlContent, filename, options = {}) {
     const overlay = document.createElement('div'); overlay.id = 'export-overlay'; overlay.innerText = 'Gerando imagem...'; document.body.appendChild(overlay);
     const iframe = document.createElement('iframe'); iframe.style.position = 'absolute'; iframe.style.left = '-9999px'; iframe.style.width = options.width || '800px'; iframe.style.height = '1px'; document.body.appendChild(iframe);
-    
-    iframe.contentWindow.document.open(); 
-    iframe.contentWindow.document.write(htmlContent); 
-    iframe.contentWindow.document.close();
-    
-    // Pequeno delay para garantir carregamento de fontes/estilos
-    setTimeout(() => {
-        html2canvas(iframe.contentWindow.document.body, { 
-            scale: 2, 
-            useCORS: true, 
-            backgroundColor: options.dark ? '#0f1115' : '#ffffff' 
-        }).then(canvas => {
-            const link = document.createElement('a'); 
-            link.download = filename; 
-            link.href = canvas.toDataURL("image/jpeg", 0.92); 
-            link.click();
-            document.body.removeChild(iframe); 
-            document.body.removeChild(overlay);
-        }).catch(err => {
-            console.error(err);
-            alert("Erro ao gerar imagem.");
-            document.body.removeChild(iframe); 
-            document.body.removeChild(overlay);
-        });
-    }, 1000);
+    iframe.contentWindow.document.open(); iframe.contentWindow.document.write(htmlContent); iframe.contentWindow.document.close();
+    setTimeout(() => { html2canvas(iframe.contentWindow.document.body, { scale: 2, useCORS: true, backgroundColor: options.dark ? '#0f1115' : '#ffffff' }).then(canvas => { const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL("image/jpeg", 0.92); link.click(); document.body.removeChild(iframe); document.body.removeChild(overlay); }); }, 1000);
   }
 
-// 1. Exportação da Lista de Times (Cadastro) - CORRIGIDA
   function getTeamsExportHtml(isDark) {
-     const bg = isDark ? '#0f1115' : '#ffffff';
-     const txtColor = isDark ? '#eef2f6' : '#000000';
-     
-     // Truque: No PDF (fundo branco), mantemos a cor do time mas adicionamos 
-     // uma sombra preta leve para garantir que cores claras (amarelo) sejam legíveis.
-     const nameStyle = (color) => `
-        color:${color}; 
-        font-weight:bold; 
-        font-size:1.1rem; 
-        ${!isDark ? 'text-shadow: 0px 0px 1px rgba(0,0,0,0.5);' : ''}
-     `;
-
-     const style = `<style>
-        body{font-family:sans-serif;background:${bg};color:${txtColor};padding:20px}
-        h1{text-align:center}
-        .team-box{border:1px dashed #555;padding:10px;margin-bottom:10px;page-break-inside:avoid;border-radius:8px}
-        ul{margin:5px 0 0;padding-left:20px; color:${isDark?'#9aa4b2':'#444'}}
-     </style>`;
-
+     const bg = isDark ? '#0f1115' : '#ffffff'; const txtColor = isDark ? '#eef2f6' : '#000000';
+     const nameStyle = (color) => `color:${color}; font-weight:bold; font-size:1.1rem; ${!isDark ? 'text-shadow: 0px 0px 1px rgba(0,0,0,0.5);' : ''}`;
+     const style = `<style>body{font-family:sans-serif;background:${bg};color:${txtColor};padding:20px}h1{text-align:center}.team-box{border:1px dashed #555;padding:10px;margin-bottom:10px;page-break-inside:avoid;border-radius:8px}ul{margin:5px 0 0;padding-left:20px; color:${isDark?'#9aa4b2':'#444'}}</style>`;
      let html = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Escalação dos Times</h1>`;
-     
-     state.teams.forEach(t => {
-         const totalSkill = t.players.reduce((a,b)=>a+b.skill,0);
-         html += `<div class="team-box">
-            <span style="${nameStyle(t.color)}">${t.name}</span> 
-            <strong style="font-size:0.9rem">(${totalSkill}⭐)</strong>
-            <ul>${t.players.map(p=>`<li>${p.name} (${p.skill}⭐)</li>`).join('')}</ul>
-         </div>`;
-     });
+     state.teams.forEach(t => { html += `<div class="team-box"><span style="${nameStyle(t.color)}">${t.name}</span> <strong style="font-size:0.9rem">(${t.players.reduce((a,b)=>a+b.skill,0)}⭐)</strong><ul>${t.players.map(p=>`<li>${p.name} (${p.skill}⭐)</li>`).join('')}</ul></div>`; });
      return html + `</body></html>`;
   }
+  el("exportTeamsPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'times.pdf',jsPDF:{format:'a4'}}).from(getTeamsExportHtml(false)).save());
+  el("exportTeamsJpegBtn").addEventListener("click", ()=> exportAsJpeg(getTeamsExportHtml(true),'times.jpeg',{dark:true,width:'500px'}));
 
-  el("exportTeamsPdfBtn").addEventListener("click", () => {
-    html2pdf().set({ margin:10, filename:'times.pdf', jsPDF:{format:'a4'} }).from(getTeamsExportHtml(false)).save();
-  });
-  el("exportTeamsJpegBtn").addEventListener("click", () => {
-    exportAsJpeg(getTeamsExportHtml(true), 'times.jpeg', { dark: true, width: '500px' });
-  });
-
- // --- EXPORTAÇÃO DA AGENDA (COM JOGADORES) ---
   function getAgendaExportHtml(format) {
       const isPdf = format === 'pdf';
-      const theme = isPdf 
-        ? { bg: '#ffffff', card: '#f2f2f2', border: '#000', text: '#000', subtext: '#444' } 
-        : { bg: '#0f1115', card: '#171a21', border: '#2a3242', text: '#eef2f6', subtext: '#9aa4b2' };
-      
+      const theme = isPdf ? { bg: '#ffffff', card: '#f2f2f2', border: '#000', text: '#000', subtext: '#444' } : { bg: '#0f1115', card: '#171a21', border: '#2a3242', text: '#eef2f6', subtext: '#9aa4b2' };
       const w = isPdf ? '100%' : '540px';
-      
-      // Estilo do nome do time
       const tStyle = (c) => `color:${c}; font-weight:bold; font-size:1.1rem; ${isPdf ? 'text-shadow:0 0 1px rgba(0,0,0,0.5)':''}`;
-      
-      let body = '';
-      const byRound = {};
-      state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
-      
+      let body = ''; const byRound = {}; state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
       Object.keys(byRound).sort((a,b)=>a-b).forEach(r => {
           body += `<div class="round"><div class="rtitle">Rodada ${r}</div>`;
           byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
                const A = state.teams[g.a], B = state.teams[g.b];
-               const pA = A.players.map(p=>p.name).join(', ');
-               const pB = B.players.map(p=>p.name).join(', ');
-
-               body += `<div class="game">
-                  <div style="flex:1; text-align:left; padding-right:5px">
-                      <div style="${tStyle(A.color)}">${A.name}</div>
-                      <div class="players">${pA}</div>
-                  </div>
-
-                  <div style="align-self:center; padding:0 10px; font-family:monospace; font-weight:bold; font-size:1.2rem; white-space:nowrap">
-                      ${g.scoreA??''} x ${g.scoreB??''}
-                  </div>
-
-                  <div style="flex:1; text-align:right; padding-left:5px">
-                      <div style="${tStyle(B.color)}">${B.name}</div>
-                      <div class="players">${pB}</div>
-                  </div>
-               </div>`;
+               body += `<div class="game"><div style="flex:1;text-align:left;padding-right:5px"><div style="${tStyle(A.color)}">${A.name}</div><div class="players">${A.players.map(p=>p.name).join(', ')}</div></div><div style="align-self:center;padding:0 10px;font-family:monospace;font-weight:bold;font-size:1.2rem;white-space:nowrap">${g.scoreA??''} x ${g.scoreB??''}</div><div style="flex:1;text-align:right;padding-left:5px"><div style="${tStyle(B.color)}">${B.name}</div><div class="players">${B.players.map(p=>p.name).join(', ')}</div></div></div>`;
           });
           body += '</div>';
       });
-
-      const style = `<style>
-        body{font-family:sans-serif;background:${theme.bg};color:${theme.text};padding:10px;width:${w}}
-        .round{background:${theme.card};border:1px solid ${theme.border};margin-bottom:10px;padding:10px;border-radius:8px;page-break-inside:avoid}
-        .rtitle{border-bottom:1px solid #777;margin-bottom:8px;font-weight:bold;text-transform:uppercase}
-        .game{display:flex;justify-content:space-between;align-items:flex-start; padding:8px 0;border-bottom:1px dashed #444}
-        .game:last-child{border-bottom:none}
-        .players{font-size:0.75rem; color:${theme.subtext}; margin-top:2px; line-height:1.2}
-      </style>`;
+      const style = `<style>body{font-family:sans-serif;background:${theme.bg};color:${theme.text};padding:10px;width:${w}}.round{background:${theme.card};border:1px solid ${theme.border};margin-bottom:10px;padding:10px;border-radius:8px;page-break-inside:avoid}.rtitle{border-bottom:1px solid #777;margin-bottom:8px;font-weight:bold;text-transform:uppercase}.game{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px dashed #444}.game:last-child{border-bottom:none}.players{font-size:0.75rem;color:${theme.subtext};margin-top:2px;line-height:1.2}</style>`;
       return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1 style="text-align:center">Agenda</h1>${body}</body></html>`;
   }
-  
-  el("exportAgendaPdfBtn").addEventListener("click", () => { 
-      html2pdf().set({ margin:10, filename: 'agenda.pdf', jsPDF:{format:'a4'} }).from(getAgendaExportHtml('pdf')).save(); 
-  });
-  el("exportAgendaJpegBtn").addEventListener("click", () => { 
-      exportAsJpeg(getAgendaExportHtml('jpeg'), 'agenda.jpeg', { dark: true, width: '540px' }); 
-  });
+  el("exportAgendaPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'agenda.pdf',jsPDF:{format:'a4'}}).from(getAgendaExportHtml('pdf')).save());
+  el("exportAgendaJpegBtn").addEventListener("click", ()=> exportAsJpeg(getAgendaExportHtml('jpeg'),'agenda.jpeg',{dark:true,width:'540px'}));
 
-// 3. Relatório Completo (Modelo Unificado: Agenda + Ranking + Finais + Pódio Completo)
   function getFullReportHtml(dark) {
-    // --- Configuração de Cores ---
-    const bg = dark ? '#0f1115' : '#f8f9fa';
-    const text = dark ? '#eef2f6' : '#212529';
-    const cardBg = dark ? '#171a21' : '#ffffff';
-    const cardBorder = dark ? '#2a3242' : '#dee2e6';
-    const borderColor = dark ? '#333' : '#dee2e6';
-    const width = dark ? '800px' : '100%';
+    const bg = dark ? '#0f1115' : '#f8f9fa'; const text = dark ? '#eef2f6' : '#212529';
+    const cardBg = dark ? '#171a21' : '#ffffff'; const cardBorder = dark ? '#2a3242' : '#dee2e6';
+    const borderColor = dark ? '#333' : '#dee2e6'; const width = dark ? '800px' : '100%';
 
-    // --- 1. AGENDA ---
-    let agendaHtml = '';
-    const byRound = {};
-    state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
-    
+    let agendaHtml = ''; const byRound = {}; state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
     Object.keys(byRound).sort((a,b)=>a-b).forEach(r => {
         agendaHtml += `<div class="round-block"><div class="round-title">Rodada ${r}</div>`;
         byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
@@ -1015,16 +689,13 @@ function atualizarClassificacao(){
         agendaHtml += `</div>`;
     });
 
-    // --- 2. CLASSIFICAÇÃO ---
     const ranking = state.teams.map(t=>({...t})).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
-    
     let rankingTable = `<table class="std-table"><thead><tr><th>Time</th><th>J</th><th>V</th><th>PF</th><th>PS</th><th>Saldo</th></tr></thead><tbody>`;
     ranking.forEach(t => {
         rankingTable += `<tr><td style="text-align:left;font-weight:bold;color:${dark ? t.color : '#000'}">${!dark ? `<span class="dot" style="background:${t.color}"></span>` : ''} ${t.name}</td><td>${t.stats.J}</td><td>${t.stats.V}</td><td>${t.stats.PF}</td><td>${t.stats.PS}</td><td>${t.stats.PF - t.stats.PS}</td></tr>`;
     });
     rankingTable += `</tbody></table>`;
 
-    // --- 3. FINAIS ---
     let finalsHtml = '';
     if (state.finals.length > 0) {
         state.finals.forEach(f => {
@@ -1033,7 +704,6 @@ function atualizarClassificacao(){
         });
     } else { finalsHtml = '<div style="color:#777; font-style:italic">Jogos finais não realizados.</div>'; }
 
-    // --- 4. PÓDIO (CORRIGIDO: MOSTRA TODOS) ---
     let podiumHtml = '';
     const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
     const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
@@ -1076,7 +746,6 @@ function atualizarClassificacao(){
             </div>`;
     });
 
-    // --- CSS ---
     const style = `<style>
         body{font-family:'Inter',sans-serif;background:${bg};color:${text};padding:20px;width:${width};margin:0 auto}
         h1{text-align:center;margin-bottom:20px;font-size:1.5rem}
@@ -1106,7 +775,6 @@ function atualizarClassificacao(){
     return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Peladas Vale no Vôlei — Relatório</h1><div class="section-card"><h2>Agenda</h2>${agendaHtml}</div><div class="section-card"><h2>Classificação das Rodadas</h2>${rankingTable}</div><div class="section-card"><h2>Finais</h2>${finalsHtml}</div><div class="section-card"><h2>Pódio Completo</h2>${podiumHtml}</div></body></html>`;
   }
 
-  // --- Botões de Exportação ---
   el("exportFullPdfBtn").addEventListener("click", () => {
       html2pdf().set({ margin:10, filename: 'relatorio_completo.pdf', jsPDF:{unit:'mm',format:'a4'} }).from(getFullReportHtml(false)).save();
   });

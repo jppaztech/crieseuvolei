@@ -632,19 +632,43 @@
     });
   };
 
-// --- AGENDA NA TELA (COM NOMES DOS JOGADORES) ---
+// --- AGENDA UNIFICADA (Visualização com Jogadores + Edição) ---
   function renderAgenda(){
-    const c=el("agenda"); c.innerHTML=""; 
-    const byR={}; 
-    state.schedule.forEach((g,i)=>{(byR[g.round]??=[]).push({...g,i})});
+    const container = el("agenda"); 
+    container.innerHTML = ""; 
+    const byRound = {}; 
     
-    Object.keys(byR).forEach(r=>{
-        c.innerHTML+=`<div class="card" style="margin-bottom:8px"><b>Rodada ${r}</b>`+byR[r].map(g=> {
-            const A=state.teams[g.a], B=state.teams[g.b];
-            const pA = A.players.map(p=>p.name).join(', ');
-            const pB = B.players.map(p=>p.name).join(', ');
+    // Agrupa preservando o índice original (i) para o botão editar saber qual jogo é
+    state.schedule.forEach((g, i) => {
+        (byRound[g.round] ??= []).push({ ...g, i });
+    });
+    
+    Object.keys(byRound).sort((a, b) => a - b).forEach(r => {
+        const card = document.createElement('div');
+        card.className = "card";
+        card.style.marginBottom = "8px";
+        
+        // Cabeçalho da Rodada
+        let html = `<b>Rodada ${r}</b>`;
+        
+        // Lista de Jogos
+        html += byRound[r].sort((x, y) => (x.order || 0) - (y.order || 0)).map(g => {
+            const A = state.teams[g.a];
+            const B = state.teams[g.b];
             
-            return `<div class="agenda-game">
+            // Lista de jogadores (O recurso que você pediu)
+            const pA = A.players.map(p => p.name).join(', ');
+            const pB = B.players.map(p => p.name).join(', ');
+            
+            // Botão Editar (Só aparece se for Admin)
+            const editBtn = isAdmin 
+                ? `<div style="text-align:center; margin-top:8px;">
+                     <button class="small secondary" data-edit="${g.i}">Editar Placar</button>
+                   </div>` 
+                : '';
+
+            return `
+            <div class="agenda-game" style="border-bottom:1px solid #2a3242; padding-bottom:10px; margin-bottom:10px;">
               <div class="mini muted" style="text-align:center; margin-bottom:4px">Jogo ${g.order}</div>
               
               <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
@@ -657,7 +681,7 @@
                 </div>
 
                 <div style="white-space:nowrap; font-weight:bold; font-size:1.1rem; padding:0 4px;">
-                    ${g.scoreA??'-'} x ${g.scoreB??'-'}
+                    ${g.scoreA ?? '-'} x ${g.scoreB ?? '-'}
                 </div>
 
                 <div style="flex:1; text-align:right; overflow:hidden;">
@@ -668,11 +692,69 @@
                 </div>
 
               </div>
-              ${isAdmin?`<div style="text-align:center; margin-top:8px"><button class="small secondary" data-edit="${g.i}">Editar</button></div>`:''}
+              
+              ${editBtn}
             </div>`;
-        }).join('')+`</div>`;
+        }).join('');
+        
+        card.innerHTML = html;
+        container.appendChild(card);
     });
   }
+
+  // --- LÓGICA DE CLIQUE (EDITAR E SALVAR) ---
+  el("agenda").addEventListener("click", e => {
+    if (!isAdmin) return;
+
+    // 1. Clicou em "Editar Placar"
+    if (e.target.matches('button[data-edit]')) { 
+        const idx = parseInt(e.target.dataset.edit, 10);
+        
+        // Evita abrir dois editores para o mesmo jogo
+        if (document.getElementById(`editor-${idx}`)) return;
+        
+        const g = state.schedule[idx]; 
+        
+        // Cria os inputs de edição
+        const editorHtml = `
+            <div class="game-editor" id="editor-${idx}" style="margin-top:8px; padding-top:8px; border-top:1px dashed #444; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center;">
+                <input type="number" value="${g.scoreA ?? 0}" id="ea-${idx}" placeholder="Pts A">
+                <input type="number" value="${g.scoreB ?? 0}" id="eb-${idx}" placeholder="Pts B">
+                <button class="small" data-save="${idx}">Salvar</button>
+            </div>`;
+            
+        // Insere o editor na tela e esconde o botão "Editar"
+        e.target.closest('.agenda-game').insertAdjacentHTML('beforeend', editorHtml);
+        e.target.parentElement.style.display = 'none';
+    }
+
+    // 2. Clicou em "Salvar" (dentro do editor)
+    if (e.target.matches('button[data-save]')) { 
+        const idx = parseInt(e.target.dataset.save, 10);
+        const g = state.schedule[idx];
+        
+        const valA = document.getElementById(`ea-${idx}`).value;
+        const valB = document.getElementById(`eb-${idx}`).value;
+        
+        if (valA === '' || valB === '') return alert("Preencha os pontos.");
+
+        // Salva na memória
+        g.scoreA = parseInt(valA, 10);
+        g.scoreB = parseInt(valB, 10);
+        
+        // Atualiza tudo
+        atualizarClassificacao();
+        renderAgenda(); // Redesenha a lista (o editor some e volta o texto normal)
+        
+        // Se este for o jogo em destaque no topo, atualiza ele também
+        if (state.currentIndex === idx && state.uiSection === 'matches') {
+            renderCurrentMatch();
+        }
+        
+        // Manda pro banco
+        saveStateToCloud();
+    }
+  });
 
   // --- FINAIS E PÓDIO ---
   function iniciarFinais(){
@@ -1050,4 +1132,5 @@
 })();
 </script>
 </body>
+
 </html>

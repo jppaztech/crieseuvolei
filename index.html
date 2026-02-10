@@ -152,19 +152,20 @@
       <b>Classificação</b>
       <div style="margin-top:8px;overflow:auto">
         
-        <table id="standingsTable">
-          <thead>
-            <tr>
-              <th>Time</th>
-              <th class="right" title="Jogos">J</th>
-              <th class="right" title="Vitórias">V</th>
-              <th class="right" title="Pontos Pró">PF</th>
-              <th class="right" title="Pontos Sofridos">PS</th>
-              <th class="right" title="Saldo">Saldo</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+<table id="standingsTable">
+  <thead>
+    <tr>
+      <th>Time</th>
+      <th class="right" title="Jogos">J</th>
+      <th class="right" title="Vitórias">V</th>
+      <th class="right" title="Pontos Pró">PF</th>
+      <th class="right" title="Pontos Sofridos">PS</th>
+      <th class="right" title="Saldo">Saldo</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+        
       </div>
     </div>
 
@@ -579,13 +580,45 @@
     state.currentIndex = 0;
   }
   
-  function atualizarClassificacao(){
-    state.teams.forEach(t=> t.stats={J:0,V:0,D:0,PF:0,PS:0});
-    state.schedule.forEach(g=>{ if(g.scoreA==null||g.scoreB==null)return; const A=state.teams[g.a], B=state.teams[g.b]; A.stats.J++; B.stats.J++; A.stats.PF+=g.scoreA; A.stats.PS+=g.scoreB; B.stats.PF+=g.scoreB; B.stats.PS+=g.scoreA; if(g.scoreA > g.scoreB){A.stats.V++;B.stats.D++;}else if(g.scoreB > g.scoreA){B.stats.V++;A.stats.D++;}});
+function atualizarClassificacao(){
+    // 1. Zera as estatísticas antes de recalcular
+    state.teams.forEach(t => t.stats = {J:0, V:0, D:0, PF:0, PS:0});
+    
+    // 2. Percorre a agenda somando os dados dos jogos realizados
+    state.schedule.forEach(g => { 
+        if(g.scoreA == null || g.scoreB == null) return; 
+        const A = state.teams[g.a], B = state.teams[g.b]; 
+        
+        // Computa Jogos (J) e Pontos (PF/PS)
+        A.stats.J++; 
+        B.stats.J++; 
+        A.stats.PF += g.scoreA; 
+        A.stats.PS += g.scoreB; 
+        B.stats.PF += g.scoreB; 
+        B.stats.PS += g.scoreA; 
+        
+        // Computa Vitórias (V) e Derrotas (D)
+        if(g.scoreA > g.scoreB) { A.stats.V++; B.stats.D++; }
+        else if(g.scoreB > g.scoreA) { B.stats.V++; A.stats.D++; }
+    });
+
+    // 3. Gera o HTML das linhas da tabela
     el("standingsTable").querySelector("tbody").innerHTML = state.teams
-      .map(t=>{ const saldo=t.stats.PF - t.stats.PS; const perc=t.stats.J?Math.round((t.stats.V/t.stats.J)*1000)/10:0; return {...t, ...t.stats, saldo, perc}; })
-      .sort((a,b)=> (b.V - a.V) || (b.saldo - a.saldo) || (b.PF - a.PF))
-      .map(r=>`<tr><td style="color:${r.color}; font-weight:700;">${r.name}</td><td class="right">${r.V}</td><td class="right">${r.PF}</td><td class="right">${r.saldo}</td><td class="right">${r.perc}%</td></tr>`).join("");
+      .map(t => { 
+          const saldo = t.stats.PF - t.stats.PS; 
+          return {...t, ...t.stats, saldo}; 
+      })
+      // Ordena por: Vitórias > Saldo > Pontos Feitos
+      .sort((a,b) => (b.V - a.V) || (b.saldo - a.saldo) || (b.PF - a.PF))
+      .map(r => `
+        <tr>
+            <td style="color:${r.color}; font-weight:700;">${r.name}</td>
+            <td class="right">${r.J}</td>
+            <td class="right">${r.V}</td>
+            <td class="right">${r.PF}</td>
+            <td class="right">${r.PS}</td>
+            <td class="right">${r.saldo}</td>
+        </tr>`).join("");
   }
 
   function renderCurrentMatch(){
@@ -1144,5 +1177,6 @@
 </body>
 
 </html>
+
 
 

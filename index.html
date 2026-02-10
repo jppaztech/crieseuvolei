@@ -1041,11 +1041,9 @@ function atualizarClassificacao(){
     const fin = state.finals.find(x => x.label === "Final");
     const thi = state.finals.find(x => x.label.includes("3º"));
     
-    // Lista de colocados
     const podiumList = [];
-    const placedNames = new Set(); // Para controlar quem já entrou
+    const placedNames = new Set(); 
 
-    // Adiciona Top 3 (com medalhas e cores)
     if (fin) {
         const champ = getW(fin), vice = getL(fin);
         if (champ) { podiumList.push({ t: champ, label: '1º LUGAR', css: 'gold', icon: '🏆' }); placedNames.add(champ.name); }
@@ -1056,12 +1054,10 @@ function atualizarClassificacao(){
         if (third) { podiumList.push({ t: third, label: '3º LUGAR', css: 'bronze', icon: '🥉' }); placedNames.add(third.name); }
     }
     
-    // Adiciona o RESTO dos times (com estilo normal)
     if (state._rankingSnapshot) {
         let currentRank = podiumList.length + 1;
         state._rankingSnapshot.forEach(r => {
             if (!placedNames.has(r.name)) {
-                // Adiciona como 'normal'
                 podiumList.push({ t: r, label: `${currentRank}º LUGAR`, css: 'normal', icon: '' });
                 placedNames.add(r.name);
                 currentRank++;
@@ -1071,10 +1067,8 @@ function atualizarClassificacao(){
 
     if (podiumList.length === 0) podiumHtml = '<div style="padding:10px">Pódio indisponível.</div>';
     
-    // Gera o HTML final do pódio
     podiumList.forEach(w => {
         const playersStr = w.t.players.map(p => p.name).join(', ');
-        // Renderiza a barra
         podiumHtml += `
             <div class="podium-bar ${w.css}">
                 <div class="podium-title">${w.icon} ${w.label}: ${w.t.name}</div>
@@ -1099,59 +1093,25 @@ function atualizarClassificacao(){
         .std-table th{text-align:center;background:${dark?'#252a33':'#f1f3f5'};padding:6px;font-weight:600}
         .std-table td{text-align:center;padding:6px;border-bottom:1px solid ${borderColor}}
         .std-table tr:last-child td{border-bottom:none}
-        
-        /* Estilos do Pódio */
         .podium-bar{padding:10px 15px;border-radius:6px;margin-bottom:8px;color:#000;display:flex;flex-direction:column;border:1px solid #ccc}
         .podium-title{font-weight:bold;font-size:1rem}
         .podium-players{font-size:0.85rem;margin-top:2px;opacity:0.85}
-        
-        /* Cores Específicas */
         .gold{background-color:#fff3cd;border-color:#ffeeba;color:#856404}
         .silver{background-color:#e2e3e5;border-color:#d6d8db;color:#383d41}
         .bronze{background-color:#f8d7da;border-color:#f5c6cb;color:#721c24}
         .normal{background-color:${dark ? '#2a3242' : '#f8f9fa'}; color:${dark ? '#fff' : '#000'}; border-color:${dark ? '#444' : '#ddd'}}
-        
         .final-row{font-size:1rem;margin-bottom:5px}
     </style>`;
 
     return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Peladas Vale no Vôlei — Relatório</h1><div class="section-card"><h2>Agenda</h2>${agendaHtml}</div><div class="section-card"><h2>Classificação das Rodadas</h2>${rankingTable}</div><div class="section-card"><h2>Finais</h2>${finalsHtml}</div><div class="section-card"><h2>Pódio Completo</h2>${podiumHtml}</div></body></html>`;
   }
-      <h1>Relatório</h1>
-      
-      <div class="section-card">
-        <h2>Agenda</h2>
-        ${agendaHtml}
-      </div>
-
-      <div class="section-card">
-        <h2>Classificação das Rodadas</h2>
-        ${rankingTable}
-      </div>
-
-      <div class="section-card">
-        <h2>Finais</h2>
-        ${finalsHtml}
-      </div>
-
-      <div class="section-card">
-        <h2>Pódio</h2>
-        ${podiumHtml}
-      </div>
-
-    </body></html>`;
-  }
 
   // --- Botões de Exportação ---
   el("exportFullPdfBtn").addEventListener("click", () => {
-      // PDF: Usa Tema Claro (dark: false)
       html2pdf().set({ margin:10, filename: 'relatorio_completo.pdf', jsPDF:{unit:'mm',format:'a4'} }).from(getFullReportHtml(false)).save();
   });
   
   el("exportFullJpegBtn").addEventListener("click", () => {
-      // JPEG: Usa Tema Escuro para mobile (dark: true) ou Claro se preferir igual ao PDF
-      // Você pediu "neste modelo", e o modelo da imagem é CLARO. 
-      // Se quiser escuro no JPEG, mude para true abaixo. Se quiser igual à imagem que mandou, deixe false.
-      // Vou deixar 'false' (CLARO) para ficar IDÊNTICO à imagem de referência que você enviou.
       exportAsJpeg(getFullReportHtml(false), 'relatorio_completo.jpeg', { dark: false, width: '800px' });
   });
 
@@ -1161,10 +1121,4 @@ function atualizarClassificacao(){
 })();
 </script>
 </body>
-
 </html>
-
-
-
-
-

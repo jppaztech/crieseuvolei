@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🏐 Peladas de Vôlei - Ao Vivo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --muted:#9aa4b2; --text:#eef2f6; --accent:#22c55e;
+    --danger:#ef4444; --warn:#f59e0b; --ring:#2a3242; --gap:14px; --radius:14px;
+    --small:0.9rem;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter', system-ui,-apple-system,sans-serif;
+      background:var(--bg);color:var(--text);line-height:1.35}
+  
+  /* Layout Básico */
+  header{padding:14px 16px;border-bottom:1px solid #1f2430;background:#0c0e13;position:sticky;top:0;z-index:10; display:flex; justify-content:space-between; align-items:center;}
+  h1{margin:0;font-size:1.15rem}
+  main{padding:12px;display:grid;gap:var(--gap);max-width:980px;margin:0 auto}
+  .card{background:var(--card);border:1px solid #2a3242;border-radius:var(--radius);padding:12px}
+  
+  /* Inputs e Botões */
+  .row{display:grid;gap:8px}
+  .row.cols-2{grid-template-columns:1fr 1fr}
+  .row.cols-3{grid-template-columns:1fr 1fr 1fr}
+  @media (max-width:720px){ .row.cols-2, .row.cols-3{grid-template-columns:1fr} }
+  
+  label{font-size:var(--small);color:var(--muted)}
+  input, select{width:100%;padding:10px;background:#0e121a;border:1px solid #293042;border-radius:10px;color:var(--text);font-size:1rem}
+  input[type="number"]{text-align:center}
+  
+  button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#08140c;font-weight:700;font-size:1rem;cursor:pointer; transition: opacity 0.2s;}
+  button:hover{opacity:0.9;}
+  button:disabled{background:#2b3344;color:#9aa4b2;cursor:not-allowed;}
+  button.small{padding:6px 10px;font-size:.85rem;width:auto}
+  button.secondary{background:#2b3344;color:#d9e1ea}
+  button.warn{background:var(--warn);color:#201600}
+  button.danger{background:var(--danger);color:#fff}
+  
+  /* Elementos Visuais */
+  .team-block{border:1px dashed #2a3346;border-radius:12px;padding:10px}
+  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#0d1118;border:1px solid #283244}
+  .dot{width:12px;height:12px;border-radius:50%}
+  .kbd{font-family:monospace;background:#0b0e14;border:1px solid #293042;padding:2px 6px;border-radius:6px;color:#fff}
+  .status{padding:10px 12px;border:1px solid #2a3242;border-radius:10px;background:#10141c;color:#dbe5f2}
+  .status.good{border-color:#1f6e3b;background:#0f1a13}
+  .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .muted{color:var(--muted)}
+  .hidden{display:none !important}
+  
+  /* Tabelas e Scores */
+  table{width:100%;border-collapse:collapse;font-size:0.95rem}
+  th,td{padding:8px;border-bottom:1px solid #16202a;text-align:left}
+  th{color:var(--muted);font-weight:700}
+  .right{text-align:right}
+  .score-grid{display:grid;grid-template-columns:1fr 140px 1fr;gap:8px;align-items:end}
+  .score-grid .vs{justify-self:center;color:var(--muted)}
+  .score-input-group{display:flex;align-items:center;gap:4px}
+  .score-input-group button{width:36px;padding:10px 0;font-size:1.1rem;border-radius:0}
+  .score-input-group button:first-of-type{border-radius:10px 0 0 10px}
+  .score-input-group button:last-of-type{border-radius:0 10px 10px 0}
+  
+  /* Agenda */
+  .agenda-game{border-bottom: 1px solid #2a3242; padding-bottom: 8px; margin-bottom: 8px;}
+  .agenda-game:last-child{border-bottom:0;}
+  .game-editor{margin-top:8px;padding-top:8px;border-top:1px dashed #2a3346;display:grid;grid-template-columns:1fr 1fr 80px;gap:8px}
+  
+  /* Overlay de Exportação e Login */
+  #export-overlay, #login-overlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);color:white;display:flex;justify-content:center;align-items:center;z-index:9999;}
+  #login-box {background:var(--card); padding:20px; border-radius:12px; width:90%; max-width:350px; border:1px solid #2a3242; text-align:center;}
+  
+  /* Classes para controle de Admin */
+  body:not(.is-admin) .admin-only { display: none !important; }
+  .login-btn { background:transparent; border:1px solid #2a3242; color:#fff; padding:6px 12px; width:auto; font-size:0.8rem; }
+  .logout-btn { background:var(--danger); font-size:0.8rem; width:auto; padding:6px 12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏐 Peladas de Vôlei</h1>
+  <div id="authContainer">
+    <button id="btnLoginAction" class="login-btn">Admin Login</button>
+  </div>
+</header>
+
+<main>
+  <section id="setup" class="card">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h2>1) Cadastro</h2>
+        <span class="mini muted admin-only" style="display:block">Modo Edição</span>
+        <span class="mini muted" id="readOnlyMsg">Modo Espectador (Aguardando Admin)</span>
+    </div>
+
+    <div id="stepParams">
+      <div class="row cols-3">
+        <div><label>Jogadores</label><input id="numPlayers" type="number" min="2" placeholder="12" /></div>
+        <div><label>Times</label><input id="numTeams" type="number" min="3" placeholder="4" /></div>
+        <div><label>Rodadas</label><input id="numRounds" type="number" min="1" placeholder="4" /></div>
+      </div>
+      <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
+        <button id="resetParamsBtn" class="warn">Limpar</button>
+        <button id="toPlayersBtn">Próximo</button>
+      </div>
+    </div>
+
+    <div id="stepPlayers" class="hidden">
+      <div class="flex" style="justify-content:space-between"><b>Jogadores</b></div>
+      <div id="playersForm" class="row cols-2" style="margin-top:8px"></div>
+      <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
+        <button id="resetPlayersBtn" class="warn">Reset</button>
+        <button id="backToParamsBtn" class="secondary">Voltar</button>
+        <button id="toTeamsBtn">Próximo</button>
+      </div>
+    </div>
+
+    <div id="stepTeams" class="hidden">
+      <div class="flex" style="justify-content:space-between"><b>Times</b></div>
+      <div id="teamsForm" class="row cols-2" style="margin-top:8px"></div>
+       <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
+        <button id="resetTeamsBtn" class="warn">Reset</button>
+        <button id="backToPlayersBtn" class="secondary">Voltar</button>
+        <button id="toPreviewBtn">Próximo</button>
+      </div>
+    </div>
+
+    <div id="stepTeamPreview" class="hidden">
+      <div class="flex" style="justify-content:space-between"><b>Times Sorteados</b></div>
+      <div id="previewBox" style="margin-top:8px"><div id="previewContent" class="row"></div></div>
+      <div class="row" style="margin-top:12px; display:grid; grid-template-columns: 1fr 1fr 2fr; gap:8px;">
+        <button id="exportTeamsJpegBtn" class="secondary">JPEG</button>
+        <button id="exportTeamsPdfBtn" class="secondary">PDF</button>
+        <button id="startMatchesBtn" class="admin-only">Iniciar Jogos</button>
+      </div>
+      <div class="row admin-only" style="margin-top:8px"><button id="backToTeamsFromPreviewBtn" class="secondary">Voltar</button></div>
+    </div>
+  </section>
+
+  <section id="matches" class="card hidden">
+    <h2>2) Rodadas (Ao Vivo)</h2>
+    <div id="roundInfo" class="status">Carregando...</div>
+    
+    <div id="currentMatch" class="card" style="margin:12px 0"></div>
+    
+    <div class="card" style="margin-bottom:12px">
+      <b>Classificação</b>
+      <div style="margin-top:8px;overflow:auto">
+        <table id="standingsTable">
+          <thead><tr><th>Time</th><th class="right">V</th><th class="right">PF</th><th class="right">Saldo</th><th class="right">%</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="row admin-only" style="margin-bottom:12px; display:grid; grid-auto-flow:column; gap:8px;">
+        <button id="saveOnlyBtn">Salvar Placar</button>
+        <button id="nextMatchBtn" class="secondary" disabled>Próxima Partida</button>
+    </div>
+
+    <div style="display: flex; align-items: flex-start; gap: 16px;">
+        <details style="flex-grow: 1;">
+          <summary>Agenda Completa</summary>
+          <div id="agenda" style="margin-top:8px"></div>
+        </details>
+        <div style="display: flex; flex-direction: column; gap: 4px; flex-shrink:0;">
+            <button id="exportAgendaJpegBtn" class="small secondary">JPEG</button>
+            <button id="exportAgendaPdfBtn" class="small secondary">PDF</button>
+        </div>
+    </div>
+    
+    <div class="row admin-only" style="margin-top:12px; display:grid; grid-auto-flow:column; gap:8px;">
+        <button id="backToPreviewBtn" class="secondary">Voltar Setup</button>
+        <button id="goToHomeBtn" class="warn">Resetar Tudo</button>
+    </div>
+  </section>
+
+  <section id="finals" class="card hidden">
+    <h2>3) Finais</h2>
+    <div id="finalsMatch" style="margin-top:8px"></div>
+    <div class="row admin-only" style="margin-top:12px; display:grid; grid-auto-flow:column; gap:8px;">
+        <button id="backToMatchesBtn" class="secondary">Voltar</button>
+        <button id="saveFinalBtn">Salvar ➜ Próxima</button>
+    </div>
+  </section>
+
+  <section id="podium" class="card hidden">
+    <h2>4) Pódio</h2>
+    <div id="podiumBox" class="podium"></div>
+    <div class="row" style="margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+        <button id="exportFullJpegBtn" class="secondary">Relatório (JPEG)</button>
+        <button id="exportFullPdfBtn" class="secondary">Relatório (PDF)</button>
+    </div>
+    <div class="row admin-only" style="margin-top:8px">
+        <button id="newTournamentBtn" class="warn">Novo Torneio</button>
+    </div>
+    <div class="row admin-only" style="margin-top:12px"><button id="backToFinalsBtn" class="secondary">Voltar</button></div>
+  </section>
+</main>
+
+<div id="login-overlay" class="hidden">
+    <div id="login-box">
+        <h2 style="margin-top:0">Acesso Admin</h2>
+        <div class="row">
+            <input type="email" id="email" placeholder="Email" />
+            <input type="password" id="password" placeholder="Senha" />
+            <button id="doLoginBtn">Entrar</button>
+            <button id="cancelLoginBtn" class="secondary">Cancelar</button>
+        </div>
+        <p id="loginMsg" class="mini muted" style="margin-top:10px"></p>
+    </div>
+</div>
+
+<script>
+(function(){
+  // --- CONFIGURAÇÃO SUPABASE ---
+  // Substitua as strings abaixo pelas suas chaves do Supabase
+  const SUPABASE_URL = 'https://cymkeazbvhxtstaxaqdc.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Nd_pwhW8NPXYTPqMMgycCA_XcKAZCDA';
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  const TEAM_COLORS = ["#ef4444","#22c55e","#3b82f6","#eab308","#a855f7","#06b6d4","#f97316","#84cc16"];
+  
+  // Estado padrão
+  let state = { 
+    numPlayers:0, numTeams:0, numRounds:0, 
+    players:[], teams:[], schedule:[], 
+    currentIndex:0, finals:[], finalsIndex:0, 
+    _rankingSnapshot: null,
+    uiStep: 'stepParams', // Controla qual tela está visível
+    uiSection: 'setup'
+  };
+
+  let isAdmin = false;
+  const el = id => document.getElementById(id);
+
+  // --- AUTENTICAÇÃO ---
+  el("btnLoginAction").addEventListener("click", () => {
+    if(isAdmin) {
+        supabase.auth.signOut().then(() => { checkUser(); });
+    } else {
+        el("login-overlay").classList.remove("hidden");
+    }
+  });
+  el("cancelLoginBtn").addEventListener("click", () => el("login-overlay").classList.add("hidden"));
+  
+  el("doLoginBtn").addEventListener("click", async () => {
+    const email = el("email").value;
+    const password = el("password").value;
+    el("loginMsg").innerText = "Entrando...";
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+        el("loginMsg").innerText = "Erro: " + error.message;
+    } else {
+        el("login-overlay").classList.add("hidden");
+        checkUser();
+    }
+  });
+
+  async function checkUser() {
+    const { data: { user } } = await supabase.auth.getUser();
+    isAdmin = !!user;
+    if (isAdmin) {
+        document.body.classList.add('is-admin');
+        el("btnLoginAction").innerText = "Sair (Admin)";
+        el("btnLoginAction").classList.add("logout-btn");
+        el("readOnlyMsg").classList.add("hidden");
+    } else {
+        document.body.classList.remove('is-admin');
+        el("btnLoginAction").innerText = "Admin Login";
+        el("btnLoginAction").classList.remove("logout-btn");
+        el("readOnlyMsg").classList.remove("hidden");
+    }
+  }
+
+  // --- SINCRONIZAÇÃO (REALTIME) ---
+  // Função principal para salvar no Supabase (apenas Admin)
+  async function saveStateToCloud() {
+    if (!isAdmin) return; 
+    // Captura estado da UI atual para quem abrir o app cair na mesma tela
+    state.uiSection = document.querySelector('main > section:not(.hidden)').id;
+    const visibleStep = document.querySelector('#setup > div[id]:not(.hidden)');
+    if (visibleStep) state.uiStep = visibleStep.id;
+
+    await supabase.from('app_state').upsert({ id: 1, game_data: state });
+  }
+
+  // Carrega estado inicial
+  async function loadStateFromCloud() {
+    const { data, error } = await supabase.from('app_state').select('game_data').eq('id', 1).single();
+    if (data && data.game_data && Object.keys(data.game_data).length > 0) {
+        state = data.game_data;
+        refreshUI();
+    }
+  }
+
+  // Escuta mudanças no banco (Realtime)
+  supabase.channel('public:app_state')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
+        console.log('Update recebido!', payload);
+        if (payload.new && payload.new.game_data) {
+            state = payload.new.game_data;
+            refreshUI();
+        }
+    })
+    .subscribe();
+
+  // --- REGRAS DE UI ---
+  function refreshUI() {
+    // 1. Navegação de Seções
+    document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+    const section = el(state.uiSection) || el('setup');
+    section.classList.remove('hidden');
+
+    // 2. Navegação do Setup
+    if (state.uiSection === 'setup') {
+        document.querySelectorAll('#setup > div[id]').forEach(d => d.classList.add('hidden'));
+        const step = el(state.uiStep) || el('stepParams');
+        step.classList.remove('hidden');
+        
+        // Preenche campos
+        if(state.numPlayers) el('numPlayers').value = state.numPlayers;
+        if(state.numTeams) el('numTeams').value = state.numTeams;
+        if(state.numRounds) el('numRounds').value = state.numRounds;
+        
+        if(state.uiStep === 'stepPlayers') renderPlayersForm();
+        if(state.uiStep === 'stepTeams') renderTeamsForm();
+        if(state.uiStep === 'stepTeamPreview') renderTeamPreview();
+    }
+    
+    // 3. Renderiza telas de jogo se necessário
+    if (state.uiSection === 'matches') {
+        atualizarClassificacao();
+        renderAgenda();
+        renderCurrentMatch();
+    } else if (state.uiSection === 'finals') {
+        renderFinalMatch();
+    } else if (state.uiSection === 'podium') {
+        buildPodium();
+    }
+  }
+
+ // --- LÓGICA DO APP (Setup Navegação - MODO OTIMISTA) ---
+  
+  // 1. Botão "Próximo" (De Configuração para Jogadores)
+  el("toPlayersBtn").addEventListener("click", () => {
+    const p = parseInt(el("numPlayers").value, 10);
+    const t = parseInt(el("numTeams").value, 10);
+    const r = parseInt(el("numRounds").value, 10);
+    
+    // Validação
+    if (!p || !t || !r) { alert("Preencha todos os números."); return; }
+    if (p < 2) { alert("Mínimo 2 jogadores."); return; }
+    if (t < 3) { alert("Mínimo 3 times."); return; }
+    
+    // Atualiza Estado Local
+    state.numPlayers = p;
+    state.numTeams = t;
+    state.numRounds = r;
+    state.uiStep = 'stepPlayers';
+    
+    // Renderiza e Muda a Tela IMEDIATAMENTE
+    renderPlayersForm();
+    refreshUI(); 
+    
+    // Salva no banco em segundo plano
+    saveStateToCloud();
+  });
+
+  // 2. Botão "Próximo" (De Jogadores para Times)
+  el("toTeamsBtn").addEventListener("click", () => {
+    state.players = [];
+    let erro = false;
+    for (let i = 0; i < state.numPlayers; i++) {
+        const elName = el(`pl_name_${i}`);
+        const elSkill = el(`pl_skill_${i}`);
+        
+        // Garante que o input existe
+        if(!elName || !elSkill) continue;
+        
+        const name = elName.value.trim();
+        if(!name) erro = true;
+        state.players.push({ name: name || `Jogador ${i+1}`, skill: parseInt(elSkill.value, 10) });
+    }
+
+    if(erro && !confirm("Alguns jogadores estão sem nome. Continuar assim mesmo?")) return;
+
+    state.uiStep = 'stepTeams';
+    renderTeamsForm();
+    refreshUI(); // Muda a tela na hora
+    saveStateToCloud();
+  });
+
+  // 3. Botão "Próximo" (De Times para Preview)
+  el("toPreviewBtn").addEventListener("click", () => {
+    state.teams = [];
+    for (let t = 0; t < state.numTeams; t++) {
+        const elTeam = el(`teamName_${t}`);
+        const name = elTeam ? elTeam.value.trim() : `Time ${t + 1}`;
+        state.teams.push({ 
+            name: name || `Time ${t + 1}`, 
+            color: TEAM_COLORS[t % TEAM_COLORS.length], 
+            players: [], 
+            stats: {} 
+        });
+    }
+    
+    distribuirPorSomaEquilibrada();
+    state.uiStep = 'stepTeamPreview';
+    renderTeamPreview();
+    refreshUI(); // Muda a tela na hora
+    saveStateToCloud();
+  });
+
+  // 4. Botão "Iniciar Jogos"
+  el("startMatchesBtn").addEventListener("click", () => {
+    gerarAgendaRoundRobinRespeitandoRodadas();
+    state.uiSection = 'matches';
+    refreshUI(); // Muda a tela na hora
+    saveStateToCloud();
+  });
+
+// --- NAVEGAÇÃO: BOTÕES DE VOLTAR (CORRIGIDOS) ---
+  el("backToParamsBtn").addEventListener("click", () => { 
+      state.uiStep = 'stepParams'; 
+      refreshUI(); // Atualiza a tela na hora
+      saveStateToCloud(); 
+  });
+
+  el("backToPlayersBtn").addEventListener("click", () => { 
+      state.uiStep = 'stepPlayers'; 
+      refreshUI(); 
+      saveStateToCloud(); 
+  });
+
+  el("backToTeamsFromPreviewBtn").addEventListener("click", () => { 
+      state.uiStep = 'stepTeams'; 
+      refreshUI(); 
+      saveStateToCloud(); 
+  });
+
+  el("backToPreviewBtn").addEventListener("click", () => { 
+      state.uiSection = 'setup'; 
+      state.uiStep = 'stepTeamPreview'; 
+      refreshUI(); 
+      saveStateToCloud(); 
+  });
+
+  el("backToMatchesBtn").addEventListener("click", () => { 
+      state.uiSection = 'matches'; 
+      refreshUI(); 
+      saveStateToCloud(); 
+  });
+
+  el("backToFinalsBtn").addEventListener("click", () => { 
+      state.uiSection = 'finals'; 
+      refreshUI(); 
+      saveStateToCloud(); 
+  });
+  
+  // --- RESETS E NOVO TORNEIO (CORRIGIDOS) ---
+  el("resetParamsBtn").addEventListener("click", () => { 
+      // Limpa inputs visuais
+      el("numPlayers").value = ""; 
+      el("numTeams").value = ""; 
+      el("numRounds").value = ""; 
+      // Limpa dados do estado para evitar bugs
+      state.numPlayers = 0;
+      state.numTeams = 0;
+      state.numRounds = 0;
+  });
+
+  el("resetPlayersBtn").addEventListener("click", () => {
+      // Reinicia lista de jogadores mantendo a quantidade
+      state.players = Array.from({length:state.numPlayers}, (_,i)=>({name:'', skill:3}));
+      renderPlayersForm();
+      saveStateToCloud();
+  });
+
+  el("resetTeamsBtn").addEventListener("click", () => {
+     // Recria os times vazios
+     state.teams = [];
+     for(let t=0; t<state.numTeams; t++){
+        state.teams.push({ name: `Time ${t + 1}`, color: TEAM_COLORS[t % TEAM_COLORS.length], players: [], stats: {} });
+     }
+     renderTeamsForm();
+     saveStateToCloud();
+  });
+
+  // Botão "Resetar Tudo" (Na tela de Rodadas)
+  el("goToHomeBtn").addEventListener("click", () => { 
+    if(confirm("Tem certeza? Isso apagará todo o progresso atual.")) { 
+        // Reseta o objeto state inteiro
+        state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
+        refreshUI(); // Força a volta para a tela inicial
+        saveStateToCloud(); 
+    }
+  });
+
+  // Botão "Novo Torneio" (Na tela de Pódio)
+  el("newTournamentBtn").addEventListener("click", () => {
+      if(confirm("Começar novo torneio apagará os dados do atual. Confirmar?")) {
+        state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
+        refreshUI();
+        saveStateToCloud();
+      }
+  });
+
+  // Funções Auxiliares de Render
+  function renderPlayersForm() {
+    const pf = el("playersForm"); pf.innerHTML = "";
+    // Se já existem jogadores salvos, usa eles. Se não, cria vazio.
+    const saved = state.players.length > 0 ? state.players : Array.from({length:state.numPlayers}, (_,i)=>({name:'', skill:3}));
+    
+    for(let i=0; i<state.numPlayers; i++){
+      const p = saved[i] || {name:'', skill:3};
+      pf.innerHTML += `<div class="team-block"><div class="row cols-2"><div><label>Jogador ${i+1}</label><input type="text" id="pl_name_${i}" value="${p.name}" placeholder="Nome"/></div><div><label>Habilidade</label><select id="pl_skill_${i}"><option value="1" ${p.skill==1?'selected':''}>1 ⭐</option><option value="2" ${p.skill==2?'selected':''}>2 ⭐</option><option value="3" ${p.skill==3?'selected':''}>3 ⭐</option><option value="4" ${p.skill==4?'selected':''}>4 ⭐</option><option value="5" ${p.skill==5?'selected':''}>5 ⭐</option></select></div></div></div>`;
+    }
+  }
+  function renderTeamsForm() {
+    const tf = el("teamsForm"); tf.innerHTML = "";
+    for(let t=0; t<state.numTeams; t++){
+      const existingName = state.teams[t] ? state.teams[t].name : '';
+      const color = TEAM_COLORS[t % TEAM_COLORS.length];
+      tf.innerHTML += `<div class="team-block"><div class="flex"><div class="chip"><span class="dot" style="background:${color}"></span><b>Time ${t+1}</b></div></div><div class="row" style="margin-top:8px"><label>Nome do time</label><input id="teamName_${t}" type="text" value="${existingName}" placeholder="Nome do time"/></div></div>`;
+    }
+  }
+  function renderTeamPreview() {
+    const container = el("previewContent"); container.innerHTML = "";
+    state.teams.forEach(team => {
+        const totalSkill = team.players.reduce((s, p) => s + p.skill, 0);
+        container.innerHTML += `<div class="team-block"><div class="chip"><span class="dot" style="background:${team.color}"></span><b style="color:${team.color}">${team.name} (${totalSkill}⭐)</b></div>${renderPlayersList(team.players)}</div>`;
+    });
+  }
+  
+  // --- LÓGICA DO JOGO ---
+  function distribuirPorSomaEquilibrada() {
+    const sortedPlayers = [...state.players].sort((a, b) => b.skill - a.skill);
+    state.teams.forEach(t => t.players = []);
+    const teamSkillSums = new Array(state.numTeams).fill(0);
+    sortedPlayers.forEach(player => {
+        const minSumIndex = teamSkillSums.indexOf(Math.min(...teamSkillSums));
+        state.teams[minSumIndex].players.push(player); teamSkillSums[minSumIndex] += player.skill;
+    });
+  }
+  function gerarAgendaRoundRobinRespeitandoRodadas(){
+    const n = state.numTeams; let list = Array.from({length:n}, (_,i)=> i);
+    if(n % 2 === 1) list.push(-1);
+    const m = list.length, roundsPerCycle = m - 1; let cycleRounds = [], arr = [...list];
+    for(let r=0; r<roundsPerCycle; r++){
+      const pairs = [];
+      for(let i=0; i<m/2; i++){ if(arr[i]!==-1&&arr[m-1-i]!==-1) pairs.push({a:arr[i],b:arr[m-1-i]}); }
+      cycleRounds.push(pairs); const fixed = arr[0], rest = arr.slice(1);
+      rest.unshift(rest.pop()); arr = [fixed, ...rest];
+    }
+    const wantedRounds = state.numRounds; let rounds = [];
+    for(let k=0; rounds.length<wantedRounds; k++){
+      for(const rr of cycleRounds){ rounds.push(rr.map(p=>({...p}))); if(rounds.length>=wantedRounds) break; }
+    }
+    state.schedule = [];
+    for(let r=0; r<rounds.length; r++){
+      let order = 1; for(const p of rounds[r]){ state.schedule.push({ a:p.a, b:p.b, scoreA:null, scoreB:null, round:r+1, order:order++ }); }
+    }
+    state.currentIndex = 0;
+  }
+  
+  function atualizarClassificacao(){
+    state.teams.forEach(t=> t.stats={J:0,V:0,D:0,PF:0,PS:0});
+    state.schedule.forEach(g=>{ if(g.scoreA==null||g.scoreB==null)return; const A=state.teams[g.a], B=state.teams[g.b]; A.stats.J++; B.stats.J++; A.stats.PF+=g.scoreA; A.stats.PS+=g.scoreB; B.stats.PF+=g.scoreB; B.stats.PS+=g.scoreA; if(g.scoreA > g.scoreB){A.stats.V++;B.stats.D++;}else if(g.scoreB > g.scoreA){B.stats.V++;A.stats.D++;}});
+    el("standingsTable").querySelector("tbody").innerHTML = state.teams
+      .map(t=>{ const saldo=t.stats.PF - t.stats.PS; const perc=t.stats.J?Math.round((t.stats.V/t.stats.J)*1000)/10:0; return {...t, ...t.stats, saldo, perc}; })
+      .sort((a,b)=> (b.V - a.V) || (b.saldo - a.saldo) || (b.PF - a.PF))
+      .map(r=>`<tr><td style="color:${r.color}; font-weight:700;">${r.name}</td><td class="right">${r.V}</td><td class="right">${r.PF}</td><td class="right">${r.saldo}</td><td class="right">${r.perc}%</td></tr>`).join("");
+  }
+
+  function renderCurrentMatch(){
+    const g=state.schedule[state.currentIndex]; 
+    if(!g){
+       if(state.schedule.length > 0) iniciarFinais();
+       return;
+    } 
+    const A=state.teams[g.a], B=state.teams[g.b];
+    el("roundInfo").innerText = `Rodada ${g.round} — Jogo ${g.order}`;
+    
+    // Renderiza controles apenas para Admin
+    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="scoreA" type="number" min="0" placeholder="0" value="${g.scoreA ?? ''}"/><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreA ?? '-'}</div>`;
+    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="scoreB" type="number" min="0" placeholder="0" value="${g.scoreB ?? ''}"/><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreB ?? '-'}</div>`;
+
+    el("currentMatch").innerHTML = `<div class="score-grid"><div class="team-side"><div>${teamChip(A)}</div>${renderPlayersList(A.players)}</div><div class="vs">vs</div><div class="team-side" style="align-items:flex-end"><div>${teamChip(B)}</div>${renderPlayersList(B.players)}</div></div><div style="margin-top:12px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div>`;
+    
+    if(isAdmin) attachScoreButtonListeners('#currentMatch', 'scoreA', 'scoreB');
+    el('nextMatchBtn').disabled = g.scoreA === null;
+  }
+
+  // --- EVENTOS DO JOGO ---
+  el("saveOnlyBtn").addEventListener("click", ()=>{
+    const g = state.schedule[state.currentIndex];
+    const a=parseInt(el("scoreA").value,10), b=parseInt(el("scoreB").value,10);
+    if(isNaN(a)||isNaN(b)){alert("Digite os pontos.");return;} 
+    g.scoreA=a;g.scoreB=b;
+    atualizarClassificacao(); renderAgenda(); 
+    el('nextMatchBtn').disabled = false;
+    saveStateToCloud();
+  });
+  el("nextMatchBtn").addEventListener("click", ()=>{
+    state.currentIndex++;
+    if (state.currentIndex >= state.schedule.length) { iniciarFinais(); } 
+    else { renderCurrentMatch(); saveStateToCloud(); }
+  });
+
+  // --- HELPER FUNCS ---
+  function teamChip(t){
+    return `<span class="chip"><span class="dot" style="background:${t.color}"></span><b style="color:${t.color}">${t.name}</b></span>`;
+  }
+  function renderPlayersList(players){
+    if(!players||!players.length) return `<div class="players-list"><ul><li><em class="mini muted">-</em></li></ul></div>`;
+    return `<div class="players-list"><ul>${players.map(p=>`<li>${p.name}</li>`).join("")}</ul></div>`;
+  }
+  const attachScoreButtonListeners = (sel, idA, idB) => {
+    document.querySelector(sel).querySelectorAll('button[data-op]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tgt = el(btn.dataset.target === 'scoreA' ? idA : idB);
+        let v = parseInt(tgt.value, 10) || 0;
+        if (btn.dataset.op === 'plus') v++; else if (btn.dataset.op === 'minus' && v > 0) v--;
+        tgt.value = v;
+      });
+    });
+  };
+
+// --- AGENDA NA TELA (COM NOMES DOS JOGADORES) ---
+  function renderAgenda(){
+    const c=el("agenda"); c.innerHTML=""; 
+    const byR={}; 
+    state.schedule.forEach((g,i)=>{(byR[g.round]??=[]).push({...g,i})});
+    
+    Object.keys(byR).forEach(r=>{
+        c.innerHTML+=`<div class="card" style="margin-bottom:8px"><b>Rodada ${r}</b>`+byR[r].map(g=> {
+            const A=state.teams[g.a], B=state.teams[g.b];
+            const pA = A.players.map(p=>p.name).join(', ');
+            const pB = B.players.map(p=>p.name).join(', ');
+            
+            return `<div class="agenda-game">
+              <div class="mini muted" style="text-align:center; margin-bottom:4px">Jogo ${g.order}</div>
+              
+              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
+                
+                <div style="flex:1; text-align:left; overflow:hidden;">
+                    ${teamChip(A)}
+                    <div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pA}">
+                        ${pA}
+                    </div>
+                </div>
+
+                <div style="white-space:nowrap; font-weight:bold; font-size:1.1rem; padding:0 4px;">
+                    ${g.scoreA??'-'} x ${g.scoreB??'-'}
+                </div>
+
+                <div style="flex:1; text-align:right; overflow:hidden;">
+                    ${teamChip(B)}
+                    <div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pB}">
+                        ${pB}
+                    </div>
+                </div>
+
+              </div>
+              ${isAdmin?`<div style="text-align:center; margin-top:8px"><button class="small secondary" data-edit="${g.i}">Editar</button></div>`:''}
+            </div>`;
+        }).join('')+`</div>`;
+    });
+  }
+
+  // --- FINAIS E PÓDIO ---
+  function iniciarFinais(){
+    atualizarClassificacao();
+    const ranking = state.teams.map((t,i)=>({ i, name:t.name, color:t.color, players:t.players, stats:{...t.stats} })).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
+    state.finals = [];
+    if (ranking.length >= 4) { state.finals.push({ label:"3º lugar", a:ranking[2].i, b:ranking[3].i }); state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); } 
+    else if (ranking.length >= 2) { state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); } 
+    else { alert("Times insuficientes."); buildPodium(); state.uiSection='podium'; refreshUI(); saveStateToCloud(); return; }
+    state.finals.forEach(f => { f.scoreA = null; f.scoreB = null; });
+    state._rankingSnapshot = ranking; state.finalsIndex = 0;
+    state.uiSection = 'finals';
+    refreshUI();
+    saveStateToCloud();
+  }
+  function renderFinalMatch(){
+    const f=state.finals[state.finalsIndex]; if(!f){buildPodium(); state.uiSection='podium'; refreshUI(); return;} const A=state.teams[f.a], B=state.teams[f.b];
+    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="fscoreA" type="number" min="0" value="${f.scoreA??''}"><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd">${f.scoreA??'-'}</div>`;
+    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="fscoreB" type="number" min="0" value="${f.scoreB??''}"><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd">${f.scoreB??'-'}</div>`;
+    
+    el("finalsMatch").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div>${teamChip(A)}</div><div class="mini muted">${f.label}</div><div>${teamChip(B)}</div></div><div style="margin-top:10px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div></div>`;
+    if(isAdmin) attachScoreButtonListeners('#finalsMatch', 'fscoreA', 'fscoreB');
+  }
+  el("saveFinalBtn").addEventListener("click", ()=>{
+    const f=state.finals[state.finalsIndex]; if(!f) return;
+    const a=parseInt(el("fscoreA").value,10), b=parseInt(el("fscoreB").value,10);
+    if(isNaN(a)||isNaN(b)){alert("Digite.");return;} f.scoreA=a; f.scoreB=b; state.finalsIndex++;
+    if(state.finalsIndex >= state.finals.length){ buildPodium(); state.uiSection='podium'; refreshUI(); } else { renderFinalMatch(); }
+    saveStateToCloud();
+  });
+  el("backToMatchesBtn").addEventListener("click", () => { state.uiSection = 'matches'; refreshUI(); saveStateToCloud(); });
+  el("backToFinalsBtn").addEventListener("click", () => { state.uiSection = 'finals'; refreshUI(); saveStateToCloud(); });
+  el("newTournamentBtn").addEventListener("click", () => {
+      if(confirm("Começar novo torneio apagará o atual. Confirmar?")) {
+        state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
+        saveStateToCloud();
+      }
+  });
+
+  function buildPodium(){
+    let podiumHTML = '';
+    const placed = new Set();
+    const finalG=state.finals.find(x=>x.label==="Final");
+    const thirdG=state.finals.find(x=>x.label.includes("3º"));
+    const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
+    const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
+    const champ=getW(finalG), vice=getL(finalG), third=getW(thirdG), fourth=getL(thirdG);
+
+    if (champ) { podiumHTML += `<div class="status good"><b>🏆 1º LUGAR:</b> ${champ.name}</div>`; placed.add(champ.name); }
+    if (vice) { podiumHTML += `<div class="status"><b>🥈 2º LUGAR:</b> ${vice.name}</div>`; placed.add(vice.name); }
+    if (third) { podiumHTML += `<div class="status"><b>🥉 3º LUGAR:</b> ${third.name}</div>`; placed.add(third.name); }
+    
+    if (state._rankingSnapshot) {
+      let rank = placed.size + 1;
+      state._rankingSnapshot.forEach(r => { if (!placed.has(r.name)) { podiumHTML += `<div class="status"><b>${rank}º LUGAR:</b> ${r.name}</div>`; placed.add(r.name); rank++; } });
+    }
+    el("podiumBox").innerHTML = podiumHTML || '<div class="status">Indisponível.</div>';
+  }
+
+  // --- MÓDULO DE EXPORTAÇÃO (CORRIGIDO E COMPLETO) ---
+  
+  // Função Genérica para JPEG
+  function exportAsJpeg(htmlContent, filename, options = {}) {
+    const overlay = document.createElement('div'); overlay.id = 'export-overlay'; overlay.innerText = 'Gerando imagem...'; document.body.appendChild(overlay);
+    const iframe = document.createElement('iframe'); iframe.style.position = 'absolute'; iframe.style.left = '-9999px'; iframe.style.width = options.width || '800px'; iframe.style.height = '1px'; document.body.appendChild(iframe);
+    
+    iframe.contentWindow.document.open(); 
+    iframe.contentWindow.document.write(htmlContent); 
+    iframe.contentWindow.document.close();
+    
+    // Pequeno delay para garantir carregamento de fontes/estilos
+    setTimeout(() => {
+        html2canvas(iframe.contentWindow.document.body, { 
+            scale: 2, 
+            useCORS: true, 
+            backgroundColor: options.dark ? '#0f1115' : '#ffffff' 
+        }).then(canvas => {
+            const link = document.createElement('a'); 
+            link.download = filename; 
+            link.href = canvas.toDataURL("image/jpeg", 0.92); 
+            link.click();
+            document.body.removeChild(iframe); 
+            document.body.removeChild(overlay);
+        }).catch(err => {
+            console.error(err);
+            alert("Erro ao gerar imagem.");
+            document.body.removeChild(iframe); 
+            document.body.removeChild(overlay);
+        });
+    }, 1000);
+  }
+
+// 1. Exportação da Lista de Times (Cadastro) - CORRIGIDA
+  function getTeamsExportHtml(isDark) {
+     const bg = isDark ? '#0f1115' : '#ffffff';
+     const txtColor = isDark ? '#eef2f6' : '#000000';
+     
+     // Truque: No PDF (fundo branco), mantemos a cor do time mas adicionamos 
+     // uma sombra preta leve para garantir que cores claras (amarelo) sejam legíveis.
+     const nameStyle = (color) => `
+        color:${color}; 
+        font-weight:bold; 
+        font-size:1.1rem; 
+        ${!isDark ? 'text-shadow: 0px 0px 1px rgba(0,0,0,0.5);' : ''}
+     `;
+
+     const style = `<style>
+        body{font-family:sans-serif;background:${bg};color:${txtColor};padding:20px}
+        h1{text-align:center}
+        .team-box{border:1px dashed #555;padding:10px;margin-bottom:10px;page-break-inside:avoid;border-radius:8px}
+        ul{margin:5px 0 0;padding-left:20px; color:${isDark?'#9aa4b2':'#444'}}
+     </style>`;
+
+     let html = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Escalação dos Times</h1>`;
+     
+     state.teams.forEach(t => {
+         const totalSkill = t.players.reduce((a,b)=>a+b.skill,0);
+         html += `<div class="team-box">
+            <span style="${nameStyle(t.color)}">${t.name}</span> 
+            <strong style="font-size:0.9rem">(${totalSkill}⭐)</strong>
+            <ul>${t.players.map(p=>`<li>${p.name} (${p.skill}⭐)</li>`).join('')}</ul>
+         </div>`;
+     });
+     return html + `</body></html>`;
+  }
+
+  el("exportTeamsPdfBtn").addEventListener("click", () => {
+    html2pdf().set({ margin:10, filename:'times.pdf', jsPDF:{format:'a4'} }).from(getTeamsExportHtml(false)).save();
+  });
+  el("exportTeamsJpegBtn").addEventListener("click", () => {
+    exportAsJpeg(getTeamsExportHtml(true), 'times.jpeg', { dark: true, width: '500px' });
+  });
+
+ // --- EXPORTAÇÃO DA AGENDA (COM JOGADORES) ---
+  function getAgendaExportHtml(format) {
+      const isPdf = format === 'pdf';
+      const theme = isPdf 
+        ? { bg: '#ffffff', card: '#f2f2f2', border: '#000', text: '#000', subtext: '#444' } 
+        : { bg: '#0f1115', card: '#171a21', border: '#2a3242', text: '#eef2f6', subtext: '#9aa4b2' };
+      
+      const w = isPdf ? '100%' : '540px';
+      
+      // Estilo do nome do time
+      const tStyle = (c) => `color:${c}; font-weight:bold; font-size:1.1rem; ${isPdf ? 'text-shadow:0 0 1px rgba(0,0,0,0.5)':''}`;
+      
+      let body = '';
+      const byRound = {};
+      state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
+      
+      Object.keys(byRound).sort((a,b)=>a-b).forEach(r => {
+          body += `<div class="round"><div class="rtitle">Rodada ${r}</div>`;
+          byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
+               const A = state.teams[g.a], B = state.teams[g.b];
+               const pA = A.players.map(p=>p.name).join(', ');
+               const pB = B.players.map(p=>p.name).join(', ');
+
+               body += `<div class="game">
+                  <div style="flex:1; text-align:left; padding-right:5px">
+                      <div style="${tStyle(A.color)}">${A.name}</div>
+                      <div class="players">${pA}</div>
+                  </div>
+
+                  <div style="align-self:center; padding:0 10px; font-family:monospace; font-weight:bold; font-size:1.2rem; white-space:nowrap">
+                      ${g.scoreA??''} x ${g.scoreB??''}
+                  </div>
+
+                  <div style="flex:1; text-align:right; padding-left:5px">
+                      <div style="${tStyle(B.color)}">${B.name}</div>
+                      <div class="players">${pB}</div>
+                  </div>
+               </div>`;
+          });
+          body += '</div>';
+      });
+
+      const style = `<style>
+        body{font-family:sans-serif;background:${theme.bg};color:${theme.text};padding:10px;width:${w}}
+        .round{background:${theme.card};border:1px solid ${theme.border};margin-bottom:10px;padding:10px;border-radius:8px;page-break-inside:avoid}
+        .rtitle{border-bottom:1px solid #777;margin-bottom:8px;font-weight:bold;text-transform:uppercase}
+        .game{display:flex;justify-content:space-between;align-items:flex-start; padding:8px 0;border-bottom:1px dashed #444}
+        .game:last-child{border-bottom:none}
+        .players{font-size:0.75rem; color:${theme.subtext}; margin-top:2px; line-height:1.2}
+      </style>`;
+      return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1 style="text-align:center">Agenda</h1>${body}</body></html>`;
+  }
+  
+  el("exportAgendaPdfBtn").addEventListener("click", () => { 
+      html2pdf().set({ margin:10, filename: 'agenda.pdf', jsPDF:{format:'a4'} }).from(getAgendaExportHtml('pdf')).save(); 
+  });
+  el("exportAgendaJpegBtn").addEventListener("click", () => { 
+      exportAsJpeg(getAgendaExportHtml('jpeg'), 'agenda.jpeg', { dark: true, width: '540px' }); 
+  });
+
+// 3. Relatório Completo (Modelo Unificado: Agenda + Ranking + Finais + Pódio)
+  function getFullReportHtml(dark) {
+    // --- Configuração de Cores (Tema Claro vs Escuro) ---
+    const bg = dark ? '#0f1115' : '#f8f9fa';
+    const text = dark ? '#eef2f6' : '#212529';
+    const cardBg = dark ? '#171a21' : '#ffffff';
+    const cardBorder = dark ? '#2a3242' : '#dee2e6';
+    const borderColor = dark ? '#333' : '#dee2e6';
+    const width = dark ? '800px' : '100%'; // JPEG fixo para mobile, PDF fluido
+
+    // --- 1. SEÇÃO: AGENDA ---
+    let agendaHtml = '';
+    const byRound = {};
+    state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
+    
+    Object.keys(byRound).sort((a,b)=>a-b).forEach(r => {
+        agendaHtml += `<div class="round-block">
+            <div class="round-title">Rodada ${r}</div>`;
+        byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
+            const A = state.teams[g.a], B = state.teams[g.b];
+            agendaHtml += `
+            <div class="match-row">
+                <div class="team-left"><span class="dot" style="background:${A.color}"></span> ${A.name}</div>
+                <div class="score-badge">${g.scoreA??''} : ${g.scoreB??''}</div>
+                <div class="team-right">${B.name} <span class="dot" style="background:${B.color}"></span></div>
+            </div>`;
+        });
+        agendaHtml += `</div>`;
+    });
+
+    // --- 2. SEÇÃO: CLASSIFICAÇÃO ---
+    // Recalcula ranking atualizado
+    const ranking = state.teams.map(t=>({...t})).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
+    
+    let rankingTable = `<table class="std-table">
+        <thead>
+            <tr><th>Time</th><th>J</th><th>V</th><th>D</th><th>PF</th><th>PS</th><th>Saldo</th><th>%</th></tr>
+        </thead>
+        <tbody>`;
+    ranking.forEach(t => {
+        const saldo = t.stats.PF - t.stats.PS;
+        const perc = t.stats.J ? Math.round((t.stats.V / t.stats.J) * 100) : 0;
+        rankingTable += `
+        <tr>
+            <td style="text-align:left; font-weight:bold; color:${dark ? t.color : '#000'}">
+                ${!dark ? `<span class="dot" style="background:${t.color}"></span>` : ''} ${t.name}
+            </td>
+            <td>${t.stats.J}</td><td>${t.stats.V}</td><td>${t.stats.D}</td>
+            <td>${t.stats.PF}</td><td>${t.stats.PS}</td><td>${saldo}</td><td>${perc}%</td>
+        </tr>`;
+    });
+    rankingTable += `</tbody></table>`;
+
+    // --- 3. SEÇÃO: FINAIS ---
+    let finalsHtml = '';
+    if (state.finals.length > 0) {
+        state.finals.forEach(f => {
+             const A = state.teams[f.a], B = state.teams[f.b];
+             finalsHtml += `<div class="final-row">
+                <b>${f.label}:</b> 
+                <span style="color:${A.color}">${A.name}</span> <b>(${f.scoreA??'-'})</b> x <b>(${f.scoreB??'-'})</b> <span style="color:${B.color}">${B.name}</span>
+             </div>`;
+        });
+    } else {
+        finalsHtml = '<div style="color:#777; font-style:italic">Jogos finais não realizados.</div>';
+    }
+
+    // --- 4. SEÇÃO: PÓDIO (ESTILO BARRAS) ---
+    let podiumHtml = '';
+    const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
+    const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
+    
+    const fin = state.finals.find(x => x.label === "Final");
+    const thi = state.finals.find(x => x.label.includes("3º"));
+    
+    const winners = [];
+    if (fin) {
+        const champ = getW(fin), vice = getL(fin);
+        if (champ) winners.push({ t: champ, label: '1º LUGAR', css: 'gold', icon: '🏆' });
+        if (vice) winners.push({ t: vice, label: '2º LUGAR', css: 'silver', icon: '🥈' });
+    }
+    if (thi) {
+        const third = getW(thi);
+        if (third) winners.push({ t: third, label: '3º LUGAR', css: 'bronze', icon: '🥉' });
+    }
+    
+    if (winners.length === 0) podiumHtml = '<div style="padding:10px">Pódio indisponível.</div>';
+    
+    winners.forEach(w => {
+        // Formata lista de jogadores: (João, Pedro, Maria)
+        const playersList = w.t.players.map(p => p.name).join(', ');
+        
+        podiumHtml += `
+            <div class="podium-bar ${w.css}">
+                <div class="podium-title">${w.icon} ${w.label}: ${w.t.name}</div>
+                <div class="podium-players">(${playersList})</div>
+            </div>
+        `;
+    });
+
+    // --- CSS E MONTAGEM FINAL ---
+    const style = `<style>
+        body { font-family: 'Inter', sans-serif; background: ${bg}; color: ${text}; padding: 20px; width:${width}; margin:0 auto; }
+        h1 { text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+        h2 { font-size: 1.1rem; margin: 0 0 10px 0; border-bottom: 1px solid ${borderColor}; padding-bottom: 5px; }
+        
+        /* Containers */
+        .section-card { background: ${cardBg}; border: 1px solid ${cardBorder}; border-radius: 8px; padding: 15px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); page-break-inside: avoid; }
+        
+        /* Agenda */
+        .round-block { border-bottom: 1px solid ${borderColor}; padding-bottom: 10px; margin-bottom: 10px; }
+        .round-block:last-child { border-bottom: none; margin-bottom: 0; }
+        .round-title { font-weight: bold; font-size: 0.9rem; margin-bottom: 5px; color: ${dark?'#ccc':'#555'}; }
+        .match-row { display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; padding: 4px 0; }
+        .score-badge { background: ${dark?'#2a3242':'#e9ecef'}; padding: 2px 8px; border-radius: 4px; font-weight: bold; font-family: monospace; }
+        .team-left { flex: 1; text-align: right; padding-right: 10px; }
+        .team-right { flex: 1; text-align: left; padding-left: 10px; }
+        .dot { height: 8px; width: 8px; background-color: #bbb; border-radius: 50%; display: inline-block; }
+
+        /* Tabela */
+        .std-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .std-table th { text-align: center; background: ${dark?'#252a33':'#f1f3f5'}; padding: 6px; font-weight: 600; }
+        .std-table td { text-align: center; padding: 6px; border-bottom: 1px solid ${borderColor}; }
+        .std-table tr:last-child td { border-bottom: none; }
+
+        /* Pódio (Barras Coloridas) */
+        .podium-bar { padding: 10px 15px; border-radius: 6px; margin-bottom: 8px; color: #000; display: flex; flex-direction: column; }
+        .podium-title { font-weight: bold; font-size: 1rem; }
+        .podium-players { font-size: 0.85rem; margin-top: 2px; opacity: 0.85; }
+        
+        /* Cores do Pódio (Fixas para manter identidade visual) */
+        .gold { background-color: #fff3cd; border: 1px solid #ffeeba; color: #856404; }
+        .silver { background-color: #e2e3e5; border: 1px solid #d6d8db; color: #383d41; }
+        .bronze { background-color: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; } /* Adaptei para tom avermelhado de destaque */
+        
+        .final-row { font-size: 1rem; margin-bottom: 5px; }
+    </style>`;
+
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body>
+      <h1>Peladas Vale no Vôlei — Relatório</h1>
+      
+      <div class="section-card">
+        <h2>Agenda</h2>
+        ${agendaHtml}
+      </div>
+
+      <div class="section-card">
+        <h2>Classificação das Rodadas</h2>
+        ${rankingTable}
+      </div>
+
+      <div class="section-card">
+        <h2>Finais</h2>
+        ${finalsHtml}
+      </div>
+
+      <div class="section-card">
+        <h2>Pódio</h2>
+        ${podiumHtml}
+      </div>
+
+    </body></html>`;
+  }
+
+  // --- Botões de Exportação ---
+  el("exportFullPdfBtn").addEventListener("click", () => {
+      // PDF: Usa Tema Claro (dark: false)
+      html2pdf().set({ margin:10, filename: 'relatorio_completo.pdf', jsPDF:{unit:'mm',format:'a4'} }).from(getFullReportHtml(false)).save();
+  });
+  
+  el("exportFullJpegBtn").addEventListener("click", () => {
+      // JPEG: Usa Tema Escuro para mobile (dark: true) ou Claro se preferir igual ao PDF
+      // Você pediu "neste modelo", e o modelo da imagem é CLARO. 
+      // Se quiser escuro no JPEG, mude para true abaixo. Se quiser igual à imagem que mandou, deixe false.
+      // Vou deixar 'false' (CLARO) para ficar IDÊNTICO à imagem de referência que você enviou.
+      exportAsJpeg(getFullReportHtml(false), 'relatorio_completo.jpeg', { dark: false, width: '800px' });
+  });
+
+  // --- INICIALIZAÇÃO ---
+  checkUser();
+  loadStateFromCloud();
+})();
+</script>
+</body>
+</html>

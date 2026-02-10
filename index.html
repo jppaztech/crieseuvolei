@@ -466,13 +466,34 @@
     });
   }
   
-  function distribuirPorSomaEquilibrada() {
+function distribuirPorSomaEquilibrada() {
+    // 1. Restaura a leitura original: Ordena do melhor para o pior jogador
     const sortedPlayers = [...state.players].sort((a, b) => b.skill - a.skill);
+    
+    // 2. Zera os times e o placar de habilidades
     state.teams.forEach(t => t.players = []);
     const teamSkillSums = new Array(state.numTeams).fill(0);
+    
+    // 3. Distribuição estrita (Trava de Quantidade + Habilidade)
     sortedPlayers.forEach(player => {
-        const minSumIndex = teamSkillSums.indexOf(Math.min(...teamSkillSums));
-        state.teams[minSumIndex].players.push(player); teamSkillSums[minSumIndex] += player.skill;
+        // Verifica qual é o menor número de jogadores em um time neste momento
+        const minPlayers = Math.min(...state.teams.map(t => t.players.length));
+        
+        let chosenIndex = -1;
+        let minSkill = Infinity;
+
+        // Procura o time com a MENOR soma de estrelas, 
+        // DESDE QUE ele esteja empatado na menor quantidade de jogadores.
+        for (let i = 0; i < state.numTeams; i++) {
+            if (state.teams[i].players.length === minPlayers && teamSkillSums[i] < minSkill) {
+                minSkill = teamSkillSums[i];
+                chosenIndex = i;
+            }
+        }
+
+        // Adiciona o jogador e atualiza a soma do time
+        state.teams[chosenIndex].players.push(player);
+        teamSkillSums[chosenIndex] += player.skill;
     });
   }
   function gerarAgendaRoundRobinRespeitandoRodadas(){
@@ -790,3 +811,4 @@
 </script>
 </body>
 </html>
+

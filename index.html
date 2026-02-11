@@ -36,7 +36,7 @@
   input, select{width:100%;padding:10px;background:#0e121a;border:1px solid #293042;border-radius:10px;color:var(--text);font-size:1rem}
   input[type="number"]{text-align:center}
   
-  /* CORREÇÃO DA COR DE AUTOFILL DO NAVEGADOR */
+  /* CORREÇÃO DA COR DE AUTOFILL E PLACEHOLDER (Rodadas) */
   input:-webkit-autofill,
   input:-webkit-autofill:hover, 
   input:-webkit-autofill:focus, 
@@ -45,7 +45,13 @@
       -webkit-text-fill-color: var(--text) !important;
       transition: background-color 5000s ease-in-out 0s;
   }
-  ::placeholder { color: #475569; opacity: 1; }
+  /* Garante que o placeholder seja cinza escuro/muted */
+  input::placeholder, 
+  input::-webkit-input-placeholder, 
+  input::-moz-placeholder { 
+      color: #475569 !important; 
+      opacity: 1 !important; 
+  }
   
   button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#08140c;font-weight:700;font-size:1rem;cursor:pointer; transition: opacity 0.2s;}
   button:hover{opacity:0.9;}
@@ -173,6 +179,7 @@
       <th class="right" title="Pontos Pró">PF</th>
       <th class="right" title="Pontos Sofridos">PS</th>
       <th class="right" title="Saldo">Saldo</th>
+      <th class="right">%</th>
     </tr>
   </thead>
   <tbody></tbody>
@@ -254,7 +261,7 @@
     players:[], teams:[], schedule:[], 
     currentIndex:0, finals:[], finalsIndex:0, 
     _rankingSnapshot: null,
-    uiStep: 'stepParams',
+    uiStep: 'stepParams', 
     uiSection: 'setup'
   };
 
@@ -364,9 +371,13 @@
     const t = parseInt(el("numTeams").value, 10);
     const r = parseInt(el("numRounds").value, 10);
     
+    // --- REGRAS ORIGINAIS RESTAURADAS (Com validação para garantir igualdade) ---
     if (!p || !t || !r) { alert("Preencha todos os números."); return; }
-    if (p < 2) { alert("Mínimo 2 jogadores."); return; }
     if (t < 3) { alert("Mínimo 3 times."); return; }
+    if (p < t * 2) { alert("Número de jogadores insuficiente."); return; }
+    
+    // IMPORTANTE: Para a regra original (soma) funcionar, não pode haver sobra.
+    if (p % t !== 0) { alert("A quantidade de jogadores deve ser múltiplo do número de times (ex: 12 jog / 3 times = 4 cada). Ajuste os números."); return; }
     
     state.numPlayers = p; state.numTeams = t; state.numRounds = r;
     state.uiStep = 'stepPlayers';
@@ -466,36 +477,23 @@
     });
   }
   
-function distribuirPorSomaEquilibrada() {
-    // 1. Restaura a leitura original: Ordena do melhor para o pior jogador
+  // --- LÓGICA DO JOGO (SORTEIO ORIGINAL RESTAURADO) ---
+  function distribuirPorSomaEquilibrada() {
+    // 1. Ordena os jogadores do melhor para o pior
     const sortedPlayers = [...state.players].sort((a, b) => b.skill - a.skill);
     
-    // 2. Zera os times e o placar de habilidades
+    // 2. Limpa os times e o placar de habilidades
     state.teams.forEach(t => t.players = []);
     const teamSkillSums = new Array(state.numTeams).fill(0);
     
-    // 3. Distribuição estrita (Trava de Quantidade + Habilidade)
+    // 3. Distribui sempre para o time que tem a menor soma de habilidades no momento
     sortedPlayers.forEach(player => {
-        // Verifica qual é o menor número de jogadores em um time neste momento
-        const minPlayers = Math.min(...state.teams.map(t => t.players.length));
-        
-        let chosenIndex = -1;
-        let minSkill = Infinity;
-
-        // Procura o time com a MENOR soma de estrelas, 
-        // DESDE QUE ele esteja empatado na menor quantidade de jogadores.
-        for (let i = 0; i < state.numTeams; i++) {
-            if (state.teams[i].players.length === minPlayers && teamSkillSums[i] < minSkill) {
-                minSkill = teamSkillSums[i];
-                chosenIndex = i;
-            }
-        }
-
-        // Adiciona o jogador e atualiza a soma do time
-        state.teams[chosenIndex].players.push(player);
-        teamSkillSums[chosenIndex] += player.skill;
+        const minSumIndex = teamSkillSums.indexOf(Math.min(...teamSkillSums));
+        state.teams[minSumIndex].players.push(player); 
+        teamSkillSums[minSumIndex] += player.skill;
     });
   }
+
   function gerarAgendaRoundRobinRespeitandoRodadas(){
     const n = state.numTeams; let list = Array.from({length:n}, (_,i)=> i);
     if(n % 2 === 1) list.push(-1);
@@ -525,9 +523,9 @@ function distribuirPorSomaEquilibrada() {
         A.stats.J++; B.stats.J++; A.stats.PF += g.scoreA; A.stats.PS += g.scoreB; B.stats.PF += g.scoreB; B.stats.PS += g.scoreA; 
         if(g.scoreA > g.scoreB) { A.stats.V++; B.stats.D++; } else if(g.scoreB > g.scoreA) { B.stats.V++; A.stats.D++; }
     });
-    el("standingsTable").querySelector("tbody").innerHTML = state.teams.map(t => { const saldo = t.stats.PF - t.stats.PS; return {...t, ...t.stats, saldo}; })
+    el("standingsTable").querySelector("tbody").innerHTML = state.teams.map(t => { const saldo = t.stats.PF - t.stats.PS; const perc = t.stats.J ? Math.round((t.stats.V / t.stats.J) * 100) : 0; return {...t, ...t.stats, saldo, perc}; })
       .sort((a,b) => (b.V - a.V) || (b.saldo - a.saldo) || (b.PF - a.PF))
-      .map(r => `<tr><td style="color:${r.color}; font-weight:700;">${r.name}</td><td class="right">${r.J}</td><td class="right">${r.V}</td><td class="right">${r.PF}</td><td class="right">${r.PS}</td><td class="right">${r.saldo}</td></tr>`).join("");
+      .map(r => `<tr><td style="color:${r.color}; font-weight:700;">${r.name}</td><td class="right">${r.J}</td><td class="right">${r.V}</td><td class="right">${r.PF}</td><td class="right">${r.PS}</td><td class="right">${r.saldo}</td><td class="right">${r.perc}%</td></tr>`).join("");
   }
 
   function renderCurrentMatch(){
@@ -712,9 +710,7 @@ function distribuirPorSomaEquilibrada() {
 
     const ranking = state.teams.map(t=>({...t})).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
     let rankingTable = `<table class="std-table"><thead><tr><th>Time</th><th>J</th><th>V</th><th>PF</th><th>PS</th><th>Saldo</th></tr></thead><tbody>`;
-    ranking.forEach(t => {
-        rankingTable += `<tr><td style="text-align:left;font-weight:bold;color:${dark ? t.color : '#000'}">${!dark ? `<span class="dot" style="background:${t.color}"></span>` : ''} ${t.name}</td><td>${t.stats.J}</td><td>${t.stats.V}</td><td>${t.stats.PF}</td><td>${t.stats.PS}</td><td>${t.stats.PF - t.stats.PS}</td></tr>`;
-    });
+    ranking.forEach(t => { rankingTable += `<tr><td style="text-align:left;font-weight:bold;color:${dark ? t.color : '#000'}">${!dark ? `<span class="dot" style="background:${t.color}"></span>` : ''} ${t.name}</td><td>${t.stats.J}</td><td>${t.stats.V}</td><td>${t.stats.PF}</td><td>${t.stats.PS}</td><td>${t.stats.PF - t.stats.PS}</td></tr>`; });
     rankingTable += `</tbody></table>`;
 
     let finalsHtml = '';
@@ -725,90 +721,24 @@ function distribuirPorSomaEquilibrada() {
         });
     } else { finalsHtml = '<div style="color:#777; font-style:italic">Jogos finais não realizados.</div>'; }
 
-    let podiumHtml = '';
-    const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
-    const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
-    
-    const fin = state.finals.find(x => x.label === "Final");
-    const thi = state.finals.find(x => x.label.includes("3º"));
-    
-    const podiumList = [];
-    const placedNames = new Set(); 
-
-    if (fin) {
-        const champ = getW(fin), vice = getL(fin);
-        if (champ) { podiumList.push({ t: champ, label: '1º LUGAR', css: 'gold', icon: '🏆' }); placedNames.add(champ.name); }
-        if (vice) { podiumList.push({ t: vice, label: '2º LUGAR', css: 'silver', icon: '🥈' }); placedNames.add(vice.name); }
-    }
-    if (thi) {
-        const third = getW(thi);
-        if (third) { podiumList.push({ t: third, label: '3º LUGAR', css: 'bronze', icon: '🥉' }); placedNames.add(third.name); }
-    }
-    
-    if (state._rankingSnapshot) {
-        let currentRank = podiumList.length + 1;
-        state._rankingSnapshot.forEach(r => {
-            if (!placedNames.has(r.name)) {
-                podiumList.push({ t: r, label: `${currentRank}º LUGAR`, css: 'normal', icon: '' });
-                placedNames.add(r.name);
-                currentRank++;
-            }
-        });
-    }
-
+    let podiumHtml = ''; const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null; const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
+    const fin = state.finals.find(x => x.label === "Final"); const thi = state.finals.find(x => x.label.includes("3º"));
+    const podiumList = []; const placedNames = new Set();
+    if (fin) { const champ = getW(fin), vice = getL(fin); if (champ) { podiumList.push({ t: champ, label: '1º LUGAR', css: 'gold', icon: '🏆' }); placedNames.add(champ.name); } if (vice) { podiumList.push({ t: vice, label: '2º LUGAR', css: 'silver', icon: '🥈' }); placedNames.add(vice.name); } }
+    if (thi) { const third = getW(thi); if (third) { podiumList.push({ t: third, label: '3º LUGAR', css: 'bronze', icon: '🥉' }); placedNames.add(third.name); } }
+    if (state._rankingSnapshot) { let currentRank = podiumList.length + 1; state._rankingSnapshot.forEach(r => { if (!placedNames.has(r.name)) { podiumList.push({ t: r, label: `${currentRank}º LUGAR`, css: 'normal', icon: '' }); placedNames.add(r.name); currentRank++; } }); }
     if (podiumList.length === 0) podiumHtml = '<div style="padding:10px">Pódio indisponível.</div>';
-    
-    podiumList.forEach(w => {
-        const playersStr = w.t.players.map(p => p.name).join(', ');
-        podiumHtml += `
-            <div class="podium-bar ${w.css}">
-                <div class="podium-title">${w.icon} ${w.label}: ${w.t.name}</div>
-                <div class="podium-players">(${playersStr})</div>
-            </div>`;
-    });
+    podiumList.forEach(w => { podiumHtml += `<div class="podium-bar ${w.css}"><div class="podium-title">${w.icon} ${w.label}: ${w.t.name}</div><div class="podium-players">(${w.t.players.map(p=>p.name).join(', ')})</div></div>`; });
 
-    const style = `<style>
-        body{font-family:'Inter',sans-serif;background:${bg};color:${text};padding:20px;width:${width};margin:0 auto}
-        h1{text-align:center;margin-bottom:20px;font-size:1.5rem}
-        h2{font-size:1.1rem;margin:0 0 10px 0;border-bottom:1px solid ${borderColor};padding-bottom:5px}
-        .section-card{background:${cardBg};border:1px solid ${cardBorder};border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.05);page-break-inside:avoid}
-        .round-block{border-bottom:1px solid ${borderColor};padding-bottom:10px;margin-bottom:10px}
-        .round-block:last-child{border-bottom:none;margin-bottom:0}
-        .round-title{font-weight:bold;font-size:0.9rem;margin-bottom:5px;color:${dark?'#ccc':'#555'}}
-        .match-row{display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;padding:4px 0}
-        .score-badge{background:${dark?'#2a3242':'#e9ecef'};padding:2px 8px;border-radius:4px;font-weight:bold;font-family:monospace}
-        .team-left{flex:1;text-align:right;padding-right:10px}.team-right{flex:1;text-align:left;padding-left:10px}
-        .dot{height:8px;width:8px;background-color:#bbb;border-radius:50%;display:inline-block}
-        .std-table{width:100%;border-collapse:collapse;font-size:0.85rem}
-        .std-table th{text-align:center;background:${dark?'#252a33':'#f1f3f5'};padding:6px;font-weight:600}
-        .std-table td{text-align:center;padding:6px;border-bottom:1px solid ${borderColor}}
-        .std-table tr:last-child td{border-bottom:none}
-        .podium-bar{padding:10px 15px;border-radius:6px;margin-bottom:8px;color:#000;display:flex;flex-direction:column;border:1px solid #ccc}
-        .podium-title{font-weight:bold;font-size:1rem}
-        .podium-players{font-size:0.85rem;margin-top:2px;opacity:0.85}
-        .gold{background-color:#fff3cd;border-color:#ffeeba;color:#856404}
-        .silver{background-color:#e2e3e5;border-color:#d6d8db;color:#383d41}
-        .bronze{background-color:#f8d7da;border-color:#f5c6cb;color:#721c24}
-        .normal{background-color:${dark ? '#2a3242' : '#f8f9fa'}; color:${dark ? '#fff' : '#000'}; border-color:${dark ? '#444' : '#ddd'}}
-        .final-row{font-size:1rem;margin-bottom:5px}
-    </style>`;
-
+    const style = `<style>body{font-family:'Inter',sans-serif;background:${bg};color:${text};padding:20px;width:${width};margin:0 auto}h1{text-align:center;margin-bottom:20px;font-size:1.5rem}h2{font-size:1.1rem;margin:0 0 10px 0;border-bottom:1px solid ${borderColor};padding-bottom:5px}.section-card{background:${cardBg};border:1px solid ${cardBorder};border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.05);page-break-inside:avoid}.round-block{border-bottom:1px solid ${borderColor};padding-bottom:10px;margin-bottom:10px}.round-block:last-child{border-bottom:none;margin-bottom:0}.round-title{font-weight:bold;font-size:0.9rem;margin-bottom:5px;color:${dark?'#ccc':'#555'}}.match-row{display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;padding:4px 0}.score-badge{background:${dark?'#2a3242':'#e9ecef'};padding:2px 8px;border-radius:4px;font-weight:bold;font-family:monospace}.team-left{flex:1;text-align:right;padding-right:10px}.team-right{flex:1;text-align:left;padding-left:10px}.dot{height:8px;width:8px;background-color:#bbb;border-radius:50%;display:inline-block}.std-table{width:100%;border-collapse:collapse;font-size:0.85rem}.std-table th{text-align:center;background:${dark?'#252a33':'#f1f3f5'};padding:6px;font-weight:600}.std-table td{text-align:center;padding:6px;border-bottom:1px solid ${borderColor}}.std-table tr:last-child td{border-bottom:none}.podium-bar{padding:10px 15px;border-radius:6px;margin-bottom:8px;color:#000;display:flex;flex-direction:column;border:1px solid #ccc}.podium-title{font-weight:bold;font-size:1rem}.podium-players{font-size:0.85rem;margin-top:2px;opacity:0.85}.gold{background-color:#fff3cd;border:1px solid #ffeeba;color:#856404}.silver{background-color:#e2e3e5;border:1px solid #d6d8db;color:#383d41}.bronze{background-color:#f8d7da;border:1px solid #f5c6cb;color:#721c24}.normal{background-color:${dark ? '#2a3242' : '#f8f9fa'}; color:${dark ? '#fff' : '#000'}; border-color:${dark ? '#444' : '#ddd'}}.final-row{font-size:1rem;margin-bottom:5px}</style>`;
     return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Peladas Vale no Vôlei — Relatório</h1><div class="section-card"><h2>Agenda</h2>${agendaHtml}</div><div class="section-card"><h2>Classificação das Rodadas</h2>${rankingTable}</div><div class="section-card"><h2>Finais</h2>${finalsHtml}</div><div class="section-card"><h2>Pódio Completo</h2>${podiumHtml}</div></body></html>`;
   }
+  el("exportFullPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'relatorio_completo.pdf',jsPDF:{unit:'mm',format:'a4'}}).from(getFullReportHtml(false)).save());
+  el("exportFullJpegBtn").addEventListener("click", ()=> exportAsJpeg(getFullReportHtml(false),'relatorio_completo.jpeg',{dark:false,width:'800px'}));
 
-  el("exportFullPdfBtn").addEventListener("click", () => {
-      html2pdf().set({ margin:10, filename: 'relatorio_completo.pdf', jsPDF:{unit:'mm',format:'a4'} }).from(getFullReportHtml(false)).save();
-  });
-  
-  el("exportFullJpegBtn").addEventListener("click", () => {
-      exportAsJpeg(getFullReportHtml(false), 'relatorio_completo.jpeg', { dark: false, width: '800px' });
-  });
-
-  // --- INICIALIZAÇÃO ---
   checkUser();
   loadStateFromCloud();
 })();
 </script>
 </body>
 </html>
-

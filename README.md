@@ -193,26 +193,15 @@ const supabase = supabase.createClient(supabaseUrl, supabaseKey)
 ### 3. Criar Tabelas no Banco de Dados
 
 ```sql
--- Tabela de Partidas
-CREATE TABLE partidas (
-  id SERIAL PRIMARY KEY,
-  time_a VARCHAR(100),
-  time_b VARCHAR(100),
-  data TIMESTAMP,
-  local VARCHAR(255),
-  resultado VARCHAR(100),
-  created_at TIMESTAMP DEFAULT NOW()
+-- Tabela para guardar o estado global do torneio
+CREATE TABLE app_state (
+  id INTEGER PRIMARY KEY,
+  game_data JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW()
 );
 
--- Tabela de Sets
-CREATE TABLE sets (
-  id SERIAL PRIMARY KEY,
-  partida_id INTEGER REFERENCES partidas(id),
-  time_a_pontos INTEGER,
-  time_b_pontos INTEGER,
-  numero_set INTEGER,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+-- Inserir a linha inicial que o sistema vai atualizar
+INSERT INTO app_state (id, game_data) VALUES (1, '{}');
 ```
 
 ## 🤝 Contribuindo

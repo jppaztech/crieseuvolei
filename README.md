@@ -21,6 +21,10 @@ Uma aplicação web moderna e responsiva para gerenciar placar e resultado de pa
 - ⚡ **Gerenciamento em Tempo Real** - Atualizações instantâneas do placar e estatísticas
 - 📱 **Design Responsivo** - Funciona perfeitamente em desktop, tablet e celular
 - 🎨 **Interface Dark Mode** - Tema escuro moderno e agradável aos olhos
+- ⚖️ **Sorteio Inteligente** - Distribuição automática de times baseada no nível de habilidade (1 a 5 ⭐)
+- 📅 **Agenda Automática** - Geração de partidas no formato Round-Robin (todos contra todos)
+- 🏆 **Classificação Dinâmica** - Tabela atualizada em tempo real com saldo de pontos e aproveitamento
+- 👑 **Finais e Pódio** - Chaveamento automático dos melhores colocados e tela de premiação
 - 📊 **Estatísticas Detalhadas** - Rastreamento de pontuação, sets e performance
 - 🖨️ **Exportar para PDF** - Gere relatórios das partidas em PDF
 - 💾 **Sincronização na Nuvem** - Dados salvos automaticamente via Supabase
@@ -114,34 +118,34 @@ netlify deploy
 
 ```
 ┌─────────────────────────────────────────┐
-│  🏐 Peladas de Vôlei - Ao Vivo          │ ← Header
+│  🏐 Peladas de Vôlei - Ao Vivo          │
 ├─────────────────────────────────────────┤
 │                                         │
-│  ┌─ Entrada de Dados ────────────────┐  │
-│  │ • Nome dos Times                   │  │
-│  │ • Data e Hora                      │  │
-│  │ • Local                            │  │
-│  └────────────────────────────────────┘  │
+│  [ 1) Cadastro ]  [ 2) Rodadas ]        │
+│  [ 3) Finais   ]  [ 4) Pódio   ]        │
 │                                         │
-│  ┌─ Placar em Tempo Real ────────────┐  │
-│  │  Time A  12  x  15  Time B        │  │
-│  │  Set 1   |  +  Estatísticas  -   │  │
-│  └────────────────────────────────────┘  │
+│  ┌─ Cadastro e Sorteio ──────────────┐  │
+│  │ • Defina Jogadores, Times e Rods. │  │
+│  │ • Dê notas de Habilidade (1 a 5⭐)│  │
+│  │ • Sorteio Equilibrado Automático  │  │
+│  └───────────────────────────────────┘  │
 │                                         │
-│  ┌─ Ações ─────────────────────────┐    │
-│  │ [Novo Set] [PDF] [Salvar]       │    │
-│  └─────────────────────────────────┘    │
-│                                         │
+│  ┌─ Painel de Jogo (Ao Vivo) ────────┐  │
+│  │ • Placar dinâmico (+ e -)         │  │
+│  │ • Classificação c/ Saldo de Pts   │  │
+│  │ • Agenda Completa e Finais        │  │
+│  └───────────────────────────────────┘  │
 └─────────────────────────────────────────┘
 ```
 
 ## 🎯 Funcionalidades
 
-### Gerenciamento de Placar
-- ✅ Incrementar/decrementar pontos
-- ✅ Gerenciar múltiplos sets
-- ✅ Reset de partida
-- ✅ Histórico de rodadas
+### Gerenciamento de Torneio e Placar
+- ✅ Sorteio equilibrado de jogadores (por estrelas)
+- ✅ Geração automática de rodadas (todos contra todos)
+- ✅ Incrementar/decrementar pontos ao vivo
+- ✅ Tabela de classificação com saldo de pontos
+- ✅ Chaveamento automático para Finais e 3º lugar
 
 ### Dados e Estatísticas
 - ✅ Visualizar pontuação por set

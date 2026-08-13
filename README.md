@@ -408,6 +408,17 @@ Veja também a lista de [contribuidores](../../contributors) que participaram de
 
 ---
 
-**Desenvolvido com ❤️ por amantes de vôlei**
+**Desenvolvido com ❤️ por um amante de vôlei**
 
-Última atualização: 2026-07-04
+## Autor
+João Paz – [LinkedIn](https://www.linkedin.com/in/joaospaz) | [GitHub](https://github.com/jppaztech) | [Email](mailto:jpsantospaz@hotmail.com) | WhatsApp: +55 81 99885-5027
+
+## Contato
+Para dúvidas, sugestões ou oportunidades de colaboração, entre em contato por e-mail, WhatsApp ou conecte-se comigo pelo LinkedIn.
+
+## Contribuição
+Contribuições são bem-vindas!  
+Se você deseja melhorar este projeto, faça um fork do repositório e envie um pull request.  
+**Importante:** qualquer alteração, mesmo pequena, deve ser aprovada previamente por mim antes de ser incorporada.  
+Para mudanças maiores, abra uma issue primeiro para discutirmos o que você gostaria de modificar.
+

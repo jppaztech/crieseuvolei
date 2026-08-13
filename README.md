@@ -16,8 +16,8 @@ Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
 ## 📋 Sumário
 
 - [Características](#-características)
-- [Stack Tecnológico](#-stack-tecnológico)
-- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Stack Tecnológico](#️-stack-tecnológico)
+- [Tecnologias Utilizadas](#️-tecnologias-utilizadas)
 - [Pré-requisitos](#-pré-requisitos)
 - [Instalação](#-instalação)
 - [Como Usar](#-como-usar)

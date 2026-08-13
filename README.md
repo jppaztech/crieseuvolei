@@ -10,19 +10,23 @@
 
 Uma aplicação web moderna e responsiva para gerenciar placar e resultado de partidas de vôlei em tempo real. Perfeita para peladas, treinos e competições amistosas.
 
+## 🌐 Website (necessário login admin)
+Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
+
 ## 📋 Sumário
 
-- [Características](#características)
-- [Stack Tecnológico](#stack-tecnológico)
-- [Pré-requisitos](#pré-requisitos)
-- [Instalação](#instalação)
-- [Como Usar](#como-usar)
-- [Funcionalidades](#funcionalidades)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Configuração do Supabase](#configuração-do-supabase)
-- [Contribuindo](#contribuindo)
-- [Troubleshooting](#troubleshooting)
-- [Licença](#licença)
+- [Características](#-características)
+- [Stack Tecnológico](#-stack-tecnológico)
+- [Tecnologias Utilizadas](#-tecnologias-utilizadas)
+- [Pré-requisitos](#-pré-requisitos)
+- [Instalação](#-instalação)
+- [Como Usar](#-como-usar)
+- [Funcionalidades](#-funcionalidades)
+- [Estrutura do Projeto](#-estrutura-do-projeto)
+- [Configuração do Supabase](#-configuração-do-supabase)
+- [Contribuindo](#-contribuindo)
+- [Troubleshooting](#-troubleshooting)
+- [Licença](#-licença)
 
 ## ✨ Características
 

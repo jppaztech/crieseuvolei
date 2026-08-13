@@ -1,5 +1,13 @@
 # 🏐 CrieSeuVolei - Gerenciador de Peladas de Vôlei
 
+![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
+![Made with Supabase](https://img.shields.io/badge/Made%20with-Supabase-blue.svg)
+![HTML5](https://img.shields.io/badge/HTML5-orange.svg)
+![CSS3](https://img.shields.io/badge/CSS3-blue.svg)
+![JavaScript](https://img.shields.io/badge/JavaScript-yellow.svg)
+![Responsive Design](https://img.shields.io/badge/Responsive-Design-orange.svg)
+![Status: Active](https://img.shields.io/badge/Status-Active-success.svg)
+
 Uma aplicação web moderna e responsiva para gerenciar placar e resultado de partidas de vôlei em tempo real. Perfeita para peladas, treinos e competições amistosas.
 
 ## 📋 Sumário
@@ -42,6 +50,15 @@ Uma aplicação web moderna e responsiva para gerenciar placar e resultado de pa
 | **html2canvas** | Captura e renderização de elementos DOM |
 | **html2pdf.js** | Geração de documentos PDF |
 | **Google Fonts** | Tipografia (Inter) |
+
+## 🛠️ Tecnologias Utilizadas
+
+<p align="left">
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original.svg" alt="HTML5" width="50" height="50"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/css3/css3-original.svg" alt="CSS3" width="50" height="50"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" alt="JavaScript" width="50" height="50"/>
+  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/supabase/supabase-original.svg" alt="Supabase" width="50" height="50"/>
+</p>
 
 ## 📦 Pré-requisitos
 
@@ -168,6 +185,7 @@ netlify deploy
 crieseuvolei/
 ├── index.html          # Arquivo principal (HTML + CSS + JS)
 ├── README.md           # Este arquivo
+├── LICENSE             # Licença MIT
 ├── .git/               # Controle de versão
 └── [opcional: assets/]
     ├── css/           # Estilos adicionais (se aplicável)
@@ -364,27 +382,22 @@ As cores e estilos podem ser customizados editando as variáveis CSS no `index.h
 - Implemente autenticação apropriada
 
 ## 📞 Suporte
-
-- **Issues**: [GitHub Issues](../../issues)
-- **Discussões**: [GitHub Discussions](../../discussions)
-- **Email**: seu-email@exemplo.com
+- **Email**: jpsantospaz@hotmail.com  
+- **WhatsApp**: +55 81 99885-5027  
+- Para dúvidas ou sugestões, entre em contato diretamente comigo.
 
 ## 📄 Licença
+Este projeto está licenciado sob a MIT License – veja o arquivo LICENSE para detalhes.  
+Mantido e supervisionado por João Paz.  
 
-Este projeto está licenciado sob a [MIT License](LICENSE) - veja o arquivo LICENSE para detalhes.
-
-## ✍️ Autores
-
-- **Seu Nome** - Desenvolvimento Inicial - [GitHub](https://github.com/seu-usuario)
-
-Veja também a lista de [contribuidores](../../contributors) que participaram deste projeto.
+## ✍️ Autor
+- **João Paz** – Desenvolvimento Inicial – [GitHub](https://github.com/jppaztech) | [LinkedIn](https://www.linkedin.com/in/joaospaz)
 
 ## 🙏 Agradecimentos
-
-- [Supabase](https://supabase.com) - Backend em tempo real
-- [html2canvas](https://html2canvas.hertzen.com/) - Captura de elementos
-- [html2pdf.js](http://html2pdf.net/) - Geração de PDF
-- [Google Fonts](https://fonts.google.com/) - Tipografia
+- [Supabase](https://supabase.com) – Backend em tempo real  
+- [html2canvas](https://html2canvas.hertzen.com/) – Captura de elementos  
+- [html2pdf.js](http://html2pdf.net/) – Geração de PDF  
+- [Google Fonts](https://fonts.google.com/) – Tipografia  
 
 ## 🚀 Roadmap
 

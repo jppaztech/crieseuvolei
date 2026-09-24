@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>🏐 Peladas de Vôlei - Ao Vivo</title>
+<title>ðŸ Peladas de VÃ´lei - Ao Vivo</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
@@ -19,13 +19,13 @@
   body{margin:0;font-family:'Inter', system-ui,-apple-system,sans-serif;
       background:var(--bg);color:var(--text);line-height:1.35}
 
-  /* Layout Básico */
+  /* Layout BÃ¡sico */
   header{padding:14px 16px;border-bottom:1px solid #1f2430;background:#0c0e13;position:sticky;top:0;z-index:10; display:flex; justify-content:space-between; align-items:center;}
   h1{margin:0;font-size:1.15rem}
   main{padding:12px;display:grid;gap:var(--gap);max-width:980px;margin:0 auto}
   .card{background:var(--card);border:1px solid #2a3242;border-radius:var(--radius);padding:12px}
 
-  /* Inputs e Botões */
+  /* Inputs e BotÃµes */
   .row{display:grid;gap:8px}
   .row.cols-2{grid-template-columns:1fr 1fr}
   .row.cols-3{grid-template-columns:1fr 1fr 1fr}
@@ -36,7 +36,7 @@
   input, select{width:100%;padding:10px;background:#0e121a;border:1px solid #293042;border-radius:10px;color:var(--text);font-size:1rem}
   input[type="number"]{text-align:center}
 
-  /* CORREÇÃO DA COR DE AUTOFILL E PLACEHOLDER (Rodadas) */
+  /* CORREÃ‡ÃƒO DA COR DE AUTOFILL E PLACEHOLDER (Rodadas) */
   input:-webkit-autofill,
   input:-webkit-autofill:hover,
   input:-webkit-autofill:focus,
@@ -89,7 +89,7 @@
   .agenda-game:last-child{border-bottom:0;}
   .game-editor{margin-top:8px;padding-top:8px;border-top:1px dashed #2a3346;display:grid;grid-template-columns:1fr 1fr 80px;gap:8px}
 
-  /* Overlay de Exportação e Login */
+  /* Overlay de ExportaÃ§Ã£o e Login */
   #export-overlay, #login-overlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);color:white;display:flex;justify-content:center;align-items:center;z-index:9999;}
   #login-box {background:var(--card); padding:20px; border-radius:12px; width:90%; max-width:350px; border:1px solid #2a3242; text-align:center;}
 
@@ -105,7 +105,7 @@
 <body>
 
 <header>
-  <h1>🏐 Peladas de Vôlei</h1>
+  <h1>ðŸ Peladas de VÃ´lei</h1>
   <div id="authContainer">
     <button id="btnLoginAction" class="login-btn">Admin Login</button>
   </div>
@@ -113,7 +113,7 @@
 <div id="cloudStatus" class="hidden" role="alert"></div>
 <div id="adminAccessBox" class="card hidden" style="margin:12px auto 0; max-width:980px;">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-    <b>Permissões da partida</b>
+    <b>PermissÃµes do torneio</b>
     <span id="currentRoleLabel" class="mini muted"></span>
   </div>
   <div class="row" style="margin-top:10px;">
@@ -130,11 +130,29 @@
   </div>
 </div>
 
+<div id="tournamentManagerBox" class="card" style="margin:12px auto 0; max-width:980px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+    <b>Torneios</b>
+  </div>
+  <div class="row" style="margin-top:10px;">
+    <div class="row cols-2">
+      <div>
+        <label>Nome do torneio</label>
+        <input id="newTournamentNameInput" type="text" placeholder="Pelada da semana" autocomplete="off" />
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button id="createTournamentBtn" class="secondary">Criar torneio</button>
+      </div>
+    </div>
+    <div id="tournamentList" style="margin-top:8px;"></div>
+  </div>
+</div>
+
 <main>
   <section id="setup" class="card">
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
         <h2>1) Cadastro</h2>
-        <span class="mini muted admin-only" style="display:block">Modo Edição</span>
+        <span class="mini muted admin-only" style="display:block">Modo EdiÃ§Ã£o</span>
         <span class="mini muted" id="readOnlyMsg">Modo Espectador (Aguardando Admin)</span>
     </div>
 
@@ -146,7 +164,7 @@
       </div>
       <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
         <button id="resetParamsBtn" class="warn">Limpar</button>
-        <button id="toPlayersBtn">Próximo</button>
+        <button id="toPlayersBtn">PrÃ³ximo</button>
       </div>
     </div>
 
@@ -156,7 +174,7 @@
       <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
         <button id="resetPlayersBtn" class="warn">Reset</button>
         <button id="backToParamsBtn" class="secondary">Voltar</button>
-        <button id="toTeamsBtn">Próximo</button>
+        <button id="toTeamsBtn">PrÃ³ximo</button>
       </div>
     </div>
 
@@ -166,7 +184,7 @@
        <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
         <button id="resetTeamsBtn" class="warn">Reset</button>
         <button id="backToPlayersBtn" class="secondary">Voltar</button>
-        <button id="toPreviewBtn">Próximo</button>
+        <button id="toPreviewBtn">PrÃ³ximo</button>
       </div>
     </div>
 
@@ -189,7 +207,7 @@
     <div id="currentMatch" class="card" style="margin:12px 0"></div>
 
     <div class="card" style="margin-bottom:12px">
-      <b>Classificação</b>
+      <b>ClassificaÃ§Ã£o</b>
       <div style="margin-top:8px;overflow:auto">
 
 <table id="standingsTable">
@@ -197,8 +215,8 @@
     <tr>
       <th>Time</th>
       <th class="right" title="Jogos">J</th>
-      <th class="right" title="Vitórias">V</th>
-      <th class="right" title="Pontos Pró">PF</th>
+      <th class="right" title="VitÃ³rias">V</th>
+      <th class="right" title="Pontos PrÃ³">PF</th>
       <th class="right" title="Pontos Sofridos">PS</th>
       <th class="right" title="Saldo">Saldo</th>
       <th class="right">%</th>
@@ -212,7 +230,7 @@
 
     <div class="row admin-only" style="margin-bottom:12px; display:grid; grid-auto-flow:column; gap:8px;">
         <button id="saveOnlyBtn">Salvar Placar</button>
-        <button id="nextMatchBtn" class="secondary" disabled>Próxima Partida</button>
+        <button id="nextMatchBtn" class="secondary" disabled>PrÃ³xima Partida</button>
     </div>
 
     <div style="display: flex; align-items: flex-start; gap: 16px;">
@@ -237,16 +255,16 @@
     <div id="finalsMatch" style="margin-top:8px"></div>
     <div class="row admin-only" style="margin-top:12px; display:grid; grid-auto-flow:column; gap:8px;">
         <button id="backToMatchesBtn" class="secondary">Voltar</button>
-        <button id="saveFinalBtn">Salvar ➜ Próxima</button>
+        <button id="saveFinalBtn">Salvar âžœ PrÃ³xima</button>
     </div>
   </section>
 
   <section id="podium" class="card hidden">
-    <h2>4) Pódio</h2>
+    <h2>4) PÃ³dio</h2>
     <div id="podiumBox" class="podium"></div>
     <div class="row" style="margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-        <button id="exportFullJpegBtn" class="secondary">Relatório (JPEG)</button>
-        <button id="exportFullPdfBtn" class="secondary">Relatório (PDF)</button>
+        <button id="exportFullJpegBtn" class="secondary">RelatÃ³rio (JPEG)</button>
+        <button id="exportFullPdfBtn" class="secondary">RelatÃ³rio (PDF)</button>
     </div>
     <div class="row admin-only" style="margin-top:8px">
         <button id="newTournamentBtn" class="warn">Novo Torneio</button>
@@ -270,7 +288,7 @@
 
 <script>
 (function(){
-  // --- CONFIGURAÇÃO SUPABASE ---
+  // --- CONFIGURAÃ‡ÃƒO SUPABASE ---
   const SUPABASE_URL = 'https://cymkeazbvhxtstaxaqdc.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_Nd_pwhW8NPXYTPqMMgycCA_XcKAZCDA';
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
@@ -317,6 +335,58 @@
     });
   }
 
+  const STORAGE_TOURNAMENT_KEY = 'crieseuvolei:selected_tournament_id';
+  let tournamentList = [];
+  let selectedTournamentId = localStorage.getItem(STORAGE_TOURNAMENT_KEY) || null;
+  let selectedTournamentMeta = null;
+
+  function getSessionUserEmail() {
+    const session = supabase.auth.getSession ? supabase.auth.getSession().data.session : null;
+    const user = session && session.user ? session.user : null;
+    return normalizeEmail(user ? user.email : '');
+  }
+
+  function buildTournamentMeta(name, ownerEmail, scorerEmails = [], gameData = {}) {
+    const cleanName = String(name || '').trim() || 'Meu torneio';
+    const owner = normalizeEmail(ownerEmail);
+    const members = Array.isArray(scorerEmails) ? scorerEmails.map(normalizeEmail).filter(Boolean) : [];
+    return {
+      id: crypto.randomUUID ? crypto.randomUUID() : `tournament-${Date.now()}-${Math.random().toString(16).slice(2)}`,
+      name: cleanName,
+      owner_email: owner,
+      scorer_emails: [...new Set(members.filter(email => email !== owner))],
+      game_data: normalizeStateShape({ ...baseState(), ...gameData, ownerEmail: owner, scorerEmails: members.filter(email => email !== owner) })
+    };
+  }
+
+  function renderTournamentManager() {
+    const container = el('tournamentList');
+    if (!container) return;
+
+    const currentEmail = getSessionUserEmail();
+    if (!currentEmail) {
+      container.innerHTML = '<div class="status">FaÃ§a login para criar e gerenciar torneios.</div>';
+      return;
+    }
+
+    if (!tournamentList.length) {
+      container.innerHTML = '<div class="status">Nenhum torneio ainda. Crie o primeiro para comeÃ§ar.</div>';
+      return;
+    }
+
+    container.innerHTML = tournamentList.map(tournament => {
+      const owner = normalizeEmail(tournament.owner_email || '');
+      const selected = tournament.id === selectedTournamentId ? 'style="border-color:#22c55e; background:#112518;"' : '';
+      return `
+        <div class="access-chip" ${selected}>
+          <button class="small secondary" data-select-tournament="${tournament.id}">${tournament.name}</button>
+          <span class="mini muted">${owner === currentEmail ? 'ResponsÃ¡vel' : 'Operador'}</span>
+          ${owner === currentEmail ? `<button class="small danger" data-delete-tournament="${tournament.id}">Excluir</button>` : ''}
+        </div>
+      `;
+    }).join('');
+  }
+
   function renderAdminAccessList() {
     const list = el("adminAccessList");
     if (!list) return;
@@ -325,14 +395,14 @@
     const entries = [];
 
     if (ownerEmail) {
-      entries.push({ type: 'owner', email: ownerEmail, role: 'Responsável' });
+      entries.push({ type: 'owner', email: ownerEmail, role: 'ResponsÃ¡vel' });
     }
     scorerEmails.forEach(email => {
       if (email && email !== ownerEmail) entries.push({ type: 'scorer', email, role: 'Operador' });
     });
 
     if (!entries.length) {
-      list.innerHTML = '<div class="status">Nenhum operador cadastrado. O primeiro usuário autenticado assume a função de responsável pela partida.</div>';
+      list.innerHTML = '<div class="status">Nenhum operador cadastrado. O primeiro usuÃ¡rio autenticado assume a funÃ§Ã£o de responsÃ¡vel pela partida.</div>';
       return;
     }
 
@@ -353,8 +423,8 @@
     if (isAdmin) {
       box.classList.remove('hidden');
       const owner = normalizeEmail(state.ownerEmail);
-      const me = normalizeEmail((supabase.auth.getSession && supabase.auth.getSession().data.session?.user?.email) || '');
-      const role = owner && me && owner === me ? 'Responsável da partida' : 'Operador autorizado';
+      const me = getSessionUserEmail();
+      const role = owner && me && owner === me ? 'ResponsÃ¡vel do torneio' : 'Operador autorizado';
       roleLabel.innerText = role;
     } else {
       box.classList.add('hidden');
@@ -388,7 +458,7 @@
     return currentEmail === ownerEmail || scorerEmails.includes(currentEmail);
   }
 
-  // --- AUTENTICAÇÃO ---
+  // --- AUTENTICAÃ‡ÃƒO ---
   el("btnLoginAction").addEventListener("click", () => {
     if(isAdmin) {
         supabase.auth.signOut().then(() => { checkUser(); });
@@ -411,14 +481,84 @@
     }
   });
 
+  el('createTournamentBtn').addEventListener('click', async () => {
+    const currentEmail = getSessionUserEmail();
+    if (!currentEmail) {
+      alert('FaÃ§a login antes de criar um torneio.');
+      return;
+    }
+
+    const tournamentInput = el('newTournamentNameInput');
+    const name = String((tournamentInput ? tournamentInput.value : '') || '').trim() || 'Meu torneio';
+    const payload = { ...buildTournamentMeta(name, currentEmail, [], {}), updated_at: new Date().toISOString() };
+    const { data, error } = await supabase.from('tournaments').insert({
+      id: payload.id,
+      name: payload.name,
+      owner_email: payload.owner_email,
+      scorer_emails: payload.scorer_emails,
+      game_data: payload.game_data,
+      updated_at: payload.updated_at
+    });
+
+    if (error) {
+      reportCloudError('NÃ£o foi possÃ­vel criar o torneio.', error);
+      return;
+    }
+
+    selectedTournamentId = payload.id;
+    localStorage.setItem(STORAGE_TOURNAMENT_KEY, selectedTournamentId);
+    selectedTournamentMeta = { ...payload, id: payload.id };
+    state = normalizeStateShape({ ...payload.game_data, ownerEmail: payload.owner_email, scorerEmails: payload.scorer_emails });
+    el('newTournamentNameInput').value = '';
+    await loadTournamentsForCurrentUser();
+    if (selectedTournamentId) await loadStateFromCloud();
+    refreshUI();
+  });
+
+  el('tournamentList').addEventListener('click', async (event) => {
+    const selectButton = event.target.closest('[data-select-tournament]');
+    if (selectButton) {
+      const nextTournamentId = selectButton.getAttribute('data-select-tournament');
+      selectedTournamentId = nextTournamentId;
+      localStorage.setItem(STORAGE_TOURNAMENT_KEY, selectedTournamentId);
+      await loadStateFromCloud();
+      refreshUI();
+      return;
+    }
+
+    const deleteButton = event.target.closest('[data-delete-tournament]');
+    if (deleteButton) {
+      const tournamentId = deleteButton.getAttribute('data-delete-tournament');
+      const match = tournamentList.find(item => item.id === tournamentId);
+      if (!match) return;
+      if (normalizeEmail(match.owner_email) !== getSessionUserEmail()) {
+        alert('SÃ³ o responsÃ¡vel do torneio pode excluir este registro.');
+        return;
+      }
+      if (!confirm(`Excluir o torneio "${match.name}"?`)) return;
+      const { error } = await supabase.from('tournaments').delete().eq('id', tournamentId);
+      if (error) {
+        reportCloudError('NÃ£o foi possÃ­vel excluir o torneio.', error);
+        return;
+      }
+      if (selectedTournamentId === tournamentId) {
+        selectedTournamentId = null;
+        localStorage.removeItem(STORAGE_TOURNAMENT_KEY);
+      }
+      await loadTournamentsForCurrentUser();
+      if (selectedTournamentId) await loadStateFromCloud();
+      refreshUI();
+    }
+  });
+
   el("addScorerBtn").addEventListener("click", () => {
     const email = normalizeEmail(el("scorerEmailInput").value);
     if (!email) {
-      alert('Informe um e-mail de operador válido.');
+      alert('Informe um e-mail de operador vÃ¡lido.');
       return;
     }
     if (normalizeEmail(state.ownerEmail) === email) {
-      alert('Este e-mail já é o responsável da partida.');
+      alert('Este e-mail jÃ¡ Ã© o responsÃ¡vel da partida.');
       return;
     }
     state.scorerEmails = Array.isArray(state.scorerEmails) ? [...new Set([...state.scorerEmails.map(normalizeEmail), email].filter(Boolean))] : [email];
@@ -459,38 +599,118 @@
       state.ownerEmail = normalizeEmail(user.email);
     }
     if (user && state.ownerEmail && (state.ownerEmail === normalizeEmail(user.email) || state.scorerEmails.includes(normalizeEmail(user.email)))) {
-      saveStateToCloud();
+      await loadTournamentsForCurrentUser();
+      if (selectedTournamentId) await loadStateFromCloud();
     }
 
     updateAdminStatus();
+    renderTournamentManager();
   }
 
-  // --- SINCRONIZAÇÃO (REALTIME) ---
+  async function loadTournamentsForCurrentUser() {
+    const currentEmail = getSessionUserEmail();
+    if (!currentEmail) {
+      tournamentList = [];
+      renderTournamentManager();
+      return;
+    }
+
+    const { data, error } = await supabase.from('tournaments').select('*').order('updated_at', { ascending: false });
+    if (error) {
+      if (error.code === '42P01') {
+        reportCloudError('A tabela de torneios ainda nÃ£o foi criada. Use o SQL do README para criar o schema multi-torneio.', error);
+      } else {
+        reportCloudError('NÃ£o foi possÃ­vel carregar a lista de torneios.', error);
+      }
+      return;
+    }
+
+    tournamentList = (data || [])
+      .filter(tournament => {
+        const owner = normalizeEmail(tournament.owner_email || '');
+        const scorers = Array.isArray(tournament.scorer_emails) ? tournament.scorer_emails.map(normalizeEmail).filter(Boolean) : [];
+        return owner === currentEmail || scorers.includes(currentEmail);
+      })
+      .map(tournament => ({
+        ...tournament,
+        name: String(tournament.name || '').trim() || 'Meu torneio',
+        owner_email: normalizeEmail(tournament.owner_email || currentEmail),
+        scorer_emails: Array.isArray(tournament.scorer_emails) ? [...new Set(tournament.scorer_emails.map(normalizeEmail).filter(Boolean))] : []
+      }));
+
+    if (!tournamentList.length) {
+      const fallback = buildTournamentMeta('Meu torneio', currentEmail, [], state);
+      const { data: inserted, error: insertError } = await supabase.from('tournaments').insert({
+        id: fallback.id,
+        name: fallback.name,
+        owner_email: fallback.owner_email,
+        scorer_emails: fallback.scorer_emails,
+        game_data: fallback.game_data,
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+      if (!insertError && inserted) {
+        tournamentList = [inserted];
+      }
+    }
+
+    const storedSelection = localStorage.getItem(STORAGE_TOURNAMENT_KEY);
+    const validSelection = tournamentList.some(item => item.id === storedSelection) ? storedSelection : null;
+    const firstTournament = tournamentList.length ? tournamentList[0] : null;
+    selectedTournamentId = validSelection || (firstTournament ? firstTournament.id : null);
+    if (selectedTournamentId) {
+      localStorage.setItem(STORAGE_TOURNAMENT_KEY, selectedTournamentId);
+      selectedTournamentMeta = tournamentList.find(item => item.id === selectedTournamentId) || null;
+    } else {
+      localStorage.removeItem(STORAGE_TOURNAMENT_KEY);
+      selectedTournamentMeta = null;
+    }
+
+    renderTournamentManager();
+  }
+
+  // --- SINCRONIZAÃ‡ÃƒO (REALTIME) ---
   async function saveStateToCloud() {
-    if (!isAdmin) return;
+    if (!isAdmin || !selectedTournamentId) return;
+    const visibleSection = document.querySelector('main > section:not(.hidden)');
+    const visibleStep = document.querySelector('#setup > div[id]:not(.hidden)');
     state = normalizeStateShape({
       ...state,
-      uiSection: document.querySelector('main > section:not(.hidden)')?.id || state.uiSection,
-      uiStep: document.querySelector('#setup > div[id]:not(.hidden)')?.id || state.uiStep
+      uiSection: visibleSection ? visibleSection.id : state.uiSection,
+      uiStep: visibleStep ? visibleStep.id : state.uiStep,
+      ownerEmail: normalizeEmail(state.ownerEmail || getSessionUserEmail()),
+      scorerEmails: Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : []
     });
 
-    const { error } = await supabase.from('app_state').upsert({ id: 1, game_data: state });
-    if (error) reportCloudError("Não foi possível salvar o estado do torneio.", error);
+    const currentTournament = tournamentList.find(item => item.id === selectedTournamentId) || selectedTournamentMeta;
+    const payload = {
+      id: selectedTournamentId,
+      name: currentTournament ? currentTournament.name : 'Meu torneio',
+      owner_email: normalizeEmail(currentTournament && currentTournament.owner_email ? currentTournament.owner_email : (state.ownerEmail || getSessionUserEmail())),
+      scorer_emails: Array.isArray(currentTournament && currentTournament.scorer_emails) ? currentTournament.scorer_emails.map(normalizeEmail).filter(Boolean) : state.scorerEmails,
+      game_data: state,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase.from('tournaments').upsert(payload, { onConflict: 'id' });
+    if (error) reportCloudError('NÃ£o foi possÃ­vel salvar o estado do torneio.', error);
   }
 
   async function loadStateFromCloud() {
-    const { data, error } = await supabase.from('app_state').select('game_data').eq('id', 1).single();
+    if (!selectedTournamentId) return;
+    const { data, error } = await supabase.from('tournaments').select('*').eq('id', selectedTournamentId).single();
     if (error && error.code !== 'PGRST116') {
-        reportCloudError("Não foi possível carregar o estado do torneio.", error);
+        reportCloudError('NÃ£o foi possÃ­vel carregar o estado do torneio.', error);
         return;
     }
     if (data && data.game_data && Object.keys(data.game_data).length > 0) {
-        state = normalizeStateShape({ ...state, ...data.game_data });
+        selectedTournamentMeta = data;
+        state = normalizeStateShape({ ...baseState(), ...data.game_data, ownerEmail: data.owner_email || (data.game_data && data.game_data.ownerEmail) || state.ownerEmail, scorerEmails: Array.isArray(data.scorer_emails) ? data.scorer_emails : (data.game_data && Array.isArray(data.game_data.scorerEmails) ? data.game_data.scorerEmails : []) });
         if (state.ownerEmail && state.scorerEmails.includes(state.ownerEmail)) {
           state.scorerEmails = state.scorerEmails.filter(email => email !== state.ownerEmail);
         }
-        const { data: { user } } = await supabase.auth.getUser();
-        checkUser();
         refreshUI();
     }
   }
@@ -498,22 +718,38 @@
   function reportCloudError(message, error) {
     console.error(message, error);
     const status = el("cloudStatus");
-    status.textContent = `${message} Verifique a configuração e as permissões do Supabase.`;
+    status.textContent = `${message} Verifique a configuraÃ§Ã£o e as permissÃµes do Supabase.`;
     status.classList.remove("hidden");
     setTimeout(() => status.classList.add("hidden"), 8000);
   }
 
-  supabase.channel('public:app_state')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
-        if (payload.new && payload.new.game_data) {
-            state = normalizeStateShape({ ...state, ...payload.new.game_data });
-            checkUser();
+  supabase.channel('public:tournaments')
+    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournaments' }, payload => {
+        if (payload.new && payload.new.id === selectedTournamentId) {
+            selectedTournamentMeta = payload.new;
+            state = normalizeStateShape({ ...baseState(), ...payload.new.game_data, ownerEmail: payload.new.owner_email || (payload.new.game_data && payload.new.game_data.ownerEmail) || state.ownerEmail, scorerEmails: Array.isArray(payload.new.scorer_emails) ? payload.new.scorer_emails : (payload.new.game_data && Array.isArray(payload.new.game_data.scorerEmails) ? payload.new.game_data.scorerEmails : []) });
             refreshUI();
         }
+        if (payload.new) {
+          loadTournamentsForCurrentUser();
+        }
+    })
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tournaments' }, payload => {
+        if (payload.new) {
+          loadTournamentsForCurrentUser();
+        }
+    })
+    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'tournaments' }, payload => {
+        if (payload.old && payload.old.id === selectedTournamentId) {
+          selectedTournamentId = null;
+          localStorage.removeItem(STORAGE_TOURNAMENT_KEY);
+          state = baseState();
+        }
+        loadTournamentsForCurrentUser();
     })
     .subscribe((status, error) => {
         if (error || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            reportCloudError("A sincronização em tempo real está indisponível.", error || status);
+            reportCloudError('A sincronizaÃ§Ã£o em tempo real do torneio estÃ¡ indisponÃ­vel.', error || status);
         }
     });
 
@@ -548,19 +784,19 @@
     }
   }
 
-  // --- NAVEGAÇÃO ---
+  // --- NAVEGAÃ‡ÃƒO ---
   el("toPlayersBtn").addEventListener("click", () => {
     const p = parseInt(el("numPlayers").value, 10);
     const t = parseInt(el("numTeams").value, 10);
     const r = parseInt(el("numRounds").value, 10);
 
-    // --- REGRAS ORIGINAIS RESTAURADAS (Com validação para garantir igualdade) ---
-    if (!p || !t || !r) { alert("Preencha todos os números."); return; }
-    if (t < 3) { alert("Mínimo 3 times."); return; }
-    if (p < t * 2) { alert("Número de jogadores insuficiente."); return; }
+    // --- REGRAS ORIGINAIS RESTAURADAS (Com validaÃ§Ã£o para garantir igualdade) ---
+    if (!p || !t || !r) { alert("Preencha todos os nÃºmeros."); return; }
+    if (t < 3) { alert("MÃ­nimo 3 times."); return; }
+    if (p < t * 2) { alert("NÃºmero de jogadores insuficiente."); return; }
 
-    // IMPORTANTE: Para a regra original (soma) funcionar, não pode haver sobra.
-    if (p % t !== 0) { alert("A quantidade de jogadores deve ser múltiplo do número de times (ex: 12 jog / 3 times = 4 cada). Ajuste os números."); return; }
+    // IMPORTANTE: Para a regra original (soma) funcionar, nÃ£o pode haver sobra.
+    if (p % t !== 0) { alert("A quantidade de jogadores deve ser mÃºltiplo do nÃºmero de times (ex: 12 jog / 3 times = 4 cada). Ajuste os nÃºmeros."); return; }
 
     state.numPlayers = p; state.numTeams = t; state.numRounds = r;
     state.uiStep = 'stepPlayers';
@@ -579,7 +815,7 @@
         if(!name) erro = true;
         state.players.push({ name: name || `Jogador ${i+1}`, skill: parseInt(elSkill.value, 10) });
     }
-    if(erro && !confirm("Alguns jogadores estão sem nome. Continuar assim mesmo?")) return;
+    if(erro && !confirm("Alguns jogadores estÃ£o sem nome. Continuar assim mesmo?")) return;
 
     state.uiStep = 'stepTeams';
     renderTeamsForm(); refreshUI(); saveStateToCloud();
@@ -624,7 +860,7 @@
      renderTeamsForm(); saveStateToCloud();
   });
   el("goToHomeBtn").addEventListener("click", () => {
-    if(confirm("Tem certeza? Isso apagará todo o progresso atual.")) {
+    if(confirm("Tem certeza? Isso apagarÃ¡ todo o progresso atual.")) {
         state = preserveAccessState({
           numPlayers:0, numTeams:0, numRounds:0,
           players:[], teams:[], schedule:[],
@@ -635,7 +871,7 @@
     }
   });
   el("newTournamentBtn").addEventListener("click", () => {
-      if(confirm("Começar novo torneio apagará os dados do atual. Confirmar?")) {
+      if(confirm("ComeÃ§ar novo torneio apagarÃ¡ os dados do atual. Confirmar?")) {
         state = preserveAccessState({
           numPlayers:0, numTeams:0, numRounds:0,
           players:[], teams:[], schedule:[],
@@ -651,7 +887,7 @@
     const saved = state.players.length > 0 ? state.players : Array.from({length:state.numPlayers}, (_,i)=>({name:'', skill:3}));
     for(let i=0; i<state.numPlayers; i++){
       const p = saved[i] || {name:'', skill:3};
-      pf.innerHTML += `<div class="team-block"><div class="row cols-2"><div><label>Jogador ${i+1}</label><input type="text" id="pl_name_${i}" value="${p.name}" placeholder="Nome" autocomplete="off"/></div><div><label>Habilidade</label><select id="pl_skill_${i}"><option value="1" ${p.skill==1?'selected':''}>1 ⭐</option><option value="2" ${p.skill==2?'selected':''}>2 ⭐</option><option value="3" ${p.skill==3?'selected':''}>3 ⭐</option><option value="4" ${p.skill==4?'selected':''}>4 ⭐</option><option value="5" ${p.skill==5?'selected':''}>5 ⭐</option></select></div></div></div>`;
+      pf.innerHTML += `<div class="team-block"><div class="row cols-2"><div><label>Jogador ${i+1}</label><input type="text" id="pl_name_${i}" value="${p.name}" placeholder="Nome" autocomplete="off"/></div><div><label>Habilidade</label><select id="pl_skill_${i}"><option value="1" ${p.skill==1?'selected':''}>1 â­</option><option value="2" ${p.skill==2?'selected':''}>2 â­</option><option value="3" ${p.skill==3?'selected':''}>3 â­</option><option value="4" ${p.skill==4?'selected':''}>4 â­</option><option value="5" ${p.skill==5?'selected':''}>5 â­</option></select></div></div></div>`;
     }
   }
   function renderTeamsForm() {
@@ -666,11 +902,11 @@
     const container = el("previewContent"); container.innerHTML = "";
     state.teams.forEach(team => {
         const totalSkill = team.players.reduce((s, p) => s + p.skill, 0);
-        container.innerHTML += `<div class="team-block"><div class="chip"><span class="dot" style="background:${team.color}"></span><b style="color:${team.color}">${team.name} (${totalSkill}⭐)</b></div>${renderPlayersList(team.players)}</div>`;
+        container.innerHTML += `<div class="team-block"><div class="chip"><span class="dot" style="background:${team.color}"></span><b style="color:${team.color}">${team.name} (${totalSkill}â­)</b></div>${renderPlayersList(team.players)}</div>`;
     });
   }
 
-  // --- LÓGICA DO JOGO (SORTEIO ORIGINAL RESTAURADO) ---
+  // --- LÃ“GICA DO JOGO (SORTEIO ORIGINAL RESTAURADO) ---
   function distribuirPorSomaEquilibrada() {
     // 1. Ordena os jogadores do melhor para o pior
     const sortedPlayers = [...state.players].sort((a, b) => b.skill - a.skill);
@@ -725,9 +961,9 @@
     const g=state.schedule[state.currentIndex];
     if(!g){ if(state.schedule.length > 0) iniciarFinais(); return; }
     const A=state.teams[g.a], B=state.teams[g.b];
-    el("roundInfo").innerText = `Rodada ${g.round} — Jogo ${g.order}`;
-    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="scoreA" type="number" min="0" placeholder="0" value="${g.scoreA ?? ''}"/><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreA ?? '-'}</div>`;
-    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="scoreB" type="number" min="0" placeholder="0" value="${g.scoreB ?? ''}"/><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreB ?? '-'}</div>`;
+    el("roundInfo").innerText = `Rodada ${g.round} â€” Jogo ${g.order}`;
+    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="scoreA" type="number" min="0" placeholder="0" value="${g.scoreA == null ? '' : g.scoreA}"/><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreA == null ? '-' : g.scoreA}</div>`;
+    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="scoreB" type="number" min="0" placeholder="0" value="${g.scoreB == null ? '' : g.scoreB}"/><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreB == null ? '-' : g.scoreB}</div>`;
     el("currentMatch").innerHTML = `<div class="score-grid"><div class="team-side"><div>${teamChip(A)}</div>${renderPlayersList(A.players)}</div><div class="vs">vs</div><div class="team-side" style="align-items:flex-end"><div>${teamChip(B)}</div>${renderPlayersList(B.players)}</div></div><div style="margin-top:12px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div>`;
     if(isAdmin) attachScoreButtonListeners('#currentMatch', 'scoreA', 'scoreB');
     el('nextMatchBtn').disabled = g.scoreA === null;
@@ -737,7 +973,7 @@
     const g = state.schedule[state.currentIndex];
     const a=parseInt(el("scoreA").value,10), b=parseInt(el("scoreB").value,10);
     if(isNaN(a)||isNaN(b)){alert("Digite os pontos.");return;}
-    if(a === b){alert("A partida não pode terminar empatada. Lance o placar final com um vencedor.");return;}
+    if(a === b){alert("A partida nÃ£o pode terminar empatada. Lance o placar final com um vencedor.");return;}
     g.scoreA=a;g.scoreB=b;
     atualizarClassificacao(); renderAgenda();
     el('nextMatchBtn').disabled = false;
@@ -766,7 +1002,10 @@
 
   function renderAgenda(){
     const container = el("agenda"); container.innerHTML = ""; const byRound = {};
-    state.schedule.forEach((g, i) => { (byRound[g.round] ??= []).push({ ...g, i }); });
+    state.schedule.forEach((g, i) => {
+      if (!byRound[g.round]) byRound[g.round] = [];
+      byRound[g.round].push({ ...g, i });
+    });
     Object.keys(byRound).sort((a, b) => a - b).forEach(r => {
         const card = document.createElement('div'); card.className = "card"; card.style.marginBottom = "8px";
         let html = `<b>Rodada ${r}</b>`;
@@ -778,7 +1017,7 @@
               <div class="mini muted" style="text-align:center; margin-bottom:4px">Jogo ${g.order}</div>
               <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
                 <div style="flex:1; text-align:left; overflow:hidden;">${teamChip(A)}<div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pA}">${pA}</div></div>
-                <div style="white-space:nowrap; font-weight:bold; font-size:1.1rem; padding:0 4px;">${g.scoreA ?? '-'} x ${g.scoreB ?? '-'}</div>
+                <div style="white-space:nowrap; font-weight:bold; font-size:1.1rem; padding:0 4px;">${g.scoreA == null ? '-' : g.scoreA} x ${g.scoreB == null ? '-' : g.scoreB}</div>
                 <div style="flex:1; text-align:right; overflow:hidden;">${teamChip(B)}<div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pB}">${pB}</div></div>
               </div>${editBtn}</div>`;
         }).join('');
@@ -793,7 +1032,7 @@
         if (document.getElementById(`editor-${idx}`)) return;
         const g = state.schedule[idx];
         const editorHtml = `<div class="game-editor" id="editor-${idx}" style="margin-top:8px; padding-top:8px; border-top:1px dashed #444; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center;">
-                <input type="number" value="${g.scoreA ?? 0}" id="ea-${idx}" placeholder="Pts A"><input type="number" value="${g.scoreB ?? 0}" id="eb-${idx}" placeholder="Pts B"><button class="small" data-save="${idx}">Salvar</button></div>`;
+                <input type="number" value="${g.scoreA == null ? 0 : g.scoreA}" id="ea-${idx}" placeholder="Pts A"><input type="number" value="${g.scoreB == null ? 0 : g.scoreB}" id="eb-${idx}" placeholder="Pts B"><button class="small" data-save="${idx}">Salvar</button></div>`;
         e.target.closest('.agenda-game').insertAdjacentHTML('beforeend', editorHtml);
         e.target.parentElement.style.display = 'none';
     }
@@ -802,7 +1041,7 @@
         const g = state.schedule[idx], valA = document.getElementById(`ea-${idx}`).value, valB = document.getElementById(`eb-${idx}`).value;
         if (valA === '' || valB === '') return alert("Preencha os pontos.");
         const scoreA = parseInt(valA, 10), scoreB = parseInt(valB, 10);
-        if (scoreA === scoreB) return alert("A partida não pode terminar empatada. Lance o placar final com um vencedor.");
+        if (scoreA === scoreB) return alert("A partida nÃ£o pode terminar empatada. Lance o placar final com um vencedor.");
         g.scoreA = scoreA; g.scoreB = scoreB;
         atualizarClassificacao(); renderAgenda(); if (state.currentIndex === idx && state.uiSection === 'matches') renderCurrentMatch(); saveStateToCloud();
     }
@@ -812,7 +1051,7 @@
     atualizarClassificacao();
     const ranking = state.teams.map((t,i)=>({ i, name:t.name, color:t.color, players:t.players, stats:{...t.stats} })).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
     state.finals = [];
-    if (ranking.length >= 4) { state.finals.push({ label:"3º lugar", a:ranking[2].i, b:ranking[3].i }); state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); }
+    if (ranking.length >= 4) { state.finals.push({ label:"3Âº lugar", a:ranking[2].i, b:ranking[3].i }); state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); }
     else if (ranking.length >= 2) { state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); }
     else { alert("Times insuficientes."); buildPodium(); state.uiSection='podium'; refreshUI(); saveStateToCloud(); return; }
     state.finals.forEach(f => { f.scoreA = null; f.scoreB = null; });
@@ -820,8 +1059,8 @@
   }
   function renderFinalMatch(){
     const f=state.finals[state.finalsIndex]; if(!f){buildPodium(); state.uiSection='podium'; refreshUI(); return;} const A=state.teams[f.a], B=state.teams[f.b];
-    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="fscoreA" type="number" min="0" value="${f.scoreA??''}"><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd">${f.scoreA??'-'}</div>`;
-    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="fscoreB" type="number" min="0" value="${f.scoreB??''}"><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd">${f.scoreB??'-'}</div>`;
+    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="fscoreA" type="number" min="0" value="${f.scoreA==null ? '' : f.scoreA}"><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd">${f.scoreA==null ? '-' : f.scoreA}</div>`;
+    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="fscoreB" type="number" min="0" value="${f.scoreB==null ? '' : f.scoreB}"><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd">${f.scoreB==null ? '-' : f.scoreB}</div>`;
     el("finalsMatch").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div>${teamChip(A)}</div><div class="mini muted">${f.label}</div><div>${teamChip(B)}</div></div><div style="margin-top:10px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div></div>`;
     if(isAdmin) attachScoreButtonListeners('#finalsMatch', 'fscoreA', 'fscoreB');
   }
@@ -829,7 +1068,7 @@
     const f=state.finals[state.finalsIndex]; if(!f) return;
     const a=parseInt(el("fscoreA").value,10), b=parseInt(el("fscoreB").value,10);
     if(isNaN(a)||isNaN(b)){alert("Digite.");return;}
-    if(a === b){alert("A partida não pode terminar empatada. Lance o placar final com um vencedor.");return;}
+    if(a === b){alert("A partida nÃ£o pode terminar empatada. Lance o placar final com um vencedor.");return;}
     f.scoreA=a; f.scoreB=b; state.finalsIndex++;
     if(state.finalsIndex >= state.finals.length){ buildPodium(); state.uiSection='podium'; refreshUI(); } else { renderFinalMatch(); }
     saveStateToCloud();
@@ -837,20 +1076,20 @@
 
   function buildPodium(){
     let podiumHTML = ''; const placed = new Set();
-    const finalG=state.finals.find(x=>x.label==="Final"); const thirdG=state.finals.find(x=>x.label.includes("3º"));
+    const finalG=state.finals.find(x=>x.label==="Final"); const thirdG=state.finals.find(x=>x.label.includes("3Âº"));
     const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
     const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
     const champ=getW(finalG), vice=getL(finalG), third=getW(thirdG), fourth=getL(thirdG);
 
-    if (champ) { podiumHTML += `<div class="status good"><b>🏆 1º LUGAR:</b> ${champ.name}</div>`; placed.add(champ.name); }
-    if (vice) { podiumHTML += `<div class="status"><b>🥈 2º LUGAR:</b> ${vice.name}</div>`; placed.add(vice.name); }
-    if (third) { podiumHTML += `<div class="status"><b>🥉 3º LUGAR:</b> ${third.name}</div>`; placed.add(third.name); }
+    if (champ) { podiumHTML += `<div class="status good"><b>ðŸ† 1Âº LUGAR:</b> ${champ.name}</div>`; placed.add(champ.name); }
+    if (vice) { podiumHTML += `<div class="status"><b>ðŸ¥ˆ 2Âº LUGAR:</b> ${vice.name}</div>`; placed.add(vice.name); }
+    if (third) { podiumHTML += `<div class="status"><b>ðŸ¥‰ 3Âº LUGAR:</b> ${third.name}</div>`; placed.add(third.name); }
 
     if (state._rankingSnapshot) {
       let rank = placed.size + 1;
-      state._rankingSnapshot.forEach(r => { if (!placed.has(r.name)) { podiumHTML += `<div class="status"><b>${rank}º LUGAR:</b> ${r.name}</div>`; placed.add(r.name); rank++; } });
+      state._rankingSnapshot.forEach(r => { if (!placed.has(r.name)) { podiumHTML += `<div class="status"><b>${rank}Âº LUGAR:</b> ${r.name}</div>`; placed.add(r.name); rank++; } });
     }
-    el("podiumBox").innerHTML = podiumHTML || '<div class="status">Indisponível.</div>';
+    el("podiumBox").innerHTML = podiumHTML || '<div class="status">IndisponÃ­vel.</div>';
   }
 
   function exportAsJpeg(htmlContent, filename, options = {}) {
@@ -864,8 +1103,8 @@
      const bg = isDark ? '#0f1115' : '#ffffff'; const txtColor = isDark ? '#eef2f6' : '#000000';
      const nameStyle = (color) => `color:${color}; font-weight:bold; font-size:1.1rem; ${!isDark ? 'text-shadow: 0px 0px 1px rgba(0,0,0,0.5);' : ''}`;
      const style = `<style>body{font-family:sans-serif;background:${bg};color:${txtColor};padding:20px}h1{text-align:center}.team-box{border:1px dashed #555;padding:10px;margin-bottom:10px;page-break-inside:avoid;border-radius:8px}ul{margin:5px 0 0;padding-left:20px; color:${isDark?'#9aa4b2':'#444'}}</style>`;
-     let html = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Escalação dos Times</h1>`;
-     state.teams.forEach(t => { html += `<div class="team-box"><span style="${nameStyle(t.color)}">${t.name}</span> <strong style="font-size:0.9rem">(${t.players.reduce((a,b)=>a+b.skill,0)}⭐)</strong><ul>${t.players.map(p=>`<li>${p.name} (${p.skill}⭐)</li>`).join('')}</ul></div>`; });
+     let html = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>EscalaÃ§Ã£o dos Times</h1>`;
+     state.teams.forEach(t => { html += `<div class="team-box"><span style="${nameStyle(t.color)}">${t.name}</span> <strong style="font-size:0.9rem">(${t.players.reduce((a,b)=>a+b.skill,0)}â­)</strong><ul>${t.players.map(p=>`<li>${p.name} (${p.skill}â­)</li>`).join('')}</ul></div>`; });
      return html + `</body></html>`;
   }
   el("exportTeamsPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'times.pdf',jsPDF:{format:'a4'}}).from(getTeamsExportHtml(false)).save());
@@ -881,7 +1120,7 @@
           body += `<div class="round"><div class="rtitle">Rodada ${r}</div>`;
           byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
                const A = state.teams[g.a], B = state.teams[g.b];
-               body += `<div class="game"><div style="flex:1;text-align:left;padding-right:5px"><div style="${tStyle(A.color)}">${A.name}</div><div class="players">${A.players.map(p=>p.name).join(', ')}</div></div><div style="align-self:center;padding:0 10px;font-family:monospace;font-weight:bold;font-size:1.2rem;white-space:nowrap">${g.scoreA??''} x ${g.scoreB??''}</div><div style="flex:1;text-align:right;padding-left:5px"><div style="${tStyle(B.color)}">${B.name}</div><div class="players">${B.players.map(p=>p.name).join(', ')}</div></div></div>`;
+               body += `<div class="game"><div style="flex:1;text-align:left;padding-right:5px"><div style="${tStyle(A.color)}">${A.name}</div><div class="players">${A.players.map(p=>p.name).join(', ')}</div></div><div style="align-self:center;padding:0 10px;font-family:monospace;font-weight:bold;font-size:1.2rem;white-space:nowrap">${g.scoreA==null ? '' : g.scoreA} x ${g.scoreB==null ? '' : g.scoreB}</div><div style="flex:1;text-align:right;padding-left:5px"><div style="${tStyle(B.color)}">${B.name}</div><div class="players">${B.players.map(p=>p.name).join(', ')}</div></div></div>`;
           });
           body += '</div>';
       });
@@ -901,7 +1140,7 @@
         agendaHtml += `<div class="round-block"><div class="round-title">Rodada ${r}</div>`;
         byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
             const A = state.teams[g.a], B = state.teams[g.b];
-            agendaHtml += `<div class="match-row"><div class="team-left"><span class="dot" style="background:${A.color}"></span> ${A.name}</div><div class="score-badge">${g.scoreA??''} : ${g.scoreB??''}</div><div class="team-right">${B.name} <span class="dot" style="background:${B.color}"></span></div></div>`;
+            agendaHtml += `<div class="match-row"><div class="team-left"><span class="dot" style="background:${A.color}"></span> ${A.name}</div><div class="score-badge">${g.scoreA==null ? '' : g.scoreA} : ${g.scoreB==null ? '' : g.scoreB}</div><div class="team-right">${B.name} <span class="dot" style="background:${B.color}"></span></div></div>`;
         });
         agendaHtml += `</div>`;
     });
@@ -915,28 +1154,30 @@
     if (state.finals.length > 0) {
         state.finals.forEach(f => {
              const A = state.teams[f.a], B = state.teams[f.b];
-             finalsHtml += `<div class="final-row"><b>${f.label}:</b> <span style="color:${A.color}">${A.name}</span> <b>(${f.scoreA??'-'})</b> x <b>(${f.scoreB??'-'})</b> <span style="color:${B.color}">${B.name}</span></div>`;
+             finalsHtml += `<div class="final-row"><b>${f.label}:</b> <span style="color:${A.color}">${A.name}</span> <b>(${f.scoreA==null ? '-' : f.scoreA})</b> x <b>(${f.scoreB==null ? '-' : f.scoreB})</b> <span style="color:${B.color}">${B.name}</span></div>`;
         });
-    } else { finalsHtml = '<div style="color:#777; font-style:italic">Jogos finais não realizados.</div>'; }
+    } else { finalsHtml = '<div style="color:#777; font-style:italic">Jogos finais nÃ£o realizados.</div>'; }
 
     let podiumHtml = ''; const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null; const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
-    const fin = state.finals.find(x => x.label === "Final"); const thi = state.finals.find(x => x.label.includes("3º"));
+    const fin = state.finals.find(x => x.label === "Final"); const thi = state.finals.find(x => x.label.includes("3Âº"));
     const podiumList = []; const placedNames = new Set();
-    if (fin) { const champ = getW(fin), vice = getL(fin); if (champ) { podiumList.push({ t: champ, label: '1º LUGAR', css: 'gold', icon: '🏆' }); placedNames.add(champ.name); } if (vice) { podiumList.push({ t: vice, label: '2º LUGAR', css: 'silver', icon: '🥈' }); placedNames.add(vice.name); } }
-    if (thi) { const third = getW(thi); if (third) { podiumList.push({ t: third, label: '3º LUGAR', css: 'bronze', icon: '🥉' }); placedNames.add(third.name); } }
-    if (state._rankingSnapshot) { let currentRank = podiumList.length + 1; state._rankingSnapshot.forEach(r => { if (!placedNames.has(r.name)) { podiumList.push({ t: r, label: `${currentRank}º LUGAR`, css: 'normal', icon: '' }); placedNames.add(r.name); currentRank++; } }); }
-    if (podiumList.length === 0) podiumHtml = '<div style="padding:10px">Pódio indisponível.</div>';
+    if (fin) { const champ = getW(fin), vice = getL(fin); if (champ) { podiumList.push({ t: champ, label: '1Âº LUGAR', css: 'gold', icon: 'ðŸ†' }); placedNames.add(champ.name); } if (vice) { podiumList.push({ t: vice, label: '2Âº LUGAR', css: 'silver', icon: 'ðŸ¥ˆ' }); placedNames.add(vice.name); } }
+    if (thi) { const third = getW(thi); if (third) { podiumList.push({ t: third, label: '3Âº LUGAR', css: 'bronze', icon: 'ðŸ¥‰' }); placedNames.add(third.name); } }
+    if (state._rankingSnapshot) { let currentRank = podiumList.length + 1; state._rankingSnapshot.forEach(r => { if (!placedNames.has(r.name)) { podiumList.push({ t: r, label: `${currentRank}Âº LUGAR`, css: 'normal', icon: '' }); placedNames.add(r.name); currentRank++; } }); }
+    if (podiumList.length === 0) podiumHtml = '<div style="padding:10px">PÃ³dio indisponÃ­vel.</div>';
     podiumList.forEach(w => { podiumHtml += `<div class="podium-bar ${w.css}"><div class="podium-title">${w.icon} ${w.label}: ${w.t.name}</div><div class="podium-players">(${w.t.players.map(p=>p.name).join(', ')})</div></div>`; });
 
     const style = `<style>body{font-family:'Inter',sans-serif;background:${bg};color:${text};padding:20px;width:${width};margin:0 auto}h1{text-align:center;margin-bottom:20px;font-size:1.5rem}h2{font-size:1.1rem;margin:0 0 10px 0;border-bottom:1px solid ${borderColor};padding-bottom:5px}.section-card{background:${cardBg};border:1px solid ${cardBorder};border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.05);page-break-inside:avoid}.round-block{border-bottom:1px solid ${borderColor};padding-bottom:10px;margin-bottom:10px}.round-block:last-child{border-bottom:none;margin-bottom:0}.round-title{font-weight:bold;font-size:0.9rem;margin-bottom:5px;color:${dark?'#ccc':'#555'}}.match-row{display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;padding:4px 0}.score-badge{background:${dark?'#2a3242':'#e9ecef'};padding:2px 8px;border-radius:4px;font-weight:bold;font-family:monospace}.team-left{flex:1;text-align:right;padding-right:10px}.team-right{flex:1;text-align:left;padding-left:10px}.dot{height:8px;width:8px;background-color:#bbb;border-radius:50%;display:inline-block}.std-table{width:100%;border-collapse:collapse;font-size:0.85rem}.std-table th{text-align:center;background:${dark?'#252a33':'#f1f3f5'};padding:6px;font-weight:600}.std-table td{text-align:center;padding:6px;border-bottom:1px solid ${borderColor}}.std-table tr:last-child td{border-bottom:none}.podium-bar{padding:10px 15px;border-radius:6px;margin-bottom:8px;color:#000;display:flex;flex-direction:column;border:1px solid #ccc}.podium-title{font-weight:bold;font-size:1rem}.podium-players{font-size:0.85rem;margin-top:2px;opacity:0.85}.gold{background-color:#fff3cd;border:1px solid #ffeeba;color:#856404}.silver{background-color:#e2e3e5;border:1px solid #d6d8db;color:#383d41}.bronze{background-color:#f8d7da;border:1px solid #f5c6cb;color:#721c24}.normal{background-color:${dark ? '#2a3242' : '#f8f9fa'}; color:${dark ? '#fff' : '#000'}; border-color:${dark ? '#444' : '#ddd'}}.final-row{font-size:1rem;margin-bottom:5px}</style>`;
-    return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Crie seu vôlei — Relatório</h1><div class="section-card"><h2>Agenda</h2>${agendaHtml}</div><div class="section-card"><h2>Classificação das Rodadas</h2>${rankingTable}</div><div class="section-card"><h2>Finais</h2>${finalsHtml}</div><div class="section-card"><h2>Pódio Completo</h2>${podiumHtml}</div></body></html>`;
+    return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Crie seu vÃ´lei â€” RelatÃ³rio</h1><div class="section-card"><h2>Agenda</h2>${agendaHtml}</div><div class="section-card"><h2>ClassificaÃ§Ã£o das Rodadas</h2>${rankingTable}</div><div class="section-card"><h2>Finais</h2>${finalsHtml}</div><div class="section-card"><h2>PÃ³dio Completo</h2>${podiumHtml}</div></body></html>`;
   }
   el("exportFullPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'relatorio_completo.pdf',jsPDF:{unit:'mm',format:'a4'}}).from(getFullReportHtml(false)).save());
   el("exportFullJpegBtn").addEventListener("click", ()=> exportAsJpeg(getFullReportHtml(false),'relatorio_completo.jpeg',{dark:false,width:'800px'}));
 
   checkUser();
-  loadStateFromCloud();
+  loadTournamentsForCurrentUser();
+  if (selectedTournamentId) loadStateFromCloud();
 })();
 </script>
 </body>
 </html>
+

@@ -217,32 +217,58 @@ A chave publishable/anon pode aparecer no navegador, mas nunca coloque uma chave
 
 ### 3. Criar Tabelas no Banco de Dados
 
+Use o schema multi-torneio abaixo para permitir que várias pessoas criem e gerenciem seus torneios em paralelo:
+
 ```sql
--- Tabela para guardar o estado global do torneio
+-- Torneios independentes por usuário / grupo
+CREATE TABLE tournaments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  owner_email TEXT NOT NULL,
+  scorer_emails TEXT[] NOT NULL DEFAULT '{}',
+  game_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Mantém compatibilidade com o modelo antigo, caso alguma instalação ainda use app_state
 CREATE TABLE app_state (
   id INTEGER PRIMARY KEY,
   game_data JSONB NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Inserir a linha inicial que o sistema vai atualizar
-INSERT INTO app_state (id, game_data) VALUES (1, '{"ownerEmail":"responsavel@exemplo.com","scorerEmails":["operador@exemplo.com"]}'::jsonb);
-
--- RLS: espectadores podem ler; somente usuários autenticados podem gravar.
+ALTER TABLE tournaments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE app_state ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Leitura pública do estado"
+
+-- Exemplo de política mínima: leitura pública para estado compartilhado, mas a regra final deve ser reforçada
+-- com RLS por usuário/torneio quando a aplicação passar a ter autenticação de produção em escala real.
+CREATE POLICY "Leitura pública dos torneios"
+  ON tournaments FOR SELECT USING (true);
+
+CREATE POLICY "Autenticado pode gravar torneios"
+  ON tournaments FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Autenticado pode atualizar torneios"
+  ON tournaments FOR UPDATE USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+CREATE POLICY "Autenticado pode deletar torneios"
+  ON tournaments FOR DELETE USING (auth.role() = 'authenticated');
+
+CREATE POLICY "Leitura pública do estado legado"
   ON app_state FOR SELECT USING (true);
-CREATE POLICY "Admin autenticado pode gravar"
+
+CREATE POLICY "Admin autenticado pode gravar estado legado"
   ON app_state FOR ALL
   USING (auth.role() = 'authenticated')
   WITH CHECK (auth.role() = 'authenticated');
 
--- No painel do Supabase, adicione app_state à publicação supabase_realtime.
+-- No painel do Supabase, adicione tournaments e app_state à publicação supabase_realtime.
 ```
 
 Crie pelo menos um usuário em **Authentication > Users** para o login administrativo.
 O primeiro carregamento pode mostrar um aviso se a tabela, as políticas ou o Realtime
-ainda não estiverem configurados.
+estiverem incompletos.
 
 ### 4. Configuração do deploy em Netlify / Vercel
 
@@ -258,17 +284,18 @@ No Netlify ou Vercel, mantenha isso em **Environment variables**; nunca exponha 
 `service_role` ou segredo no HTML. Essa aplicação é um front-end estático e depende dos
 controles de acesso e RLS do banco para manter o ambiente seguro.
 
-### Modelo para uso geral
+### Modelo para uso geral e multi-torneios
 
-O modelo implementado no código agora segue a decisão de uso geral:
+O modelo implementado agora segue a decisão de uso geral em múltiplos torneios:
 
-- o primeiro usuário autenticado vira o **responsável da partida**;
-- ele pode adicionar outros e-mails como **operadores de placar**;
+- cada torneio possui um **responsável** e uma lista de **operadores**;
+- o primeiro usuário autenticado que cria um torneio vira seu responsável;
+- o responsável pode adicionar ou remover operadores para esse torneio;
 - operadores podem lançar e corrigir pontos, mas não assumem a gestão global da aplicação;
-- o usuário criador da aplicação continua sendo um responsável geral para manutenção e suporte, mas não precisa ser o único operador de todos os torneios;
-- a lista de responsável e operadores é preservada durante reinícios de torneio/partida, para que a administração compartilhada continue consistente mesmo quando o estado do torneio é zerado.
+- várias pessoas podem criar seus próprios torneios no mesmo app e no mesmo Supabase, sem misturar dados;
+- quando o volume de dados cresce, a estratégia recomendada é manter apenas o último torneio ativo por responsável para reduzir custo e manutenção, mas a arquitetura já foi evoluída para suportar múltiplos torneios ao mesmo tempo.
 
-Para o estado atual, essa autorização é controlada pelo JSON do `game_data`, com campos como:
+Para o estado atual, essa autorização continua sendo persistida no `game_data`, com campos como:
 
 ```json
 {
@@ -277,31 +304,20 @@ Para o estado atual, essa autorização é controlada pelo JSON do `game_data`, 
 }
 ```
 
-Esse modelo é um passo funcional para uso compartilhado, e a evolução natural é migrar para
-`transactions`/`tournaments` e `tournament_members` quando houver múltiplos torneios independentes.
-
-Exemplo de estrutura futura:
+A estrutura real de persistência foi migrada para a tabela `tournaments`, com um registro por torneio:
 
 ```sql
 CREATE TABLE tournaments (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  owner_id UUID NOT NULL REFERENCES auth.users(id),
+  owner_email TEXT NOT NULL,
+  scorer_emails TEXT[] NOT NULL DEFAULT '{}',
   game_data JSONB NOT NULL DEFAULT '{}'::jsonb,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE tournament_members (
-  tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT NOT NULL CHECK (role IN ('owner', 'scorer', 'viewer')),
-  PRIMARY KEY (tournament_id, user_id)
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 ```
 
-As políticas devem permitir `SELECT` para membros, escrita de placar para
-`owner`/`scorer` e alterações administrativas somente para `owner`. Essa migração
-deve ser feita antes de oferecer criação de torneios independentes em produção.
+Esse modelo já atende ao caso de vários usuários e vários torneios simultâneos. Se em algum momento a base crescer demais, a otimização pode ser feita mantendo apenas o torneio ativo mais recente por responsável, sem perder a capacidade de criar múltiplos torneios no mesmo sistema.
 
 ## 🤝 Contribuindo
 

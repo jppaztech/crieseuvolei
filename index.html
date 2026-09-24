@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
@@ -105,21 +105,27 @@
 <body>
 
 <header>
-  <h1>ðŸ Peladas de VÃ´lei</h1>
-  <div id="authContainer">
-    <button id="btnLoginAction" class="login-btn">Admin Login</button>
+  <h1 id="headerTitle">?? Peladas de V?lei</h1>
+  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <div class="chip" aria-label="Language selector" style="padding:4px; background:#10151d;">
+      <button id="langPtBr" class="small secondary" type="button" data-lang="pt-BR">PT-BR</button>
+      <button id="langEnUs" class="small secondary" type="button" data-lang="en-US">EN-US</button>
+    </div>
+    <div id="authContainer">
+      <button id="btnLoginAction" class="login-btn">Admin Login</button>
+    </div>
   </div>
 </header>
 <div id="cloudStatus" class="hidden" role="alert"></div>
 <div id="adminAccessBox" class="card hidden" style="margin:12px auto 0; max-width:980px;">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-    <b>PermissÃµes do torneio</b>
+    <b id="tournamentPermissionsLabel">Permiss?es do torneio</b>
     <span id="currentRoleLabel" class="mini muted"></span>
   </div>
   <div class="row" style="margin-top:10px;">
     <div class="row cols-2">
       <div>
-        <label>E-mail do operador</label>
+        <label id="scorerEmailLabel">E-mail do operador</label>
         <input id="scorerEmailInput" type="email" placeholder="operador@exemplo.com" autocomplete="off" />
       </div>
       <div style="display:flex; align-items:flex-end;">
@@ -132,12 +138,12 @@
 
 <div id="tournamentManagerBox" class="card" style="margin:12px auto 0; max-width:980px;">
   <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-    <b>Torneios</b>
+    <b id="tournamentsLabel">Torneios</b>
   </div>
   <div class="row" style="margin-top:10px;">
     <div class="row cols-2">
       <div>
-        <label>Nome do torneio</label>
+        <label id="newTournamentLabel">Nome do torneio</label>
         <input id="newTournamentNameInput" type="text" placeholder="Pelada da semana" autocomplete="off" />
       </div>
       <div style="display:flex; align-items:flex-end;">
@@ -147,6 +153,13 @@
     <div id="tournamentList" style="margin-top:8px;"></div>
   </div>
 </div>
+
+<section id="spectatorBoard" class="card" style="margin:12px auto 0; max-width:980px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+    <h2 id="spectatorTitle" style="margin:0; font-size:1.05rem;">Torneios em andamento</h2>
+  </div>
+  <div id="publicTournamentsList" style="margin-top:10px;"></div>
+</section>
 
 <main>
   <section id="setup" class="card">
@@ -275,13 +288,17 @@
 
 <div id="login-overlay" class="hidden">
     <div id="login-box">
-        <h2 style="margin-top:0">Acesso Admin</h2>
+        <h2 id="loginTitle" style="margin-top:0">Acesso Admin</h2>
         <div class="row">
             <input type="email" id="email" placeholder="Email" autocomplete="off" />
             <input type="password" id="password" placeholder="Senha" autocomplete="off" />
             <button id="doLoginBtn">Entrar</button>
+            <button id="doSignupBtn" class="secondary">Criar conta</button>
             <button id="cancelLoginBtn" class="secondary">Cancelar</button>
         </div>
+        <p id="loginMsg" class="mini muted" style="margin-top:10px"></p>
+    </div>
+</div>
         <p id="loginMsg" class="mini muted" style="margin-top:10px"></p>
     </div>
 </div>
@@ -295,6 +312,60 @@
 
   const TEAM_COLORS = ["#ef4444","#22c55e","#3b82f6","#eab308","#a855f7","#06b6d4","#f97316","#84cc16"];
 
+  const STORAGE_LANG_KEY = 'crieseuvolei:language';
+  const translations = {
+    'pt-BR': {
+      loginAdmin: 'Entrar',
+      logoutAdmin: 'Sair',
+      accessAdmin: 'Acesso Admin',
+      createAccount: 'Criar conta',
+      entering: 'Entrando...',
+      cancel: 'Cancelar',
+      createTournament: 'Criar torneio',
+      tournamentName: 'Nome do torneio',
+      tournamentListTitle: 'Torneios',
+      spectatorTitle: 'Torneios em andamento',
+      permissions: 'Permissões do torneio',
+      operatorEmail: 'E-mail do operador',
+      addOperator: 'Adicionar operador',
+      responsible: 'Responsável',
+      operator: 'Operador',
+      watchMode: 'Modo Espectador',
+      withoutLogin: 'Faça login para criar e gerenciar torneios.',
+      noTournaments: 'Nenhum torneio ainda. Crie o primeiro para começar.',
+      createAccountError: 'Não foi possível criar a conta. Verifique os dados e tente novamente.',
+      noOperator: 'Nenhum operador cadastrado. O primeiro usuário autenticado assume a função de responsável pela partida.',
+      ownerOfTournament: 'Responsável do torneio',
+      authorizedOperator: 'Operador autorizado',
+      publicTournamentsEmpty: 'Nenhum torneio público em andamento no momento.'
+    },
+    'en-US': {
+      loginAdmin: 'Log in',
+      logoutAdmin: 'Log out',
+      accessAdmin: 'Admin access',
+      createAccount: 'Create account',
+      entering: 'Signing in...',
+      cancel: 'Cancel',
+      createTournament: 'Create tournament',
+      tournamentName: 'Tournament name',
+      tournamentListTitle: 'Tournaments',
+      spectatorTitle: 'Tournaments in progress',
+      permissions: 'Tournament permissions',
+      operatorEmail: 'Operator email',
+      addOperator: 'Add operator',
+      responsible: 'Owner',
+      operator: 'Operator',
+      watchMode: 'Viewer mode',
+      withoutLogin: 'Log in to create and manage tournaments.',
+      noTournaments: 'No tournaments yet. Create the first one to begin.',
+      createAccountError: 'Could not create the account. Check the details and try again.',
+      noOperator: 'No operators registered yet. The first authenticated user becomes the tournament owner.',
+      ownerOfTournament: 'Tournament owner',
+      authorizedOperator: 'Authorized operator',
+      publicTournamentsEmpty: 'No public tournaments are currently in progress.'
+    }
+  };
+
   const baseState = () => ({
     numPlayers:0, numTeams:0, numRounds:0,
     players:[], teams:[], schedule:[],
@@ -307,7 +378,7 @@
   });
 
   let state = baseState();
-
+  let currentLanguage = localStorage.getItem(STORAGE_LANG_KEY) || 'pt-BR';
   let isAdmin = false;
   const el = id => document.getElementById(id);
   const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
@@ -340,6 +411,36 @@
   let selectedTournamentId = localStorage.getItem(STORAGE_TOURNAMENT_KEY) || null;
   let selectedTournamentMeta = null;
 
+  function setLanguage(lang) {
+    const normalized = (lang === 'en-US') ? 'en-US' : 'pt-BR';
+    currentLanguage = normalized;
+    localStorage.setItem(STORAGE_LANG_KEY, normalized);
+    document.documentElement.lang = normalized;
+
+    const t = translations[normalized];
+    if (el('headerTitle')) el('headerTitle').innerText = '🏐 Peladas de Vôlei';
+    if (el('btnLoginAction')) el('btnLoginAction').innerText = isAdmin ? t.logoutAdmin : t.loginAdmin;
+    if (el('tournamentPermissionsLabel')) el('tournamentPermissionsLabel').innerText = t.permissions;
+    if (el('scorerEmailLabel')) el('scorerEmailLabel').innerText = t.operatorEmail;
+    if (el('addScorerBtn')) el('addScorerBtn').innerText = t.addOperator;
+    if (el('tournamentsLabel')) el('tournamentsLabel').innerText = t.tournamentListTitle;
+    if (el('newTournamentLabel')) el('newTournamentLabel').innerText = t.tournamentName;
+    if (el('createTournamentBtn')) el('createTournamentBtn').innerText = t.createTournament;
+    if (el('spectatorTitle')) el('spectatorTitle').innerText = t.spectatorTitle;
+    if (el('loginTitle')) el('loginTitle').innerText = t.accessAdmin;
+    if (el('doLoginBtn')) el('doLoginBtn').innerText = t.loginAdmin;
+    if (el('doSignupBtn')) el('doSignupBtn').innerText = t.createAccount;
+    if (el('cancelLoginBtn')) el('cancelLoginBtn').innerText = t.cancel;
+
+    document.querySelectorAll('[data-lang]').forEach(button => {
+      const active = button.dataset.lang === normalized;
+      button.style.opacity = active ? '1' : '0.8';
+    });
+
+    renderTournamentManager();
+    renderPublicTournaments();
+  }
+
   function getSessionUserEmail() {
     const session = supabase.auth.getSession ? supabase.auth.getSession().data.session : null;
     const user = session && session.user ? session.user : null;
@@ -365,12 +466,12 @@
 
     const currentEmail = getSessionUserEmail();
     if (!currentEmail) {
-      container.innerHTML = '<div class="status">FaÃ§a login para criar e gerenciar torneios.</div>';
+      container.innerHTML = '<div class="status">' + translations[currentLanguage].withoutLogin + '</div>';
       return;
     }
 
     if (!tournamentList.length) {
-      container.innerHTML = '<div class="status">Nenhum torneio ainda. Crie o primeiro para comeÃ§ar.</div>';
+      container.innerHTML = '<div class="status">' + translations[currentLanguage].noTournaments + '</div>';
       return;
     }
 
@@ -380,11 +481,46 @@
       return `
         <div class="access-chip" ${selected}>
           <button class="small secondary" data-select-tournament="${tournament.id}">${tournament.name}</button>
-          <span class="mini muted">${owner === currentEmail ? 'ResponsÃ¡vel' : 'Operador'}</span>
+          <span class="mini muted">${owner === currentEmail ? translations[currentLanguage].responsible : translations[currentLanguage].operator}</span>
           ${owner === currentEmail ? `<button class="small danger" data-delete-tournament="${tournament.id}">Excluir</button>` : ''}
         </div>
       `;
     }).join('');
+  }
+
+  async function renderPublicTournaments() {
+    const list = el('publicTournamentsList');
+    if (!list) return;
+
+    try {
+      const { data, error } = await supabase.from('tournaments').select('*').order('updated_at', { ascending: false }).limit(12);
+      if (error) {
+        list.innerHTML = '<div class="status">' + (error.message || 'Não foi possível carregar os torneios.') + '</div>';
+        return;
+      }
+      const rows = data || [];
+      if (!rows.length) {
+        list.innerHTML = '<div class="status">' + translations[currentLanguage].publicTournamentsEmpty + '</div>';
+        return;
+      }
+      list.innerHTML = rows.map(tournament => {
+        const gameData = tournament.game_data || {};
+        const summary = Array.isArray(gameData.schedule) && gameData.schedule.length ? `${gameData.schedule.length} partidas` : 'Cadastro inicial';
+        const status = gameData.uiSection === 'matches' ? 'Ao vivo' : (gameData.uiSection === 'finals' ? 'Finais' : 'Gestão');
+        return `
+          <div class="access-chip" style="display:block; width:100%; margin:8px 0; padding:10px 12px;">
+            <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap;">
+              <strong>${tournament.name || 'Torneio'}</strong>
+              <span class="mini muted">${status}</span>
+            </div>
+            <div class="mini muted">${summary}</div>
+            <div class="mini muted">Responsável: ${tournament.owner_email || 'N/D'}</div>
+          </div>
+        `;
+      }).join('');
+    } catch (err) {
+      list.innerHTML = '<div class="status">Erro ao carregar os torneios públicos.</div>';
+    }
   }
 
   function renderAdminAccessList() {
@@ -395,14 +531,14 @@
     const entries = [];
 
     if (ownerEmail) {
-      entries.push({ type: 'owner', email: ownerEmail, role: 'ResponsÃ¡vel' });
+      entries.push({ type: 'owner', email: ownerEmail, role: translations[currentLanguage].responsible });
     }
     scorerEmails.forEach(email => {
-      if (email && email !== ownerEmail) entries.push({ type: 'scorer', email, role: 'Operador' });
+      if (email && email !== ownerEmail) entries.push({ type: 'scorer', email, role: translations[currentLanguage].operator });
     });
 
     if (!entries.length) {
-      list.innerHTML = '<div class="status">Nenhum operador cadastrado. O primeiro usuÃ¡rio autenticado assume a funÃ§Ã£o de responsÃ¡vel pela partida.</div>';
+      list.innerHTML = '<div class="status">' + translations[currentLanguage].noOperator + '</div>';
       return;
     }
 
@@ -424,7 +560,7 @@
       box.classList.remove('hidden');
       const owner = normalizeEmail(state.ownerEmail);
       const me = getSessionUserEmail();
-      const role = owner && me && owner === me ? 'ResponsÃ¡vel do torneio' : 'Operador autorizado';
+      const role = owner && me && owner === me ? translations[currentLanguage].ownerOfTournament : translations[currentLanguage].authorizedOperator;
       roleLabel.innerText = role;
     } else {
       box.classList.add('hidden');
@@ -458,7 +594,11 @@
     return currentEmail === ownerEmail || scorerEmails.includes(currentEmail);
   }
 
-  // --- AUTENTICAÃ‡ÃƒO ---
+  // --- AUTENTICAÇÃO ---
+  document.querySelectorAll('[data-lang]').forEach(button => {
+    button.addEventListener('click', () => setLanguage(button.dataset.lang));
+  });
+
   el("btnLoginAction").addEventListener("click", () => {
     if(isAdmin) {
         supabase.auth.signOut().then(() => { checkUser(); });
@@ -471,13 +611,33 @@
   el("doLoginBtn").addEventListener("click", async () => {
     const email = el("email").value;
     const password = el("password").value;
-    el("loginMsg").innerText = "Entrando...";
+    el("loginMsg").innerText = translations[currentLanguage].entering;
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
         el("loginMsg").innerText = "Erro: " + error.message;
     } else {
         el("login-overlay").classList.add("hidden");
         checkUser();
+    }
+  });
+
+  el("doSignupBtn").addEventListener("click", async () => {
+    const email = el("email").value;
+    const password = el("password").value;
+    if (!email || !password || password.length < 6) {
+      el("loginMsg").innerText = translations[currentLanguage].createAccountError;
+      return;
+    }
+    el("loginMsg").innerText = translations[currentLanguage].entering;
+    const { data, error } = await supabase.auth.signUp({ email, password });
+    if (error) {
+      el("loginMsg").innerText = "Erro: " + error.message;
+    } else {
+      el("loginMsg").innerText = 'Conta criada. Verifique seu e-mail e depois faça login.';
+      setTimeout(() => {
+        el("login-overlay").classList.add("hidden");
+        el("loginMsg").innerText = '';
+      }, 1800);
     }
   });
 
@@ -585,14 +745,14 @@
     isAdmin = isAuthorizedAdmin(user);
     if (isAdmin) {
         document.body.classList.add('is-admin');
-        el("btnLoginAction").innerText = "Sair (Admin)";
+        el("btnLoginAction").innerText = translations[currentLanguage].logoutAdmin;
         el("btnLoginAction").classList.add("logout-btn");
-        el("readOnlyMsg").classList.add("hidden");
+        if (el("readOnlyMsg")) el("readOnlyMsg").classList.add("hidden");
     } else {
         document.body.classList.remove('is-admin');
-        el("btnLoginAction").innerText = "Admin Login";
+        el("btnLoginAction").innerText = translations[currentLanguage].loginAdmin;
         el("btnLoginAction").classList.remove("logout-btn");
-        el("readOnlyMsg").classList.remove("hidden");
+        if (el("readOnlyMsg")) el("readOnlyMsg").classList.remove("hidden");
     }
 
     if (user && !state.ownerEmail) {
@@ -605,6 +765,7 @@
 
     updateAdminStatus();
     renderTournamentManager();
+    renderPublicTournaments();
   }
 
   async function loadTournamentsForCurrentUser() {
@@ -669,6 +830,7 @@
     }
 
     renderTournamentManager();
+    renderPublicTournaments();
   }
 
   // --- SINCRONIZAÃ‡ÃƒO (REALTIME) ---
@@ -1105,7 +1267,10 @@
      const style = `<style>body{font-family:sans-serif;background:${bg};color:${txtColor};padding:20px}h1{text-align:center}.team-box{border:1px dashed #555;padding:10px;margin-bottom:10px;page-break-inside:avoid;border-radius:8px}ul{margin:5px 0 0;padding-left:20px; color:${isDark?'#9aa4b2':'#444'}}</style>`;
      let html = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>EscalaÃ§Ã£o dos Times</h1>`;
      state.teams.forEach(t => { html += `<div class="team-box"><span style="${nameStyle(t.color)}">${t.name}</span> <strong style="font-size:0.9rem">(${t.players.reduce((a,b)=>a+b.skill,0)}â­)</strong><ul>${t.players.map(p=>`<li>${p.name} (${p.skill}â­)</li>`).join('')}</ul></div>`; });
-     return html + `</body></html>`;
+     return html + `<footer style="padding:18px 16px 28px; color:#8aa0b7; text-align:center; font-size:0.82rem; border-top:1px solid #1b2230; margin-top:20px;">
+  ? 2026 Jo?o Paz. CrieSeuVolei. Todos os direitos reservados.
+</footer>
+</body></html>`;
   }
   el("exportTeamsPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'times.pdf',jsPDF:{format:'a4'}}).from(getTeamsExportHtml(false)).save());
   el("exportTeamsJpegBtn").addEventListener("click", ()=> exportAsJpeg(getTeamsExportHtml(true),'times.jpeg',{dark:true,width:'500px'}));
@@ -1173,8 +1338,10 @@
   el("exportFullPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'relatorio_completo.pdf',jsPDF:{unit:'mm',format:'a4'}}).from(getFullReportHtml(false)).save());
   el("exportFullJpegBtn").addEventListener("click", ()=> exportAsJpeg(getFullReportHtml(false),'relatorio_completo.jpeg',{dark:false,width:'800px'}));
 
+  setLanguage(currentLanguage);
   checkUser();
   loadTournamentsForCurrentUser();
+  renderPublicTournaments();
   if (selectedTournamentId) loadStateFromCloud();
 })();
 </script>

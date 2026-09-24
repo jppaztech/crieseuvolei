@@ -1,1437 +1,979 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>ðŸ Peladas de VÃ´lei - Ao Vivo</title>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.3/html2pdf.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CrieSeuVôlei — organize torneios, partidas e placares de vôlei com design moderno e uso público." />
+  <title>CrieSeuVôlei</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #07111d;
+      --bg-2: #0d1726;
+      --panel: rgba(14, 25, 39, 0.9);
+      --panel-soft: rgba(18, 29, 44, 0.86);
+      --line: rgba(148, 163, 184, 0.18);
+      --text: #edf4ff;
+      --muted: #9fb1c6;
+      --primary: #34d399;
+      --primary-2: #22c55e;
+      --accent: #7dd3fc;
+      --warning: #fbbf24;
+      --danger: #f87171;
+      --purple: #a78bfa;
+      --shadow: 0 20px 55px rgba(2, 6, 23, 0.54);
+      --radius: 24px;
+      --max-width: 1200px;
+      --header-h: 88px;
+    }
 
-<style>
-  :root{
-    --bg:#0f1115; --card:#171a21; --muted:#9aa4b2; --text:#eef2f6; --accent:#22c55e;
-    --danger:#ef4444; --warn:#f59e0b; --ring:#2a3242; --gap:14px; --radius:14px;
-    --small:0.9rem;
-  }
-  *{box-sizing:border-box}
-  body{margin:0;font-family:'Inter', system-ui,-apple-system,sans-serif;
-      background:var(--bg);color:var(--text);line-height:1.35}
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top left, rgba(34, 197, 94, 0.18), transparent 18%),
+        radial-gradient(circle at top right, rgba(125, 211, 252, 0.16), transparent 15%),
+        linear-gradient(180deg, #050d18 0%, #0b1320 100%);
+      color: var(--text);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      line-height: 1.5;
+      letter-spacing: -0.01em;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
 
-  /* Layout BÃ¡sico */
-  header{padding:14px 16px;border-bottom:1px solid #1f2430;background:#0c0e13;position:sticky;top:0;z-index:10; display:flex; justify-content:space-between; align-items:center;}
-  h1{margin:0;font-size:1.15rem}
-  main{padding:12px;display:grid;gap:var(--gap);max-width:980px;margin:0 auto}
-  .card{background:var(--card);border:1px solid #2a3242;border-radius:var(--radius);padding:12px}
+    img { max-width: 100%; display: block; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
 
-  /* Inputs e BotÃµes */
-  .row{display:grid;gap:8px}
-  .row.cols-2{grid-template-columns:1fr 1fr}
-  .row.cols-3{grid-template-columns:1fr 1fr 1fr}
-  @media (max-width:720px){ .row.cols-2, .row.cols-3{grid-template-columns:1fr} }
+    .container { width: min(var(--max-width), calc(100% - 32px)); margin: 0 auto; }
 
-  label{font-size:var(--small);color:var(--muted)}
+    .topbar {
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(5, 13, 24, 0.72); backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--line);
+    }
+    .topbar-inner {
+      height: var(--header-h); display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 800; font-size: 1.15rem; letter-spacing: -0.04em; }
+    .brand-mark {
+      width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%;
+      background: linear-gradient(135deg, #c084fc, #4ade80); box-shadow: 0 8px 24px rgba(167, 139, 250, 0.55); font-size: 1rem;
+    }
+    .top-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .lang-switch { display: inline-flex; align-items: center; gap: 6px; padding: 6px; border-radius: 999px; border: 1px solid var(--line); background: rgba(15, 23, 42, 0.7); }
+    .lang-btn {
+      border: 0; background: transparent; color: var(--muted); padding: 8px 12px; border-radius: 999px; cursor: pointer;
+      transition: 0.2s ease; font-weight: 600;
+    }
+    .lang-btn.active { color: var(--text); background: rgba(148, 163, 184, 0.12); }
+    .btn {
+      border: 0; border-radius: 14px; cursor: pointer; padding: 0.9rem 1.15rem; font-weight: 700; transition: transform 0.18s ease, opacity 0.18s ease, box-shadow 0.18s ease; color: var(--text);
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #04130d; box-shadow: 0 16px 28px rgba(52, 211, 153, 0.25); }
+    .btn-secondary { background: rgba(15, 23, 42, 0.8); border: 1px solid var(--line); color: var(--text); }
+    .btn-warning { background: linear-gradient(135deg, #fbbf24, #f59e0b); color: #201600; }
+    .btn-danger { background: linear-gradient(135deg, #f87171, #ef4444); color: white; }
 
-  input, select{width:100%;padding:10px;background:#0e121a;border:1px solid #293042;border-radius:10px;color:var(--text);font-size:1rem}
-  input[type="number"]{text-align:center}
+    .main { padding: 28px 0 64px; }
+    .hero { margin-top: 20px; display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 28px; align-items: center; padding: 30px 0 8px; }
+    .hero-copy { display: grid; gap: 18px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
+      background: rgba(125, 211, 252, 0.1); border: 1px solid rgba(125, 211, 252, 0.18); color: var(--accent);
+      font-weight: 700; width: fit-content; font-size: 0.82rem; letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    h1 { margin: 0; font-size: clamp(2.2rem, 4vw, 4rem); line-height: 0.98; letter-spacing: -0.06em; }
+    .lead { margin: 0; color: var(--muted); font-size: 1.08rem; max-width: 60ch; }
+    .hero-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 14px; margin-top: 4px; }
+    .hero-card { background: linear-gradient(180deg, rgba(15, 23, 42, 0.96), rgba(15, 23, 42, 0.82)); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; position: relative; }
+    .hero-image {
+      position: relative; min-height: 420px; background:
+        linear-gradient(180deg, rgba(6, 12, 22, 0.18), rgba(6, 12, 22, 0.7)),
+        url('https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=1200&q=80') center/cover no-repeat;
+      border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden;
+    }
+    .hero-badge {
+      position: absolute; bottom: 20px; left: 20px; right: 20px; display: flex; justify-content: space-between; gap: 12px; align-items: end;
+      background: rgba(5, 13, 24, 0.7); border: 1px solid rgba(148, 163, 184, 0.18); border-radius: 18px; padding: 14px 16px; backdrop-filter: blur(10px);
+    }
+    .mini-label { display: block; color: var(--muted); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+    .big-stat { font-size: clamp(1.35rem, 2vw, 2.2rem); font-weight: 800; letter-spacing: -0.06em; }
 
-  /* CORREÃ‡ÃƒO DA COR DE AUTOFILL E PLACEHOLDER (Rodadas) */
-  input:-webkit-autofill,
-  input:-webkit-autofill:hover,
-  input:-webkit-autofill:focus,
-  input:-webkit-autofill:active {
-      -webkit-box-shadow: 0 0 0 30px #0e121a inset !important;
-      -webkit-text-fill-color: var(--text) !important;
-      transition: background-color 5000s ease-in-out 0s;
-  }
-  /* Garante que o placeholder seja cinza escuro/muted */
-  input::placeholder,
-  input::-webkit-input-placeholder,
-  input::-moz-placeholder {
-      color: #475569 !important;
-      opacity: 1 !important;
-  }
+    .panel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 30px; }
+    .panel { background: rgba(15, 23, 42, 0.72); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 24px; }
+    .panel-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+    .panel-title { margin: 0; font-size: clamp(1.2rem, 2vw, 1.7rem); letter-spacing: -0.04em; }
+    .tournament-form { display: grid; grid-template-columns: 1fr auto; gap: 12px; align-items: end; }
+    .field { display: grid; gap: 8px; }
+    .field label { color: var(--muted); font-weight: 600; font-size: 0.9rem; }
+    .input, .select { width: 100%; background: rgba(11, 17, 27, 0.94); border: 1px solid var(--line); border-radius: 14px; color: var(--text); padding: 0.9rem 1rem; font-size: 1rem; outline: none; transition: border-color 0.2s ease, box-shadow 0.2s ease; }
+    .input:focus, .select:focus { border-color: rgba(52, 211, 153, 0.75); box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.14); }
+    .tournament-list { margin-top: 16px; display: grid; gap: 10px; }
+    .tournament-item, .public-item { border: 1px solid var(--line); border-radius: 16px; background: rgba(11, 17, 27, 0.82); padding: 14px 16px; }
+    .tournament-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .tournament-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .status-pill { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; padding: 7px 10px; font-size: 0.76rem; background: rgba(52, 211, 153, 0.12); color: #bbf7d0; border: 1px solid rgba(52, 211, 153, 0.2); }
+    .muted { color: var(--muted); }
+    .app-shell { margin-top: 28px; display: grid; gap: 24px; }
+    .active-tournament-banner {
+      display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap;
+      background: linear-gradient(135deg, rgba(14, 25, 39, 0.95), rgba(15, 23, 42, 0.8)); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px 22px;
+    }
+    .tournament-name { font-size: clamp(1.3rem, 2vw, 2rem); font-weight: 800; letter-spacing: -0.05em; }
+    .action-row { display: flex; gap: 10px; flex-wrap: wrap; }
+    .manager-grid { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 24px; }
+    .card { background: rgba(15, 23, 42, 0.74); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); padding: 22px 20px; }
+    .section-title { margin: 0 0 18px; font-size: 1.3rem; letter-spacing: -0.04em; }
+    .two-col { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    .stat-box { background: rgba(11, 17, 27, 0.9); border: 1px solid var(--line); border-radius: 16px; padding: 14px 16px; }
+    .stat-box label { color: var(--muted); display: block; margin-bottom: 6px; font-size: 0.8rem; }
+    .stat-box strong { font-size: 1.8rem; letter-spacing: -0.06em; }
+    .setup-controls { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 18px; }
+    .list-stack { display: grid; gap: 10px; margin-top: 10px; }
+    .tag { display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px; border: 1px solid var(--line); background: rgba(11, 17, 27, 0.95); }
+    .tag small { color: var(--muted); }
+    .empty {
+      display: grid; place-items: center; min-height: 120px; border-radius: 18px; border: 1px dashed var(--line); color: var(--muted); background: rgba(11, 17, 27, 0.25); text-align: center; padding: 18px;
+    }
+    .hidden { display: none !important; }
+    .modal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.72); backdrop-filter: blur(5px); display: grid; place-items: center; z-index: 200; padding: 16px; }
+    .modal-card { width: min(440px, 100%); border-radius: 24px; background: rgba(15, 23, 42, 0.96); border: 1px solid var(--line); padding: 22px 20px; box-shadow: var(--shadow); }
+    .modal-card h3 { margin-top: 0; margin-bottom: 16px; font-size: clamp(1.4rem, 2vw, 2rem); letter-spacing: -0.05em; }
+    .modal-form { display: grid; gap: 12px; }
+    .search-box { margin-top: 12px; }
+    .public-grid { display: grid; gap: 12px; margin-top: 14px; }
+    .public-item { display: grid; gap: 6px; }
+    .public-meta { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 0.85rem; }
+    .scoreboard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-top: 18px; }
+    .team-score { border: 1px solid var(--line); border-radius: 18px; padding: 16px; background: rgba(11, 17, 27, 0.9); display: grid; gap: 12px; }
+    .team-score-header { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .score-value { font-size: clamp(2.4rem, 4vw, 3.3rem); font-weight: 800; letter-spacing: -0.08em; text-align: center; color: var(--text); }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tiny { font-size: 0.8rem; }
 
-  button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#08140c;font-weight:700;font-size:1rem;cursor:pointer; transition: opacity 0.2s;}
-  button:hover{opacity:0.9;}
-  button:disabled{background:#2b3344;color:#9aa4b2;cursor:not-allowed;}
-  button.small{padding:6px 10px;font-size:.85rem;width:auto}
-  button.secondary{background:#2b3344;color:#d9e1ea}
-  button.warn{background:var(--warn);color:#201600}
-  button.danger{background:var(--danger);color:#fff}
-
-  /* Elementos Visuais */
-  .team-block{border:1px dashed #2a3346;border-radius:12px;padding:10px}
-  .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#0d1118;border:1px solid #283244}
-  .dot{width:12px;height:12px;border-radius:50%}
-  .kbd{font-family:monospace;background:#0b0e14;border:1px solid #293042;padding:2px 6px;border-radius:6px;color:#fff}
-  .status{padding:10px 12px;border:1px solid #2a3242;border-radius:10px;background:#10141c;color:#dbe5f2}
-  .status.good{border-color:#1f6e3b;background:#0f1a13}
-  .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-  .muted{color:var(--muted)}
-  .hidden{display:none !important}
-
-  /* Tabelas e Scores */
-  table{width:100%;border-collapse:collapse;font-size:0.95rem}
-  th,td{padding:8px;border-bottom:1px solid #16202a;text-align:left}
-  th{color:var(--muted);font-weight:700}
-  .right{text-align:right}
-  .score-grid{display:grid;grid-template-columns:1fr 140px 1fr;gap:8px;align-items:end}
-  .score-grid .vs{justify-self:center;color:var(--muted)}
-  .score-input-group{display:flex;align-items:center;gap:4px}
-  .score-input-group button{width:36px;padding:10px 0;font-size:1.1rem;border-radius:0}
-  .score-input-group button:first-of-type{border-radius:10px 0 0 10px}
-  .score-input-group button:last-of-type{border-radius:0 10px 10px 0}
-
-  /* Agenda */
-  .agenda-game{border-bottom: 1px solid #2a3242; padding-bottom: 8px; margin-bottom: 8px;}
-  .agenda-game:last-child{border-bottom:0;}
-  .game-editor{margin-top:8px;padding-top:8px;border-top:1px dashed #2a3346;display:grid;grid-template-columns:1fr 1fr 80px;gap:8px}
-
-  /* Overlay de ExportaÃ§Ã£o e Login */
-  #export-overlay, #login-overlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);color:white;display:flex;justify-content:center;align-items:center;z-index:9999;}
-  #login-box {background:var(--card); padding:20px; border-radius:12px; width:90%; max-width:350px; border:1px solid #2a3242; text-align:center;}
-
-  /* Classes para controle de Admin */
-  body:not(.is-admin) .admin-only { display: none !important; }
-  .login-btn { background:transparent; border:1px solid #2a3242; color:#fff; padding:6px 12px; width:auto; font-size:0.8rem; }
-  .logout-btn { background:var(--danger); font-size:0.8rem; width:auto; padding:6px 12px; }
-  #cloudStatus{position:fixed;right:12px;bottom:12px;max-width:360px;padding:10px 12px;border:1px solid #7f1d1d;border-radius:10px;background:#450a0a;color:#fecaca;z-index:10000;font-size:.85rem;}
-  .access-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#0d1118;border:1px solid #283244;margin:4px 4px 0 0;}
-  .access-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
-</style>
+    @media (max-width: 920px) {
+      .hero, .panel-grid, .manager-grid { grid-template-columns: 1fr; }
+      .two-col { grid-template-columns: 1fr; }
+      .tournament-form { grid-template-columns: 1fr; }
+      .setup-controls { grid-template-columns: 1fr; }
+      .scoreboard { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-
-<header>
-  <h1 id="headerTitle">?? Peladas de V?lei</h1>
-  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-    <div class="chip" aria-label="Language selector" style="padding:4px; background:#10151d;">
-      <button id="langPtBr" class="small secondary" type="button" data-lang="pt-BR">PT-BR</button>
-      <button id="langEnUs" class="small secondary" type="button" data-lang="en-US">EN-US</button>
-    </div>
-    <div id="authContainer">
-      <button id="btnLoginAction" class="login-btn">Admin Login</button>
-    </div>
-  </div>
-</header>
-<div id="cloudStatus" class="hidden" role="alert"></div>
-<div id="adminAccessBox" class="card hidden" style="margin:12px auto 0; max-width:980px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-    <b id="tournamentPermissionsLabel">Permiss?es do torneio</b>
-    <span id="currentRoleLabel" class="mini muted"></span>
-  </div>
-  <div class="row" style="margin-top:10px;">
-    <div class="row cols-2">
-      <div>
-        <label id="scorerEmailLabel">E-mail do operador</label>
-        <input id="scorerEmailInput" type="email" placeholder="operador@exemplo.com" autocomplete="off" />
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <div class="brand" aria-label="CrieSeuVôlei">
+        <span class="brand-mark">🏐</span>
+        <span>Peladas de Vôlei</span>
       </div>
-      <div style="display:flex; align-items:flex-end;">
-        <button id="addScorerBtn" class="secondary">Adicionar operador</button>
-      </div>
-    </div>
-    <div class="row cols-2" style="margin-top:8px;">
-      <div>
-        <label id="inviteEmailLabel">E-mail do co-criador</label>
-        <input id="inviteEmailInput" type="email" placeholder="co-criador@exemplo.com" autocomplete="off" />
-      </div>
-      <div style="display:flex; align-items:flex-end;">
-        <button id="addInviteBtn" class="secondary">Convidar co-criador</button>
-      </div>
-    </div>
-    <div id="adminAccessList" style="margin-top:8px;"></div>
-    <div id="inviteList" style="margin-top:8px;"></div>
-  </div>
-</div>
 
-<div id="tournamentManagerBox" class="card" style="margin:12px auto 0; max-width:980px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-    <b id="tournamentsLabel">Torneios</b>
-  </div>
-  <div class="row" style="margin-top:10px;">
-    <div class="row cols-2">
-      <div>
-        <label id="newTournamentLabel">Nome do torneio</label>
-        <input id="newTournamentNameInput" type="text" placeholder="Pelada da semana" autocomplete="off" />
-      </div>
-      <div style="display:flex; align-items:flex-end;">
-        <button id="createTournamentBtn" class="secondary">Criar torneio</button>
-      </div>
-    </div>
-    <div id="tournamentList" style="margin-top:8px;"></div>
-  </div>
-</div>
-
-<section id="spectatorBoard" class="card" style="margin:12px auto 0; max-width:980px;">
-  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
-    <h2 id="spectatorTitle" style="margin:0; font-size:1.05rem;">Torneios em andamento</h2>
-  </div>
-  <div id="publicTournamentsList" style="margin-top:10px;"></div>
-</section>
-
-<main>
-  <section id="setup" class="card">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-        <h2>1) Cadastro</h2>
-        <span class="mini muted admin-only" style="display:block">Modo EdiÃ§Ã£o</span>
-        <span class="mini muted" id="readOnlyMsg">Modo Espectador (Aguardando Admin)</span>
-    </div>
-
-    <div id="stepParams">
-      <div class="row cols-3">
-        <div><label>Jogadores</label><input id="numPlayers" type="number" min="2" placeholder="12" autocomplete="off" /></div>
-        <div><label>Times</label><input id="numTeams" type="number" min="3" placeholder="4" autocomplete="off" /></div>
-        <div><label>Rodadas</label><input id="numRounds" type="number" min="1" placeholder="4" autocomplete="off" /></div>
-      </div>
-      <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
-        <button id="resetParamsBtn" class="warn">Limpar</button>
-        <button id="toPlayersBtn">PrÃ³ximo</button>
-      </div>
-    </div>
-
-    <div id="stepPlayers" class="hidden">
-      <div class="flex" style="justify-content:space-between"><b>Jogadores</b></div>
-      <div id="playersForm" class="row cols-2" style="margin-top:8px"></div>
-      <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
-        <button id="resetPlayersBtn" class="warn">Reset</button>
-        <button id="backToParamsBtn" class="secondary">Voltar</button>
-        <button id="toTeamsBtn">PrÃ³ximo</button>
-      </div>
-    </div>
-
-    <div id="stepTeams" class="hidden">
-      <div class="flex" style="justify-content:space-between"><b>Times</b></div>
-      <div id="teamsForm" class="row cols-2" style="margin-top:8px"></div>
-       <div class="row admin-only" style="margin-top:14px; display:grid; grid-auto-flow:column; gap:8px;">
-        <button id="resetTeamsBtn" class="warn">Reset</button>
-        <button id="backToPlayersBtn" class="secondary">Voltar</button>
-        <button id="toPreviewBtn">PrÃ³ximo</button>
-      </div>
-    </div>
-
-    <div id="stepTeamPreview" class="hidden">
-      <div class="flex" style="justify-content:space-between"><b>Times Sorteados</b></div>
-      <div id="previewBox" style="margin-top:8px"><div id="previewContent" class="row"></div></div>
-      <div class="row" style="margin-top:12px; display:grid; grid-template-columns: 1fr 1fr 2fr; gap:8px;">
-        <button id="exportTeamsJpegBtn" class="secondary">JPEG</button>
-        <button id="exportTeamsPdfBtn" class="secondary">PDF</button>
-        <button id="startMatchesBtn" class="admin-only">Iniciar Jogos</button>
-      </div>
-      <div class="row admin-only" style="margin-top:8px"><button id="backToTeamsFromPreviewBtn" class="secondary">Voltar</button></div>
-    </div>
-  </section>
-
-  <section id="matches" class="card hidden">
-    <h2>2) Rodadas (Ao Vivo)</h2>
-    <div id="roundInfo" class="status">Carregando...</div>
-
-    <div id="currentMatch" class="card" style="margin:12px 0"></div>
-
-    <div class="card" style="margin-bottom:12px">
-      <b>ClassificaÃ§Ã£o</b>
-      <div style="margin-top:8px;overflow:auto">
-
-<table id="standingsTable">
-  <thead>
-    <tr>
-      <th>Time</th>
-      <th class="right" title="Jogos">J</th>
-      <th class="right" title="VitÃ³rias">V</th>
-      <th class="right" title="Pontos PrÃ³">PF</th>
-      <th class="right" title="Pontos Sofridos">PS</th>
-      <th class="right" title="Saldo">Saldo</th>
-      <th class="right">%</th>
-    </tr>
-  </thead>
-  <tbody></tbody>
-</table>
-
-      </div>
-    </div>
-
-    <div class="row admin-only" style="margin-bottom:12px; display:grid; grid-auto-flow:column; gap:8px;">
-        <button id="saveOnlyBtn">Salvar Placar</button>
-        <button id="nextMatchBtn" class="secondary" disabled>PrÃ³xima Partida</button>
-    </div>
-
-    <div style="display: flex; align-items: flex-start; gap: 16px;">
-        <details style="flex-grow: 1;">
-          <summary>Agenda Completa</summary>
-          <div id="agenda" style="margin-top:8px"></div>
-        </details>
-        <div style="display: flex; flex-direction: column; gap: 4px; flex-shrink:0;">
-            <button id="exportAgendaJpegBtn" class="small secondary">JPEG</button>
-            <button id="exportAgendaPdfBtn" class="small secondary">PDF</button>
+      <div class="top-actions">
+        <div class="lang-switch" aria-label="Seletor de idioma">
+          <button class="lang-btn active" data-lang="pt-BR" type="button">PT-BR</button>
+          <button class="lang-btn" data-lang="en-US" type="button">EN-US</button>
         </div>
+        <button id="openAuth" class="btn btn-secondary" type="button">Entrar</button>
+      </div>
     </div>
+  </header>
 
-    <div class="row admin-only" style="margin-top:12px; display:grid; grid-auto-flow:column; gap:8px;">
-        <button id="backToPreviewBtn" class="secondary">Voltar Setup</button>
-        <button id="goToHomeBtn" class="warn">Resetar Tudo</button>
-    </div>
-  </section>
-
-  <section id="finals" class="card hidden">
-    <h2>3) Finais</h2>
-    <div id="finalsMatch" style="margin-top:8px"></div>
-    <div class="row admin-only" style="margin-top:12px; display:grid; grid-auto-flow:column; gap:8px;">
-        <button id="backToMatchesBtn" class="secondary">Voltar</button>
-        <button id="saveFinalBtn">Salvar âžœ PrÃ³xima</button>
-    </div>
-  </section>
-
-  <section id="podium" class="card hidden">
-    <h2>4) PÃ³dio</h2>
-    <div id="podiumBox" class="podium"></div>
-    <div class="row" style="margin-top:10px; display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
-        <button id="exportFullJpegBtn" class="secondary">RelatÃ³rio (JPEG)</button>
-        <button id="exportFullPdfBtn" class="secondary">RelatÃ³rio (PDF)</button>
-    </div>
-    <div class="row admin-only" style="margin-top:8px">
-        <button id="newTournamentBtn" class="warn">Novo Torneio</button>
-    </div>
-    <div class="row admin-only" style="margin-top:12px"><button id="backToFinalsBtn" class="secondary">Voltar</button></div>
-  </section>
-</main>
-
-<div id="login-overlay" class="hidden">
-    <div id="login-box">
-        <h2 id="loginTitle" style="margin-top:0">Acesso Admin</h2>
-        <div class="row">
-            <input type="email" id="email" placeholder="Email" autocomplete="off" />
-            <input type="password" id="password" placeholder="Senha" autocomplete="off" />
-            <button id="doLoginBtn">Entrar</button>
-            <button id="doSignupBtn" class="secondary">Criar conta</button>
-            <button id="cancelLoginBtn" class="secondary">Cancelar</button>
-        </div>
-        <p id="loginMsg" class="mini muted" style="margin-top:10px"></p>
-    </div>
-</div>
-        <p id="loginMsg" class="mini muted" style="margin-top:10px"></p>
-    </div>
-</div>
-
-<script>
-(function(){
-  // --- CONFIGURAÃ‡ÃƒO SUPABASE ---
-  const SUPABASE_URL = 'https://cymkeazbvhxtstaxaqdc.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_Nd_pwhW8NPXYTPqMMgycCA_XcKAZCDA';
-  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-  const TEAM_COLORS = ["#ef4444","#22c55e","#3b82f6","#eab308","#a855f7","#06b6d4","#f97316","#84cc16"];
-
-  const STORAGE_LANG_KEY = 'crieseuvolei:language';
-  const translations = {
-    'pt-BR': {
-      loginAdmin: 'Entrar',
-      logoutAdmin: 'Sair',
-      accessAdmin: 'Acesso Admin',
-      createAccount: 'Criar conta',
-      entering: 'Entrando...',
-      cancel: 'Cancelar',
-      createTournament: 'Criar torneio',
-      tournamentName: 'Nome do torneio',
-      tournamentListTitle: 'Torneios',
-      spectatorTitle: 'Torneios em andamento',
-      permissions: 'Permissões do torneio',
-      operatorEmail: 'E-mail do operador',
-      inviteEmail: 'E-mail do co-criador',
-      addOperator: 'Adicionar operador',
-      addInvite: 'Convidar co-criador',
-      responsible: 'Responsável',
-      operator: 'Operador',
-      guest: 'Convidado',
-      watchMode: 'Modo Espectador',
-      withoutLogin: 'Faça login para criar e gerenciar torneios.',
-      noTournaments: 'Nenhum torneio ainda. Crie o primeiro para começar.',
-      createAccountError: 'Não foi possível criar a conta. Verifique os dados e tente novamente.',
-      noOperator: 'Nenhum operador cadastrado. O primeiro usuário autenticado assume a função de responsável pela partida.',
-      ownerOfTournament: 'Responsável do torneio',
-      authorizedOperator: 'Operador autorizado',
-      publicTournamentsEmpty: 'Nenhum torneio público em andamento no momento.'
-    },
-    'en-US': {
-      loginAdmin: 'Log in',
-      logoutAdmin: 'Log out',
-      accessAdmin: 'Admin access',
-      createAccount: 'Create account',
-      entering: 'Signing in...',
-      cancel: 'Cancel',
-      createTournament: 'Create tournament',
-      tournamentName: 'Tournament name',
-      tournamentListTitle: 'Tournaments',
-      spectatorTitle: 'Tournaments in progress',
-      permissions: 'Tournament permissions',
-      operatorEmail: 'Operator email',
-      inviteEmail: 'Co-creator email',
-      addOperator: 'Add operator',
-      addInvite: 'Invite co-creator',
-      responsible: 'Owner',
-      operator: 'Operator',
-      guest: 'Invited',
-      watchMode: 'Viewer mode',
-      withoutLogin: 'Log in to create and manage tournaments.',
-      noTournaments: 'No tournaments yet. Create the first one to begin.',
-      createAccountError: 'Could not create the account. Check the details and try again.',
-      noOperator: 'No operators registered yet. The first authenticated user becomes the tournament owner.',
-      ownerOfTournament: 'Tournament owner',
-      authorizedOperator: 'Authorized operator',
-      publicTournamentsEmpty: 'No public tournaments are currently in progress.'
-    }
-  };
-
-  const baseState = () => ({
-    numPlayers:0, numTeams:0, numRounds:0,
-    players:[], teams:[], schedule:[],
-    currentIndex:0, finals:[], finalsIndex:0,
-    ownerEmail: '',
-    scorerEmails: [],
-    inviteEmails: [],
-    _rankingSnapshot: null,
-    uiStep: 'stepParams',
-    uiSection: 'setup'
-  });
-
-  let state = baseState();
-  let currentLanguage = localStorage.getItem(STORAGE_LANG_KEY) || 'pt-BR';
-  let isAdmin = false;
-  const el = id => document.getElementById(id);
-  const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
-
-  function normalizeStateShape(rawState = {}) {
-    const next = { ...baseState(), ...rawState };
-    next.ownerEmail = normalizeEmail(next.ownerEmail);
-    next.scorerEmails = Array.isArray(next.scorerEmails)
-      ? [...new Set(next.scorerEmails.map(normalizeEmail).filter(Boolean))]
-      : [];
-    next.inviteEmails = Array.isArray(next.inviteEmails)
-      ? [...new Set(next.inviteEmails.map(normalizeEmail).filter(Boolean))]
-      : [];
-    if (next.ownerEmail && next.scorerEmails.includes(next.ownerEmail)) {
-      next.scorerEmails = next.scorerEmails.filter(email => email !== next.ownerEmail);
-    }
-    if (next.ownerEmail && next.inviteEmails.includes(next.ownerEmail)) {
-      next.inviteEmails = next.inviteEmails.filter(email => email !== next.ownerEmail);
-    }
-    return next;
-  }
-
-  function preserveAccessState(nextState = {}) {
-    return normalizeStateShape({
-      ...baseState(),
-      ...nextState,
-      ownerEmail: normalizeEmail(state.ownerEmail || nextState.ownerEmail || ''),
-      scorerEmails: Array.isArray(nextState.scorerEmails)
-        ? nextState.scorerEmails
-        : Array.isArray(state.scorerEmails) ? state.scorerEmails : [],
-      inviteEmails: Array.isArray(nextState.inviteEmails)
-        ? nextState.inviteEmails
-        : Array.isArray(state.inviteEmails) ? state.inviteEmails : []
-    });
-  }
-
-  const STORAGE_TOURNAMENT_KEY = 'crieseuvolei:selected_tournament_id';
-  let tournamentList = [];
-  let selectedTournamentId = localStorage.getItem(STORAGE_TOURNAMENT_KEY) || null;
-  let selectedTournamentMeta = null;
-
-  function setLanguage(lang) {
-    const normalized = (lang === 'en-US') ? 'en-US' : 'pt-BR';
-    currentLanguage = normalized;
-    localStorage.setItem(STORAGE_LANG_KEY, normalized);
-    document.documentElement.lang = normalized;
-
-    const t = translations[normalized];
-    if (el('headerTitle')) el('headerTitle').innerText = '🏐 Peladas de Vôlei';
-    if (el('btnLoginAction')) el('btnLoginAction').innerText = isAdmin ? t.logoutAdmin : t.loginAdmin;
-    if (el('tournamentPermissionsLabel')) el('tournamentPermissionsLabel').innerText = t.permissions;
-    if (el('scorerEmailLabel')) el('scorerEmailLabel').innerText = t.operatorEmail;
-    if (el('inviteEmailLabel')) el('inviteEmailLabel').innerText = t.inviteEmail;
-    if (el('addScorerBtn')) el('addScorerBtn').innerText = t.addOperator;
-    if (el('addInviteBtn')) el('addInviteBtn').innerText = t.addInvite;
-    if (el('tournamentsLabel')) el('tournamentsLabel').innerText = t.tournamentListTitle;
-    if (el('newTournamentLabel')) el('newTournamentLabel').innerText = t.tournamentName;
-    if (el('createTournamentBtn')) el('createTournamentBtn').innerText = t.createTournament;
-    if (el('spectatorTitle')) el('spectatorTitle').innerText = t.spectatorTitle;
-    if (el('loginTitle')) el('loginTitle').innerText = t.accessAdmin;
-    if (el('doLoginBtn')) el('doLoginBtn').innerText = t.loginAdmin;
-    if (el('doSignupBtn')) el('doSignupBtn').innerText = t.createAccount;
-    if (el('cancelLoginBtn')) el('cancelLoginBtn').innerText = t.cancel;
-
-    document.querySelectorAll('[data-lang]').forEach(button => {
-      const active = button.dataset.lang === normalized;
-      button.style.opacity = active ? '1' : '0.8';
-    });
-
-    renderTournamentManager();
-    renderPublicTournaments();
-  }
-
-  function getSessionUserEmail() {
-    const session = supabase.auth.getSession ? supabase.auth.getSession().data.session : null;
-    const user = session && session.user ? session.user : null;
-    return normalizeEmail(user ? user.email : '');
-  }
-
-  function buildTournamentMeta(name, ownerEmail, scorerEmails = [], inviteEmails = [], gameData = {}) {
-    const cleanName = String(name || '').trim() || 'Meu torneio';
-    const owner = normalizeEmail(ownerEmail);
-    const members = Array.isArray(scorerEmails) ? scorerEmails.map(normalizeEmail).filter(Boolean) : [];
-    const invited = Array.isArray(inviteEmails) ? inviteEmails.map(normalizeEmail).filter(Boolean) : [];
-    return {
-      id: crypto.randomUUID ? crypto.randomUUID() : `tournament-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      name: cleanName,
-      owner_email: owner,
-      scorer_emails: [...new Set(members.filter(email => email !== owner))],
-      invite_emails: [...new Set(invited.filter(email => email !== owner && !members.includes(email)))],
-      game_data: normalizeStateShape({ ...baseState(), ...gameData, ownerEmail: owner, scorerEmails: members.filter(email => email !== owner), inviteEmails: invited.filter(email => email !== owner && !members.includes(email)) })
-    };
-  }
-
-  function renderTournamentManager() {
-    const container = el('tournamentList');
-    if (!container) return;
-
-    const currentEmail = getSessionUserEmail();
-    if (!currentEmail) {
-      container.innerHTML = '<div class="status">' + translations[currentLanguage].withoutLogin + '</div>';
-      return;
-    }
-
-    if (!tournamentList.length) {
-      container.innerHTML = '<div class="status">' + translations[currentLanguage].noTournaments + '</div>';
-      return;
-    }
-
-    container.innerHTML = tournamentList.map(tournament => {
-      const owner = normalizeEmail(tournament.owner_email || '');
-      const selected = tournament.id === selectedTournamentId ? 'style="border-color:#22c55e; background:#112518;"' : '';
-      return `
-        <div class="access-chip" ${selected}>
-          <button class="small secondary" data-select-tournament="${tournament.id}">${tournament.name}</button>
-          <span class="mini muted">${owner === currentEmail ? translations[currentLanguage].responsible : translations[currentLanguage].operator}</span>
-          ${owner === currentEmail ? `<button class="small danger" data-delete-tournament="${tournament.id}">Excluir</button>` : ''}
-        </div>
-      `;
-    }).join('');
-  }
-
-  async function renderPublicTournaments() {
-    const list = el('publicTournamentsList');
-    if (!list) return;
-
-    try {
-      const { data, error } = await supabase.from('tournaments').select('*').order('updated_at', { ascending: false }).limit(12);
-      if (error) {
-        list.innerHTML = '<div class="status">' + (error.message || 'Não foi possível carregar os torneios.') + '</div>';
-        return;
-      }
-      const rows = data || [];
-      if (!rows.length) {
-        list.innerHTML = '<div class="status">' + translations[currentLanguage].publicTournamentsEmpty + '</div>';
-        return;
-      }
-      list.innerHTML = rows.map(tournament => {
-        const gameData = tournament.game_data || {};
-        const summary = Array.isArray(gameData.schedule) && gameData.schedule.length ? `${gameData.schedule.length} partidas` : 'Cadastro inicial';
-        const status = gameData.uiSection === 'matches' ? 'Ao vivo' : (gameData.uiSection === 'finals' ? 'Finais' : 'Gestão');
-        return `
-          <div class="access-chip" style="display:block; width:100%; margin:8px 0; padding:10px 12px;">
-            <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap;">
-              <strong>${tournament.name || 'Torneio'}</strong>
-              <span class="mini muted">${status}</span>
-            </div>
-            <div class="mini muted">${summary}</div>
-            <div class="mini muted">Responsável: ${tournament.owner_email || 'N/D'}</div>
+  <main class="main">
+    <div class="container">
+      <section id="landing" class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">CrieSeuVôlei</span>
+          <h1 id="heroTitle">Organize sua pelada e acompanhe os torneios em tempo real.</h1>
+          <p id="heroText" class="lead">Crie torneios, convide co-admins, organize partidas e acompanhe o andamento em uma experiência moderna e profissional para todos os públicos.</p>
+          <div class="hero-actions">
+            <button id="primaryCreate" class="btn btn-primary" type="button">Criar torneio</button>
+            <button id="primaryWatch" class="btn btn-secondary" type="button">Acompanhar torneios</button>
           </div>
+        </div>
+
+        <div class="hero-card hero-image" aria-label="Imagem de vôlei">
+          <div class="hero-badge">
+            <div>
+              <span class="mini-label">Torneios ativos</span>
+              <div id="heroStatTournaments" class="big-stat">0</div>
+            </div>
+            <div>
+              <span class="mini-label">Usuários ativos</span>
+              <div id="heroStatUsers" class="big-stat">1+</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="landingCards" class="panel-grid">
+        <div class="panel">
+          <div class="panel-header">
+            <h2 id="createPanelTitle" class="panel-title">Criar torneio</h2>
+          </div>
+
+          <div class="tournament-form">
+            <div class="field">
+              <label id="tournamentNameLabel" for="newTournamentName">Nome do torneio</label>
+              <input id="newTournamentName" class="input" type="text" placeholder="Pelada da semana" />
+            </div>
+            <button id="createTournamentBtn" class="btn btn-primary" type="button">Criar torneio</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <h2 id="watchPanelTitle" class="panel-title">Acompanhar torneios</h2>
+          </div>
+
+          <div class="field search-box">
+            <label id="searchLabel" for="searchTournament">Buscar torneio</label>
+            <input id="searchTournament" class="input" type="search" placeholder="Pesquisar pelo nome" />
+          </div>
+          <div id="publicTournamentList" class="public-grid"></div>
+        </div>
+      </section>
+
+      <section id="appShell" class="app-shell hidden"></section>
+    </div>
+  </main>
+
+  <div id="authModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-card">
+      <h3 id="authTitle">Faça login</h3>
+      <div class="modal-form">
+        <div class="field">
+          <label id="authEmailLabel" for="authEmail">E-mail</label>
+          <input id="authEmail" class="input" type="email" placeholder="seu@email.com" />
+        </div>
+
+        <div class="field">
+          <label id="authPasswordLabel" for="authPassword">Senha</label>
+          <input id="authPassword" class="input" type="password" placeholder="••••••••" />
+        </div>
+
+        <button id="loginSubmit" class="btn btn-primary" type="button">Entrar</button>
+        <button id="signupSubmit" class="btn btn-secondary" type="button">Criar conta</button>
+        <button id="closeAuth" class="btn btn-secondary" type="button">Cancelar</button>
+      </div>
+
+      <div id="authMessage" class="tiny muted" style="margin-top: 14px;"></div>
+    </div>
+  </div>
+
+  <script>
+    (() => {
+      const STORAGE = {
+        lang: 'crieseuvolei.lang',
+        accounts: 'crieseuvolei.accounts',
+        tournaments: 'crieseuvolei.tournaments',
+        session: 'crieseuvolei.session',
+        selectedTournament: 'crieseuvolei.selectedTournament'
+      };
+
+      const translations = {
+        'pt-BR': {
+          welcomeTitle: 'Organize sua pelada e acompanhe os torneios em tempo real.',
+          welcomeText: 'Crie torneios, convide co-admins, organize partidas e acompanhe o andamento em uma experiência moderna e profissional para todos os públicos.',
+          createTournament: 'Criar torneio',
+          watchTournaments: 'Acompanhar torneios',
+          searchTournament: 'Buscar torneio',
+          tournamentName: 'Nome do torneio',
+          enter: 'Entrar',
+          cancel: 'Cancelar',
+          accountCreatedTitle: 'Conta criada com sucesso',
+          accountCreatedText: 'Seu e-mail de confirmação do CrieSeuVôlei foi preparado. Verifique sua caixa de entrada e depois volte para fazer login.',
+          loginRequired: 'Faça login para criar e administrar seu torneio.',
+          noTournaments: 'Nenhum torneio em andamento no momento.',
+          openAuth: 'Entrar',
+          tournamentManager: 'Gestão do torneio',
+          randomizeTeams: 'Sortear times',
+          audienceMode: 'Acompanhamento',
+          setup: 'Cadastro',
+          currentTournament: 'Torneio atual',
+          loginToManage: 'Faça login para criar e gerir seu torneio.',
+          back: 'Voltar',
+          save: 'Salvar',
+          continue: 'Próximo',
+          noPublicTournaments: 'Ainda não há torneios públicos disponíveis.',
+          inviteHint: 'Convide um co-admin por e-mail ou WhatsApp.',
+          noPlayers: 'Cadastre os jogadores para a pelada.',
+          scoreTieError: 'A partida não pode terminar empatada. O vencedor deve ficar à frente.',
+          shareLink: 'Compartilhar link do torneio',
+          createAccount: 'Criar conta',
+          createYourAccount: 'Criar conta',
+          playerName: 'Nome do jogador',
+          skill: 'Habilidade',
+          teamName: 'Nome do time',
+          rounds: 'Rodadas',
+          players: 'Jogadores',
+          teams: 'Times',
+          matchDay: 'Partidas',
+          score: 'Placar',
+          createPublicTournament: 'Criar torneio público',
+          plus: '+',
+          minus: '-'
+        },
+        'en-US': {
+          welcomeTitle: 'Organize your match and follow tournaments in real time.',
+          welcomeText: 'Create tournaments, invite co-admins, organize matches and track progress in a modern and professional experience for everyone.',
+          createTournament: 'Create tournament',
+          watchTournaments: 'Follow tournaments',
+          searchTournament: 'Search tournament',
+          tournamentName: 'Tournament name',
+          enter: 'Log in',
+          cancel: 'Cancel',
+          accountCreatedTitle: 'Account created successfully',
+          accountCreatedText: 'Your confirmation email from CrieSeuVôlei has been prepared. Check your inbox and then return to sign in.',
+          loginRequired: 'Log in to create and manage your tournament.',
+          noTournaments: 'No tournaments are in progress right now.',
+          openAuth: 'Log in',
+          tournamentManager: 'Tournament management',
+          randomizeTeams: 'Randomize teams',
+          audienceMode: 'Audience mode',
+          setup: 'Registration',
+          currentTournament: 'Current tournament',
+          loginToManage: 'Log in to create and manage your tournament.',
+          back: 'Back',
+          save: 'Save',
+          continue: 'Next',
+          noPublicTournaments: 'There are no public tournaments yet.',
+          inviteHint: 'Invite a co-admin by email or WhatsApp.',
+          noPlayers: 'Add player names to start the tournament.',
+          scoreTieError: 'The match cannot end in a draw. A winner must finish ahead.',
+          shareLink: 'Share tournament link',
+          createAccount: 'Create account',
+          createYourAccount: 'Create account',
+          playerName: 'Player name',
+          skill: 'Skill',
+          teamName: 'Team name',
+          rounds: 'Rounds',
+          players: 'Players',
+          teams: 'Teams',
+          matchDay: 'Matches',
+          score: 'Score',
+          createPublicTournament: 'Create public tournament',
+          plus: '+',
+          minus: '-'
+        }
+      };
+
+      const state = {
+        lang: localStorage.getItem(STORAGE.lang) || 'pt-BR',
+        accounts: JSON.parse(localStorage.getItem(STORAGE.accounts) || '[]'),
+        tournaments: JSON.parse(localStorage.getItem(STORAGE.tournaments) || '[]'),
+        session: JSON.parse(localStorage.getItem(STORAGE.session) || 'null'),
+        selectedTournamentId: localStorage.getItem(STORAGE.selectedTournament) || null
+      };
+
+      function saveStorage() {
+        localStorage.setItem(STORAGE.accounts, JSON.stringify(state.accounts));
+        localStorage.setItem(STORAGE.tournaments, JSON.stringify(state.tournaments));
+        localStorage.setItem(STORAGE.session, JSON.stringify(state.session));
+        if (state.selectedTournamentId) localStorage.setItem(STORAGE.selectedTournament, state.selectedTournamentId);
+        else localStorage.removeItem(STORAGE.selectedTournament);
+      }
+
+      function t(key) {
+        return translations[state.lang][key] || key;
+      }
+
+      function getCurrentUser() {
+        return state.session ? state.accounts.find(item => item.email.toLowerCase() === state.session.email.toLowerCase()) || null : null;
+      }
+
+      function getSelectedTournament() {
+        return state.tournaments.find(tournament => tournament.id === state.selectedTournamentId) || null;
+      }
+
+      function uuid() {
+        if (crypto && crypto.randomUUID) return crypto.randomUUID();
+        return 'id-' + Date.now() + '-' + Math.random().toString(16).slice(2);
+      }
+
+      function openAuthModal(mode = 'login') {
+        const modal = document.getElementById('authModal');
+        modal.classList.remove('hidden');
+        modal.setAttribute('aria-hidden', 'false');
+        document.getElementById('authTitle').textContent = mode === 'signup' ? t('createYourAccount') : t('enter');
+        document.getElementById('signupSubmit').textContent = t('createAccount');
+      }
+
+      function closeAuthModal() {
+        const modal = document.getElementById('authModal');
+        modal.classList.add('hidden');
+        modal.setAttribute('aria-hidden', 'true');
+        document.getElementById('authMessage').textContent = '';
+      }
+
+      function setLanguage(lang) {
+        state.lang = lang === 'en-US' ? 'en-US' : 'pt-BR';
+        localStorage.setItem(STORAGE.lang, state.lang);
+        document.documentElement.lang = state.lang;
+        document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.lang));
+        render();
+      }
+
+      function getPublicTournaments(query = '') {
+        const search = query.toLowerCase().trim();
+        return state.tournaments.filter(item => {
+          const matches = !search || item.name.toLowerCase().includes(search);
+          return item.isPublic && matches;
+        }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#039;');
+      }
+
+      function login(email, password) {
+        const account = state.accounts.find(item => item.email.toLowerCase() === email.toLowerCase() && item.password === password);
+        if (!account) {
+          document.getElementById('authMessage').textContent = 'E-mail ou senha inválidos.';
+          return;
+        }
+        state.session = { email: account.email };
+        saveStorage();
+        closeAuthModal();
+        render();
+      }
+
+      function createAccount(email, password) {
+        const userEmail = (email || '').trim();
+        const pwd = (password || '').trim();
+
+        if (!userEmail || !pwd) {
+          document.getElementById('authMessage').textContent = 'Informe e-mail e senha para continuar.';
+          return;
+        }
+
+        if (state.accounts.some(item => item.email.toLowerCase() === userEmail.toLowerCase())) {
+          document.getElementById('authMessage').textContent = 'Esse e-mail já está cadastrado.';
+          return;
+        }
+
+        state.accounts.push({ email: userEmail, password: pwd, createdAt: new Date().toISOString() });
+        saveStorage();
+        document.getElementById('authMessage').textContent = '✅ Confirmação de conta do CrieSeuVôlei: verifique seu e-mail e volte para fazer login.';
+        setTimeout(() => {
+          closeAuthModal();
+          openAuthModal('login');
+        }, 2200);
+      }
+
+      function logout() {
+        state.session = null;
+        saveStorage();
+        render();
+      }
+
+      function createTournament() {
+        const user = getCurrentUser();
+        if (!user) {
+          openAuthModal('login');
+          return;
+        }
+
+        const nameInput = document.getElementById('newTournamentName');
+        const name = (nameInput.value || '').trim();
+        if (!name) {
+          alert(state.lang === 'en-US' ? 'Please name the tournament.' : 'Informe o nome do torneio.');
+          return;
+        }
+
+        const tournament = {
+          id: uuid(),
+          name,
+          ownerEmail: user.email,
+          adminEmails: [user.email],
+          coAdmins: [],
+          isPublic: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          setup: { players: 0, teams: 0, rounds: 0, playersList: [], teamsList: [], schedule: [], currentIndex: 0 }
+        };
+
+        state.tournaments.unshift(tournament);
+        state.selectedTournamentId = tournament.id;
+        nameInput.value = '';
+        saveStorage();
+        render();
+      }
+
+      function addCoAdmin() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return;
+        const input = document.getElementById('coAdminInput');
+        const value = (input.value || '').trim();
+        if (!value) return;
+        if (![...tournament.adminEmails, ...tournament.coAdmins].includes(value)) {
+          tournament.coAdmins.push(value);
+          tournament.updatedAt = new Date().toISOString();
+          input.value = '';
+          saveStorage();
+          render();
+        }
+      }
+
+      function formatShareUrl() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return 'https://crieseuvolei.netlify.app';
+        return `https://crieseuvolei.netlify.app/?t=${encodeURIComponent(tournament.id)}`;
+      }
+
+      function saveTournamentName() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return;
+        const value = document.getElementById('tournamentNameEditor').value.trim();
+        if (!value) return;
+        tournament.name = value;
+        tournament.updatedAt = new Date().toISOString();
+        saveStorage();
+        render();
+      }
+
+      function updateSetupValues() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return;
+        const players = Number(document.getElementById('playersCount').value || 0);
+        const teams = Number(document.getElementById('teamsCount').value || 0);
+        const rounds = Number(document.getElementById('roundsCount').value || 0);
+        if (!players || !teams || !rounds) {
+          alert('Preencha jogadores, times e rodadas.');
+          return;
+        }
+        tournament.setup.players = players;
+        tournament.setup.teams = teams;
+        tournament.setup.rounds = rounds;
+        tournament.setup.playersList = Array.from({ length: players }, (_, index) => ({ id: index, name: '', skill: 3 }));
+        tournament.setup.teamsList = Array.from({ length: teams }, (_, index) => ({ id: index, name: `Time ${index + 1}`, members: [] }));
+        tournament.updatedAt = new Date().toISOString();
+        saveStorage();
+        render();
+      }
+
+      function generateTeamsFromPlayers() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return;
+        const playerRows = Array.from(document.querySelectorAll('[data-player-row]'));
+        const players = playerRows.map((row) => ({
+          name: row.querySelector('[data-player-name]').value.trim() || `Jogador ${Number(row.dataset.index) + 1}`,
+          skill: Number(row.querySelector('[data-player-skill]').value || 3)
+        }));
+
+        const teamSlots = Array.from({ length: tournament.setup.teams }, (_, index) => ({ id: index, name: `Time ${index + 1}`, members: [] }));
+        const totals = Array.from({ length: teamSlots.length }, () => 0);
+        const sorted = [...players].sort((a, b) => b.skill - a.skill);
+
+        sorted.forEach((player) => {
+          const bestIndex = totals.indexOf(Math.min(...totals));
+          teamSlots[bestIndex].members.push(player);
+          totals[bestIndex] += player.skill;
+        });
+
+        tournament.setup.teamsList = teamSlots.map((team, index) => ({
+          id: index,
+          name: (document.querySelector(`[data-team-name="${index}"]`)?.value || team.name).trim() || `Time ${index + 1}`,
+          members: team.members
+        }));
+
+        tournament.updatedAt = new Date().toISOString();
+        saveStorage();
+        render();
+      }
+
+      function generateSchedule() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return;
+        const teams = tournament.setup.teamsList || [];
+        if (teams.length < 2) return;
+
+        const indexes = teams.map((_, index) => index);
+        const matches = [];
+        for (let round = 0; round < tournament.setup.rounds; round++) {
+          const rotated = [...indexes];
+          for (let i = 0; i < rotated.length / 2; i++) {
+            const a = rotated[i];
+            const b = rotated[rotated.length - 1 - i];
+            if (a !== b && a < b) matches.push({ round: round + 1, a, b, scoreA: null, scoreB: null, status: 'pending' });
+          }
+          const first = rotated.shift();
+          rotated.push(first);
+          indexes.splice(0, indexes.length, ...rotated);
+        }
+
+        tournament.setup.schedule = matches;
+        tournament.setup.currentIndex = 0;
+        tournament.updatedAt = new Date().toISOString();
+        saveStorage();
+        render();
+      }
+
+      function saveScore() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return;
+        const match = tournament.setup.schedule[tournament.setup.currentIndex];
+        if (!match) return;
+
+        const scoreA = Number(document.getElementById('matchScoreA').value || 0);
+        const scoreB = Number(document.getElementById('matchScoreB').value || 0);
+        if (scoreA === scoreB) {
+          alert(t('scoreTieError'));
+          return;
+        }
+
+        match.scoreA = scoreA;
+        match.scoreB = scoreB;
+        match.status = 'done';
+        tournament.setup.currentIndex = Math.min(tournament.setup.currentIndex + 1, tournament.setup.schedule.length - 1);
+        tournament.updatedAt = new Date().toISOString();
+        saveStorage();
+        render();
+      }
+
+      function renderTournamentShell() {
+        const tournament = getSelectedTournament();
+        if (!tournament) return '<div class="empty">Faça login para criar seu torneio.</div>';
+
+        const canManage = state.session && (tournament.ownerEmail === state.session.email || tournament.coAdmins.includes(state.session.email) || tournament.adminEmails.includes(state.session.email));
+        const shareUrl = formatShareUrl();
+
+        const setup = tournament.setup;
+        const playerInputs = (setup.playersList || []).map((player, index) => `
+          <div class="field" data-player-row data-index="${index}">
+            <label>${t('playerName')} ${index + 1}</label>
+            <div class="setup-controls">
+              <input data-player-name class="input" type="text" value="${escapeHtml(player.name || '')}" placeholder="${t('playerName')} ${index + 1}" />
+              <select data-player-skill class="select">
+                ${[1,2,3,4,5].map(v => `<option value="${v}" ${Number(player.skill || 3) === v ? 'selected' : ''}>${v}★</option>`).join('')}
+              </select>
+            </div>
+          </div>
+        `).join('');
+
+        const teamInputs = (setup.teamsList || []).map((team, index) => `
+          <div class="field">
+            <label>${t('teamName')} ${index + 1}</label>
+            <input class="input" data-team-name="${index}" value="${escapeHtml(team.name || '')}" />
+          </div>
+        `).join('');
+
+        const matchesMarkup = (setup.schedule || []).length ? (setup.schedule || []).map((match, index) => {
+          const aName = setup.teamsList[match.a]?.name || 'Time A';
+          const bName = setup.teamsList[match.b]?.name || 'Time B';
+          const status = match.scoreA !== null && match.scoreB !== null ? 'Concluída' : 'Pendente';
+          const tickActive = index === setup.currentIndex ? 'status-pill' : 'tiny muted';
+          return `
+            <div class="public-item">
+              <div class="public-meta">
+                <strong>Rodada ${match.round}</strong>
+                <span class="${tickActive}">${status}</span>
+              </div>
+              <div>${aName} x ${bName}</div>
+              <div class="tiny muted">${match.scoreA === null || match.scoreB === null ? 'Aguardando placar' : `${match.scoreA} x ${match.scoreB}`}</div>
+            </div>
+          `;
+        }).join('') : '<div class="empty">Nenhuma partida criada ainda.</div>';
+
+        return `
+          <div class="active-tournament-banner">
+            <div>
+              <div class="tiny muted">${t('currentTournament')}</div>
+              <div class="tournament-name">${escapeHtml(tournament.name)}</div>
+            </div>
+            <div class="action-row">
+              <button class="btn btn-secondary" type="button" data-copy-link="${shareUrl}">${t('shareLink')}</button>
+            </div>
+          </div>
+
+          <div class="manager-grid">
+            <div class="card">
+              <h3 class="section-title">${t('tournamentManager')}</h3>
+              <div class="field">
+                <label>${t('tournamentName')}</label>
+                <input id="tournamentNameEditor" class="input" value="${escapeHtml(tournament.name)}" />
+              </div>
+              <div class="action-row" style="margin-top:16px;">
+                <button class="btn btn-primary" type="button" data-save-tournament-name>${t('save')}</button>
+                <button class="btn btn-secondary" type="button" data-share-whatsapp="${shareUrl}">WhatsApp</button>
+              </div>
+
+              <div class="field" style="margin-top:20px;">
+                <label>Co-admin</label>
+                <input id="coAdminInput" class="input" type="email" placeholder="coadmin@exemplo.com" />
+              </div>
+              <div class="action-row" style="margin-top:12px;">
+                <button class="btn btn-secondary" type="button" data-add-coadmin>Adicionar co-admin</button>
+              </div>
+
+              <div class="list-stack">
+                ${[...tournament.adminEmails, ...tournament.coAdmins].map(email => `
+                  <span class="tag"><strong>${escapeHtml(email)}</strong><small>admin</small></span>
+                `).join('') || '<div class="empty">Nenhum co-admin adicionado.</div>'}
+              </div>
+            </div>
+
+            <div class="card">
+              <h3 class="section-title">${t('audienceMode')}</h3>
+              <div class="field">
+                <label>Link público</label>
+                <input class="input" value="${shareUrl}" readonly />
+              </div>
+              <div class="tiny muted" style="margin-top:12px;">${t('inviteHint')}</div>
+              <div class="pill-row" style="margin-top: 12px;">
+                <span class="status-pill">${tournament.isPublic ? 'Público' : 'Privado'}</span>
+                <span class="status-pill">${(setup.schedule || []).length} partidas</span>
+              </div>
+            </div>
+          </div>
+
+          ${canManage ? `
+            <div class="card" style="margin-top:24px;">
+              <h3 class="section-title">${t('setup')}</h3>
+              <div class="two-col">
+                <div class="stat-box">
+                  <label>${t('players')}</label>
+                  <input id="playersCount" class="input" type="number" min="2" max="40" value="${setup.players || 12}" />
+                </div>
+                <div class="stat-box">
+                  <label>${t('teams')}</label>
+                  <input id="teamsCount" class="input" type="number" min="2" max="10" value="${setup.teams || 4}" />
+                </div>
+                <div class="stat-box">
+                  <label>${t('rounds')}</label>
+                  <input id="roundsCount" class="input" type="number" min="1" max="20" value="${setup.rounds || 4}" />
+                </div>
+              </div>
+              <div class="action-row" style="margin-top:18px;">
+                <button class="btn btn-primary" type="button" data-save-setup>${t('continue')}</button>
+              </div>
+
+              ${(setup.players && setup.teams && setup.rounds) ? `
+                <div class="scoreboard" style="margin-top:24px;">
+                  <div class="team-score">
+                    <div class="team-score-header"><strong>${t('players')}</strong></div>
+                    <div class="list-stack">${playerInputs || '<div class="empty">' + t('noPlayers') + '</div>'}</div>
+                    <button class="btn btn-primary" type="button" data-generate-teams>${t('randomizeTeams')}</button>
+                  </div>
+
+                  <div class="team-score">
+                    <div class="team-score-header"><strong>${t('teams')}</strong></div>
+                    <div class="list-stack">${teamInputs || '<div class="empty">' + t('noPlayers') + '</div>'}</div>
+                    <button class="btn btn-primary" type="button" data-generate-schedule>${t('continue')}</button>
+                  </div>
+                </div>
+              ` : ''}
+
+              ${(setup.schedule || []).length ? `
+                <div class="card" style="margin-top:24px;">
+                  <h3 class="section-title">${t('matchDay')}</h3>
+                  <div class="scoreboard">${matchesMarkup}</div>
+                  ${setup.schedule[setup.currentIndex] ? `
+                    <div class="card" style="margin-top: 18px;">
+                      <div class="team-score-header">
+                        <strong>Placar atual</strong>
+                        <span class="tiny muted">Rodada ${setup.schedule[setup.currentIndex].round}</span>
+                      </div>
+                      <div class="scoreboard">
+                        <div class="team-score">
+                          <div class="team-score-header">
+                            <strong>${escapeHtml(setup.teamsList[setup.schedule[setup.currentIndex].a]?.name || 'Time A')}</strong>
+                          </div>
+                          <input id="matchScoreA" class="input" type="number" min="0" value="${setup.schedule[setup.currentIndex].scoreA ?? 0}" />
+                        </div>
+                        <div class="team-score">
+                          <div class="team-score-header">
+                            <strong>${escapeHtml(setup.teamsList[setup.schedule[setup.currentIndex].b]?.name || 'Time B')}</strong>
+                          </div>
+                          <input id="matchScoreB" class="input" type="number" min="0" value="${setup.schedule[setup.currentIndex].scoreB ?? 0}" />
+                        </div>
+                      </div>
+                      <div class="action-row" style="margin-top: 18px;">
+                        <button class="btn btn-primary" type="button" data-save-score>Salvar placar</button>
+                        <button class="btn btn-secondary" type="button" data-next-match>Próxima partida</button>
+                      </div>
+                    </div>
+                  ` : ''}
+                </div>
+              ` : ''}
+            </div>
+          ` : '<div class="card" style="margin-top:24px;"><div class="empty">Você está em modo de observação. Faça login como administrador para editar.</div></div>'}
         `;
-      }).join('');
-    } catch (err) {
-      list.innerHTML = '<div class="status">Erro ao carregar os torneios públicos.</div>';
-    }
-  }
-
-  function renderInviteList() {
-    const list = el('inviteList');
-    if (!list) return;
-    const inviteEmails = Array.isArray(state.inviteEmails) ? state.inviteEmails.map(normalizeEmail).filter(Boolean) : [];
-    if (!inviteEmails.length) {
-      list.innerHTML = '<div class="status">Nenhum convite pendente para este torneio.</div>';
-      return;
-    }
-
-    list.innerHTML = inviteEmails.map(email => `
-      <span class="access-chip">
-        <span>${translations[currentLanguage].guest}</span>
-        <span>${email}</span>
-        <button class="small secondary" data-remove-invite="${email}">Remover</button>
-      </span>
-    `).join('');
-  }
-
-  function renderAdminAccessList() {
-    const list = el("adminAccessList");
-    if (!list) return;
-    const ownerEmail = normalizeEmail(state.ownerEmail);
-    const scorerEmails = Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : [];
-    const entries = [];
-
-    if (ownerEmail) {
-      entries.push({ type: 'owner', email: ownerEmail, role: translations[currentLanguage].responsible });
-    }
-    scorerEmails.forEach(email => {
-      if (email && email !== ownerEmail) entries.push({ type: 'scorer', email, role: translations[currentLanguage].operator });
-    });
-
-    if (!entries.length) {
-      list.innerHTML = '<div class="status">' + translations[currentLanguage].noOperator + '</div>';
-      return;
-    }
-
-    list.innerHTML = entries.map(item => `
-      <span class="access-chip">
-        <span>${item.role}</span>
-        <span>${item.email}</span>
-        ${item.type === 'scorer' ? `<button class="small secondary" data-remove-scorer="${item.email}">Remover</button>` : ''}
-      </span>
-    `).join('');
-  }
-
-  function updateAdminStatus() {
-    const box = el('adminAccessBox');
-    const roleLabel = el('currentRoleLabel');
-    if (!box || !roleLabel) return;
-
-    if (isAdmin) {
-      box.classList.remove('hidden');
-      const owner = normalizeEmail(state.ownerEmail);
-      const me = getSessionUserEmail();
-      const role = owner && me && owner === me ? translations[currentLanguage].ownerOfTournament : translations[currentLanguage].authorizedOperator;
-      roleLabel.innerText = role;
-    } else {
-      box.classList.add('hidden');
-      roleLabel.innerText = '';
-    }
-    renderAdminAccessList();
-    renderInviteList();
-  }
-
-  function ensureOwnerAssignment(email) {
-    if (!email) return;
-    state = normalizeStateShape({
-      ...state,
-      ownerEmail: normalizeEmail(state.ownerEmail || email),
-      scorerEmails: Array.isArray(state.scorerEmails) ? state.scorerEmails : []
-    });
-  }
-
-  function isAuthorizedAdmin(user) {
-    if (!user) return false;
-    const currentEmail = normalizeEmail(user.email);
-    if (!currentEmail) return false;
-
-    const ownerEmail = normalizeEmail(state.ownerEmail);
-    const scorerEmails = Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : [];
-
-    if (!ownerEmail && !scorerEmails.length) {
-      state = normalizeStateShape({ ...state, ownerEmail: currentEmail });
-      return true;
-    }
-
-    return currentEmail === ownerEmail || scorerEmails.includes(currentEmail);
-  }
-
-  // --- AUTENTICAÇÃO ---
-  document.querySelectorAll('[data-lang]').forEach(button => {
-    button.addEventListener('click', () => setLanguage(button.dataset.lang));
-  });
-
-  el("btnLoginAction").addEventListener("click", () => {
-    if(isAdmin) {
-        supabase.auth.signOut().then(() => { checkUser(); });
-    } else {
-        el("login-overlay").classList.remove("hidden");
-    }
-  });
-  el("cancelLoginBtn").addEventListener("click", () => el("login-overlay").classList.add("hidden"));
-
-  el("doLoginBtn").addEventListener("click", async () => {
-    const email = el("email").value;
-    const password = el("password").value;
-    el("loginMsg").innerText = translations[currentLanguage].entering;
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-        el("loginMsg").innerText = "Erro: " + error.message;
-    } else {
-        el("login-overlay").classList.add("hidden");
-        checkUser();
-    }
-  });
-
-  el("doSignupBtn").addEventListener("click", async () => {
-    const email = el("email").value;
-    const password = el("password").value;
-    if (!email || !password || password.length < 6) {
-      el("loginMsg").innerText = translations[currentLanguage].createAccountError;
-      return;
-    }
-    el("loginMsg").innerText = translations[currentLanguage].entering;
-    const { data, error } = await supabase.auth.signUp({ email, password });
-    if (error) {
-      el("loginMsg").innerText = "Erro: " + error.message;
-    } else {
-      el("loginMsg").innerText = 'Conta criada. Verifique seu e-mail e depois faça login.';
-      setTimeout(() => {
-        el("login-overlay").classList.add("hidden");
-        el("loginMsg").innerText = '';
-      }, 1800);
-    }
-  });
-
-  el('createTournamentBtn').addEventListener('click', async () => {
-    const currentEmail = getSessionUserEmail();
-    if (!currentEmail) {
-      alert('FaÃ§a login antes de criar um torneio.');
-      return;
-    }
-
-    const tournamentInput = el('newTournamentNameInput');
-    const name = String((tournamentInput ? tournamentInput.value : '') || '').trim() || 'Meu torneio';
-    const payload = { ...buildTournamentMeta(name, currentEmail, [], state.inviteEmails || [], {}), updated_at: new Date().toISOString() };
-    const { data, error } = await supabase.from('tournaments').insert({
-      id: payload.id,
-      name: payload.name,
-      owner_email: payload.owner_email,
-      scorer_emails: payload.scorer_emails,
-      game_data: payload.game_data,
-      updated_at: payload.updated_at
-    });
-
-    if (error) {
-      reportCloudError('NÃ£o foi possÃ­vel criar o torneio.', error);
-      return;
-    }
-
-    selectedTournamentId = payload.id;
-    localStorage.setItem(STORAGE_TOURNAMENT_KEY, selectedTournamentId);
-    selectedTournamentMeta = { ...payload, id: payload.id };
-    state = normalizeStateShape({ ...payload.game_data, ownerEmail: payload.owner_email, scorerEmails: payload.scorer_emails, inviteEmails: Array.isArray(payload.game_data.inviteEmails) ? payload.game_data.inviteEmails : [] });
-    el('newTournamentNameInput').value = '';
-    await loadTournamentsForCurrentUser();
-    if (selectedTournamentId) await loadStateFromCloud();
-    refreshUI();
-  });
-
-  el('tournamentList').addEventListener('click', async (event) => {
-    const selectButton = event.target.closest('[data-select-tournament]');
-    if (selectButton) {
-      const nextTournamentId = selectButton.getAttribute('data-select-tournament');
-      selectedTournamentId = nextTournamentId;
-      localStorage.setItem(STORAGE_TOURNAMENT_KEY, selectedTournamentId);
-      await loadStateFromCloud();
-      refreshUI();
-      return;
-    }
-
-    const deleteButton = event.target.closest('[data-delete-tournament]');
-    if (deleteButton) {
-      const tournamentId = deleteButton.getAttribute('data-delete-tournament');
-      const match = tournamentList.find(item => item.id === tournamentId);
-      if (!match) return;
-      if (normalizeEmail(match.owner_email) !== getSessionUserEmail()) {
-        alert('SÃ³ o responsÃ¡vel do torneio pode excluir este registro.');
-        return;
       }
-      if (!confirm(`Excluir o torneio "${match.name}"?`)) return;
-      const { error } = await supabase.from('tournaments').delete().eq('id', tournamentId);
-      if (error) {
-        reportCloudError('NÃ£o foi possÃ­vel excluir o torneio.', error);
-        return;
+
+      function renderPublicTournaments() {
+        const query = document.getElementById('searchTournament')?.value || '';
+        const list = document.getElementById('publicTournamentList');
+        const tournaments = getPublicTournaments(query);
+        if (!tournaments.length) {
+          list.innerHTML = `<div class="empty">${t('noPublicTournaments')}</div>`;
+          return;
+        }
+
+        list.innerHTML = tournaments.map(item => `
+          <div class="public-item">
+            <div class="public-meta">
+              <strong>${escapeHtml(item.name)}</strong>
+              <span class="status-pill">Público</span>
+            </div>
+            <div class="tiny muted">Responsável: ${escapeHtml(item.ownerEmail)}</div>
+            <button class="btn btn-secondary" type="button" data-selected-public="${item.id}">Acompanhar</button>
+          </div>
+        `).join('');
       }
-      if (selectedTournamentId === tournamentId) {
-        selectedTournamentId = null;
-        localStorage.removeItem(STORAGE_TOURNAMENT_KEY);
+
+      function render() {
+        const user = getCurrentUser();
+        const openAuthBtn = document.getElementById('openAuth');
+        if (openAuthBtn) {
+          openAuthBtn.textContent = user ? 'Sair' : 'Entrar';
+          openAuthBtn.onclick = () => (user ? logout() : openAuthModal('login'));
+        }
+
+        document.getElementById('heroTitle').textContent = t('welcomeTitle');
+        document.getElementById('heroText').textContent = t('welcomeText');
+        document.getElementById('primaryCreate').textContent = t('createTournament');
+        document.getElementById('primaryWatch').textContent = t('watchTournaments');
+        document.getElementById('createPanelTitle').textContent = t('createTournament');
+        document.getElementById('watchPanelTitle').textContent = t('watchTournaments');
+        document.getElementById('tournamentNameLabel').textContent = t('tournamentName');
+        document.getElementById('searchLabel').textContent = t('searchTournament');
+        document.getElementById('createTournamentBtn').textContent = t('createTournament');
+
+        const publicCount = state.tournaments.filter(item => item.isPublic).length;
+        document.getElementById('heroStatTournaments').textContent = String(publicCount || 0);
+        document.getElementById('heroStatUsers').textContent = String(Math.max(1, state.accounts.length || 1)) + '+';
+        renderPublicTournaments();
+
+        const shell = document.getElementById('appShell');
+        if (state.selectedTournamentId || user) {
+          shell.classList.remove('hidden');
+          shell.innerHTML = renderTournamentShell();
+        } else {
+          shell.classList.add('hidden');
+          shell.innerHTML = '';
+        }
       }
-      await loadTournamentsForCurrentUser();
-      if (selectedTournamentId) await loadStateFromCloud();
-      refreshUI();
-    }
-  });
 
-  el("addScorerBtn").addEventListener("click", () => {
-    const email = normalizeEmail(el("scorerEmailInput").value);
-    if (!email) {
-      alert('Informe um e-mail de operador válido.');
-      return;
-    }
-    if (normalizeEmail(state.ownerEmail) === email) {
-      alert('Este e-mail já é o responsável da partida.');
-      return;
-    }
-    state.scorerEmails = Array.isArray(state.scorerEmails) ? [...new Set([...state.scorerEmails.map(normalizeEmail), email].filter(Boolean))] : [email];
-    el("scorerEmailInput").value = '';
-    updateAdminStatus();
-    saveStateToCloud();
-  });
-
-  el("addInviteBtn").addEventListener("click", () => {
-    const email = normalizeEmail(el("inviteEmailInput").value);
-    if (!email) {
-      alert('Informe um e-mail de co-criador válido.');
-      return;
-    }
-    if ([normalizeEmail(state.ownerEmail), ...(state.scorerEmails || [])].includes(email)) {
-      alert('Este e-mail já está autorizado neste torneio.');
-      return;
-    }
-    state.inviteEmails = Array.isArray(state.inviteEmails) ? [...new Set([...state.inviteEmails.map(normalizeEmail), email].filter(Boolean))] : [email];
-    el("inviteEmailInput").value = '';
-    updateAdminStatus();
-    saveStateToCloud();
-  });
-
-  document.getElementById('adminAccessList').addEventListener('click', (event) => {
-    const button = event.target.closest('[data-remove-scorer]');
-    if (!button) return;
-    const email = normalizeEmail(button.dataset.removeScorer);
-    state.scorerEmails = (state.scorerEmails || []).map(normalizeEmail).filter(item => item && item !== email);
-    updateAdminStatus();
-    saveStateToCloud();
-  });
-
-  document.getElementById('inviteList').addEventListener('click', (event) => {
-    const button = event.target.closest('[data-remove-invite]');
-    if (!button) return;
-    const email = normalizeEmail(button.dataset.removeInvite);
-    state.inviteEmails = (state.inviteEmails || []).map(normalizeEmail).filter(item => item && item !== email);
-    updateAdminStatus();
-    saveStateToCloud();
-  });
-
-  async function checkUser() {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      ensureOwnerAssignment(user.email);
-    }
-
-    isAdmin = isAuthorizedAdmin(user);
-    if (isAdmin) {
-        document.body.classList.add('is-admin');
-        el("btnLoginAction").innerText = translations[currentLanguage].logoutAdmin;
-        el("btnLoginAction").classList.add("logout-btn");
-        if (el("readOnlyMsg")) el("readOnlyMsg").classList.add("hidden");
-    } else {
-        document.body.classList.remove('is-admin');
-        el("btnLoginAction").innerText = translations[currentLanguage].loginAdmin;
-        el("btnLoginAction").classList.remove("logout-btn");
-        if (el("readOnlyMsg")) el("readOnlyMsg").classList.remove("hidden");
-    }
-
-    if (user && !state.ownerEmail) {
-      state.ownerEmail = normalizeEmail(user.email);
-    }
-    if (user && state.ownerEmail && (state.ownerEmail === normalizeEmail(user.email) || state.scorerEmails.includes(normalizeEmail(user.email)))) {
-      await loadTournamentsForCurrentUser();
-      if (selectedTournamentId) await loadStateFromCloud();
-    }
-
-    updateAdminStatus();
-    renderTournamentManager();
-    renderPublicTournaments();
-  }
-
-  async function loadTournamentsForCurrentUser() {
-    const currentEmail = getSessionUserEmail();
-    if (!currentEmail) {
-      tournamentList = [];
-      renderTournamentManager();
-      return;
-    }
-
-    const { data, error } = await supabase.from('tournaments').select('*').order('updated_at', { ascending: false });
-    if (error) {
-      if (error.code === '42P01') {
-        reportCloudError('A tabela de torneios ainda nÃ£o foi criada. Use o SQL do README para criar o schema multi-torneio.', error);
-      } else {
-        reportCloudError('NÃ£o foi possÃ­vel carregar a lista de torneios.', error);
-      }
-      return;
-    }
-
-    tournamentList = (data || [])
-      .filter(tournament => {
-        const owner = normalizeEmail(tournament.owner_email || '');
-        const scorers = Array.isArray(tournament.scorer_emails) ? tournament.scorer_emails.map(normalizeEmail).filter(Boolean) : [];
-        return owner === currentEmail || scorers.includes(currentEmail);
-      })
-      .map(tournament => ({
-        ...tournament,
-        name: String(tournament.name || '').trim() || 'Meu torneio',
-        owner_email: normalizeEmail(tournament.owner_email || currentEmail),
-        scorer_emails: Array.isArray(tournament.scorer_emails) ? [...new Set(tournament.scorer_emails.map(normalizeEmail).filter(Boolean))] : []
-      }));
-
-    if (!tournamentList.length) {
-      const fallback = buildTournamentMeta('Meu torneio', currentEmail, [], state);
-      const { data: inserted, error: insertError } = await supabase.from('tournaments').insert({
-        id: fallback.id,
-        name: fallback.name,
-        owner_email: fallback.owner_email,
-        scorer_emails: fallback.scorer_emails,
-        game_data: fallback.game_data,
-        updated_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-
-      if (!insertError && inserted) {
-        tournamentList = [inserted];
-      }
-    }
-
-    const storedSelection = localStorage.getItem(STORAGE_TOURNAMENT_KEY);
-    const validSelection = tournamentList.some(item => item.id === storedSelection) ? storedSelection : null;
-    const firstTournament = tournamentList.length ? tournamentList[0] : null;
-    selectedTournamentId = validSelection || (firstTournament ? firstTournament.id : null);
-    if (selectedTournamentId) {
-      localStorage.setItem(STORAGE_TOURNAMENT_KEY, selectedTournamentId);
-      selectedTournamentMeta = tournamentList.find(item => item.id === selectedTournamentId) || null;
-    } else {
-      localStorage.removeItem(STORAGE_TOURNAMENT_KEY);
-      selectedTournamentMeta = null;
-    }
-
-    renderTournamentManager();
-    renderPublicTournaments();
-  }
-
-  // --- SINCRONIZAÃ‡ÃƒO (REALTIME) ---
-  async function saveStateToCloud() {
-    if (!isAdmin || !selectedTournamentId) return;
-    const visibleSection = document.querySelector('main > section:not(.hidden)');
-    const visibleStep = document.querySelector('#setup > div[id]:not(.hidden)');
-    state = normalizeStateShape({
-      ...state,
-      uiSection: visibleSection ? visibleSection.id : state.uiSection,
-      uiStep: visibleStep ? visibleStep.id : state.uiStep,
-      ownerEmail: normalizeEmail(state.ownerEmail || getSessionUserEmail()),
-      scorerEmails: Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : [],
-      inviteEmails: Array.isArray(state.inviteEmails) ? state.inviteEmails.map(normalizeEmail).filter(Boolean) : []
-    });
-
-    const currentTournament = tournamentList.find(item => item.id === selectedTournamentId) || selectedTournamentMeta;
-    const payload = {
-      id: selectedTournamentId,
-      name: currentTournament ? currentTournament.name : 'Meu torneio',
-      owner_email: normalizeEmail(currentTournament && currentTournament.owner_email ? currentTournament.owner_email : (state.ownerEmail || getSessionUserEmail())),
-      scorer_emails: Array.isArray(currentTournament && currentTournament.scorer_emails) ? currentTournament.scorer_emails.map(normalizeEmail).filter(Boolean) : state.scorerEmails,
-      game_data: state,
-      updated_at: new Date().toISOString()
-    };
-
-    const { error } = await supabase.from('tournaments').upsert(payload, { onConflict: 'id' });
-    if (error) reportCloudError('NÃ£o foi possÃ­vel salvar o estado do torneio.', error);
-  }
-
-  async function loadStateFromCloud() {
-    if (!selectedTournamentId) return;
-    const { data, error } = await supabase.from('tournaments').select('*').eq('id', selectedTournamentId).single();
-    if (error && error.code !== 'PGRST116') {
-        reportCloudError('NÃ£o foi possÃ­vel carregar o estado do torneio.', error);
-        return;
-    }
-    if (data && data.game_data && Object.keys(data.game_data).length > 0) {
-        selectedTournamentMeta = data;
-        state = normalizeStateShape({
-          ...baseState(),
-          ...data.game_data,
-          ownerEmail: data.owner_email || (data.game_data && data.game_data.ownerEmail) || state.ownerEmail,
-          scorerEmails: Array.isArray(data.scorer_emails) ? data.scorer_emails : (data.game_data && Array.isArray(data.game_data.scorerEmails) ? data.game_data.scorerEmails : []),
-          inviteEmails: Array.isArray(data.game_data && data.game_data.inviteEmails) ? data.game_data.inviteEmails : []
+      function bindEvents() {
+        document.getElementById('primaryCreate').addEventListener('click', () => {
+          if (!getCurrentUser()) openAuthModal('login');
+          else document.getElementById('newTournamentName').focus();
         });
-        if (state.ownerEmail && state.scorerEmails.includes(state.ownerEmail)) {
-          state.scorerEmails = state.scorerEmails.filter(email => email !== state.ownerEmail);
-        }
-        refreshUI();
-    }
-  }
 
-  function reportCloudError(message, error) {
-    console.error(message, error);
-    const status = el("cloudStatus");
-    status.textContent = `${message} Verifique a configuraÃ§Ã£o e as permissÃµes do Supabase.`;
-    status.classList.remove("hidden");
-    setTimeout(() => status.classList.add("hidden"), 8000);
-  }
-
-  supabase.channel('public:tournaments')
-    .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournaments' }, payload => {
-        if (payload.new && payload.new.id === selectedTournamentId) {
-            selectedTournamentMeta = payload.new;
-            state = normalizeStateShape({
-              ...baseState(),
-              ...payload.new.game_data,
-              ownerEmail: payload.new.owner_email || (payload.new.game_data && payload.new.game_data.ownerEmail) || state.ownerEmail,
-              scorerEmails: Array.isArray(payload.new.scorer_emails) ? payload.new.scorer_emails : (payload.new.game_data && Array.isArray(payload.new.game_data.scorerEmails) ? payload.new.game_data.scorerEmails : []),
-              inviteEmails: Array.isArray(payload.new.game_data && payload.new.game_data.inviteEmails) ? payload.new.game_data.inviteEmails : []
-            });
-            refreshUI();
-        }
-        if (payload.new) {
-          loadTournamentsForCurrentUser();
-        }
-    })
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'tournaments' }, payload => {
-        if (payload.new) {
-          loadTournamentsForCurrentUser();
-        }
-    })
-    .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'tournaments' }, payload => {
-        if (payload.old && payload.old.id === selectedTournamentId) {
-          selectedTournamentId = null;
-          localStorage.removeItem(STORAGE_TOURNAMENT_KEY);
-          state = baseState();
-        }
-        loadTournamentsForCurrentUser();
-    })
-    .subscribe((status, error) => {
-        if (error || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            reportCloudError('A sincronizaÃ§Ã£o em tempo real do torneio estÃ¡ indisponÃ­vel.', error || status);
-        }
-    });
-
-  // --- REGRAS DE UI ---
-  function refreshUI() {
-    document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
-    const section = el(state.uiSection) || el('setup');
-    section.classList.remove('hidden');
-
-    if (state.uiSection === 'setup') {
-        document.querySelectorAll('#setup > div[id]').forEach(d => d.classList.add('hidden'));
-        const step = el(state.uiStep) || el('stepParams');
-        step.classList.remove('hidden');
-
-        if(state.numPlayers) el('numPlayers').value = state.numPlayers;
-        if(state.numTeams) el('numTeams').value = state.numTeams;
-        if(state.numRounds) el('numRounds').value = state.numRounds;
-
-        if(state.uiStep === 'stepPlayers') renderPlayersForm();
-        if(state.uiStep === 'stepTeams') renderTeamsForm();
-        if(state.uiStep === 'stepTeamPreview') renderTeamPreview();
-    }
-
-    if (state.uiSection === 'matches') {
-        atualizarClassificacao();
-        renderAgenda();
-        renderCurrentMatch();
-    } else if (state.uiSection === 'finals') {
-        renderFinalMatch();
-    } else if (state.uiSection === 'podium') {
-        buildPodium();
-    }
-  }
-
-  // --- NAVEGAÃ‡ÃƒO ---
-  el("toPlayersBtn").addEventListener("click", () => {
-    const p = parseInt(el("numPlayers").value, 10);
-    const t = parseInt(el("numTeams").value, 10);
-    const r = parseInt(el("numRounds").value, 10);
-
-    // --- REGRAS ORIGINAIS RESTAURADAS (Com validaÃ§Ã£o para garantir igualdade) ---
-    if (!p || !t || !r) { alert("Preencha todos os nÃºmeros."); return; }
-    if (t < 3) { alert("MÃ­nimo 3 times."); return; }
-    if (p < t * 2) { alert("NÃºmero de jogadores insuficiente."); return; }
-
-    // IMPORTANTE: Para a regra original (soma) funcionar, nÃ£o pode haver sobra.
-    if (p % t !== 0) { alert("A quantidade de jogadores deve ser mÃºltiplo do nÃºmero de times (ex: 12 jog / 3 times = 4 cada). Ajuste os nÃºmeros."); return; }
-
-    state.numPlayers = p; state.numTeams = t; state.numRounds = r;
-    state.uiStep = 'stepPlayers';
-
-    renderPlayersForm(); refreshUI(); saveStateToCloud();
-  });
-
-  el("toTeamsBtn").addEventListener("click", () => {
-    state.players = [];
-    let erro = false;
-    for (let i = 0; i < state.numPlayers; i++) {
-        const elName = el(`pl_name_${i}`);
-        const elSkill = el(`pl_skill_${i}`);
-        if(!elName || !elSkill) continue;
-        const name = elName.value.trim();
-        if(!name) erro = true;
-        state.players.push({ name: name || `Jogador ${i+1}`, skill: parseInt(elSkill.value, 10) });
-    }
-    if(erro && !confirm("Alguns jogadores estÃ£o sem nome. Continuar assim mesmo?")) return;
-
-    state.uiStep = 'stepTeams';
-    renderTeamsForm(); refreshUI(); saveStateToCloud();
-  });
-
-  el("toPreviewBtn").addEventListener("click", () => {
-    state.teams = [];
-    for (let t = 0; t < state.numTeams; t++) {
-        const elTeam = el(`teamName_${t}`);
-        const name = elTeam ? elTeam.value.trim() : `Time ${t + 1}`;
-        state.teams.push({ name: name || `Time ${t + 1}`, color: TEAM_COLORS[t % TEAM_COLORS.length], players: [], stats: {} });
-    }
-    distribuirPorSomaEquilibrada();
-    state.uiStep = 'stepTeamPreview';
-    renderTeamPreview(); refreshUI(); saveStateToCloud();
-  });
-
-  el("startMatchesBtn").addEventListener("click", () => {
-    gerarAgendaRoundRobinRespeitandoRodadas();
-    state.uiSection = 'matches';
-    refreshUI(); saveStateToCloud();
-  });
-
-  el("backToParamsBtn").addEventListener("click", () => { state.uiStep = 'stepParams'; refreshUI(); saveStateToCloud(); });
-  el("backToPlayersBtn").addEventListener("click", () => { state.uiStep = 'stepPlayers'; refreshUI(); saveStateToCloud(); });
-  el("backToTeamsFromPreviewBtn").addEventListener("click", () => { state.uiStep = 'stepTeams'; refreshUI(); saveStateToCloud(); });
-  el("backToPreviewBtn").addEventListener("click", () => { state.uiSection = 'setup'; state.uiStep = 'stepTeamPreview'; refreshUI(); saveStateToCloud(); });
-  el("backToMatchesBtn").addEventListener("click", () => { state.uiSection = 'matches'; refreshUI(); saveStateToCloud(); });
-  el("backToFinalsBtn").addEventListener("click", () => { state.uiSection = 'finals'; refreshUI(); saveStateToCloud(); });
-
-  el("resetParamsBtn").addEventListener("click", () => {
-      el("numPlayers").value = ""; el("numTeams").value = ""; el("numRounds").value = "";
-      state.numPlayers = 0; state.numTeams = 0; state.numRounds = 0;
-  });
-  el("resetPlayersBtn").addEventListener("click", () => {
-      state.players = Array.from({length:state.numPlayers}, (_,i)=>({name:'', skill:3}));
-      renderPlayersForm(); saveStateToCloud();
-  });
-  el("resetTeamsBtn").addEventListener("click", () => {
-     state.teams = [];
-     for(let t=0; t<state.numTeams; t++){ state.teams.push({ name: `Time ${t + 1}`, color: TEAM_COLORS[t % TEAM_COLORS.length], players: [], stats: {} }); }
-     renderTeamsForm(); saveStateToCloud();
-  });
-  el("goToHomeBtn").addEventListener("click", () => {
-    if(confirm("Tem certeza? Isso apagarÃ¡ todo o progresso atual.")) {
-        state = preserveAccessState({
-          numPlayers:0, numTeams:0, numRounds:0,
-          players:[], teams:[], schedule:[],
-          currentIndex:0, finals:[], finalsIndex:0,
-          uiStep:'stepParams', uiSection:'setup'
+        document.getElementById('primaryWatch').addEventListener('click', () => {
+          document.getElementById('searchTournament').focus();
+          document.getElementById('landingCards').scrollIntoView({ behavior: 'smooth', block: 'start' });
         });
-        refreshUI(); saveStateToCloud();
-    }
-  });
-  el("newTournamentBtn").addEventListener("click", () => {
-      if(confirm("ComeÃ§ar novo torneio apagarÃ¡ os dados do atual. Confirmar?")) {
-        state = preserveAccessState({
-          numPlayers:0, numTeams:0, numRounds:0,
-          players:[], teams:[], schedule:[],
-          currentIndex:0, finals:[], finalsIndex:0,
-          uiStep:'stepParams', uiSection:'setup'
+
+        document.getElementById('createTournamentBtn').addEventListener('click', createTournament);
+        document.getElementById('loginSubmit').addEventListener('click', () => login(document.getElementById('authEmail').value, document.getElementById('authPassword').value));
+        document.getElementById('signupSubmit').addEventListener('click', () => createAccount(document.getElementById('authEmail').value, document.getElementById('authPassword').value));
+        document.getElementById('closeAuth').addEventListener('click', closeAuthModal);
+        document.getElementById('searchTournament').addEventListener('input', renderPublicTournaments);
+
+        document.querySelectorAll('.lang-btn').forEach(btn => btn.addEventListener('click', () => setLanguage(btn.dataset.lang)));
+
+        document.addEventListener('click', (event) => {
+          const copyBtn = event.target.closest('[data-copy-link]');
+          if (copyBtn) {
+            const url = copyBtn.dataset.copyLink;
+            navigator.clipboard?.writeText(url).catch(() => {});
+            alert('Link copiado para a área de transferência.');
+            return;
+          }
+
+          const whatsapp = event.target.closest('[data-share-whatsapp]');
+          if (whatsapp) {
+            const url = whatsapp.dataset.shareWhatsapp;
+            window.open(`https://wa.me/?text=${encodeURIComponent(url)}`, '_blank');
+            return;
+          }
+
+          if (event.target.closest('[data-selected-public]')) {
+            state.selectedTournamentId = event.target.closest('[data-selected-public]').dataset.selectedPublic;
+            saveStorage();
+            render();
+            return;
+          }
+
+          if (event.target.closest('[data-add-coadmin]')) {
+            addCoAdmin();
+            return;
+          }
+
+          if (event.target.closest('[data-save-tournament-name]')) {
+            saveTournamentName();
+            return;
+          }
+
+          if (event.target.closest('[data-save-setup]')) {
+            updateSetupValues();
+            return;
+          }
+
+          if (event.target.closest('[data-generate-teams]')) {
+            generateTeamsFromPlayers();
+            return;
+          }
+
+          if (event.target.closest('[data-generate-schedule]')) {
+            generateSchedule();
+            return;
+          }
+
+          if (event.target.closest('[data-save-score]')) {
+            saveScore();
+            return;
+          }
+
+          if (event.target.closest('[data-next-match]')) {
+            const tournament = getSelectedTournament();
+            if (!tournament) return;
+            const total = (tournament.setup.schedule || []).length;
+            if (total) tournament.setup.currentIndex = Math.min((tournament.setup.currentIndex || 0) + 1, total - 1);
+            tournament.updatedAt = new Date().toISOString();
+            saveStorage();
+            render();
+          }
         });
-        refreshUI(); saveStateToCloud();
       }
-  });
 
-  function renderPlayersForm() {
-    const pf = el("playersForm"); pf.innerHTML = "";
-    const saved = state.players.length > 0 ? state.players : Array.from({length:state.numPlayers}, (_,i)=>({name:'', skill:3}));
-    for(let i=0; i<state.numPlayers; i++){
-      const p = saved[i] || {name:'', skill:3};
-      pf.innerHTML += `<div class="team-block"><div class="row cols-2"><div><label>Jogador ${i+1}</label><input type="text" id="pl_name_${i}" value="${p.name}" placeholder="Nome" autocomplete="off"/></div><div><label>Habilidade</label><select id="pl_skill_${i}"><option value="1" ${p.skill==1?'selected':''}>1 â­</option><option value="2" ${p.skill==2?'selected':''}>2 â­</option><option value="3" ${p.skill==3?'selected':''}>3 â­</option><option value="4" ${p.skill==4?'selected':''}>4 â­</option><option value="5" ${p.skill==5?'selected':''}>5 â­</option></select></div></div></div>`;
-    }
-  }
-  function renderTeamsForm() {
-    const tf = el("teamsForm"); tf.innerHTML = "";
-    for(let t=0; t<state.numTeams; t++){
-      const existingName = state.teams[t] ? state.teams[t].name : '';
-      const color = TEAM_COLORS[t % TEAM_COLORS.length];
-      tf.innerHTML += `<div class="team-block"><div class="flex"><div class="chip"><span class="dot" style="background:${color}"></span><b>Time ${t+1}</b></div></div><div class="row" style="margin-top:8px"><label>Nome do time</label><input id="teamName_${t}" type="text" value="${existingName}" placeholder="Nome do time" autocomplete="off"/></div></div>`;
-    }
-  }
-  function renderTeamPreview() {
-    const container = el("previewContent"); container.innerHTML = "";
-    state.teams.forEach(team => {
-        const totalSkill = team.players.reduce((s, p) => s + p.skill, 0);
-        container.innerHTML += `<div class="team-block"><div class="chip"><span class="dot" style="background:${team.color}"></span><b style="color:${team.color}">${team.name} (${totalSkill}â­)</b></div>${renderPlayersList(team.players)}</div>`;
-    });
-  }
+      if (!state.accounts.length) {
+        state.accounts.push({ email: 'admin@crieseuvolei.com', password: 'crieseuvolei123', createdAt: new Date().toISOString() });
+      }
 
-  // --- LÃ“GICA DO JOGO (SORTEIO ORIGINAL RESTAURADO) ---
-  function distribuirPorSomaEquilibrada() {
-    // 1. Ordena os jogadores do melhor para o pior
-    const sortedPlayers = [...state.players].sort((a, b) => b.skill - a.skill);
-
-    // 2. Limpa os times e o placar de habilidades
-    state.teams.forEach(t => t.players = []);
-    const teamSkillSums = new Array(state.numTeams).fill(0);
-
-    // 3. Distribui sempre para o time que tem a menor soma de habilidades no momento
-    sortedPlayers.forEach(player => {
-        const minSumIndex = teamSkillSums.indexOf(Math.min(...teamSkillSums));
-        state.teams[minSumIndex].players.push(player);
-        teamSkillSums[minSumIndex] += player.skill;
-    });
-  }
-
-  function gerarAgendaRoundRobinRespeitandoRodadas(){
-    const n = state.numTeams; let list = Array.from({length:n}, (_,i)=> i);
-    if(n % 2 === 1) list.push(-1);
-    const m = list.length, roundsPerCycle = m - 1; let cycleRounds = [], arr = [...list];
-    for(let r=0; r<roundsPerCycle; r++){
-      const pairs = [];
-      for(let i=0; i<m/2; i++){ if(arr[i]!==-1&&arr[m-1-i]!==-1) pairs.push({a:arr[i],b:arr[m-1-i]}); }
-      cycleRounds.push(pairs); const fixed = arr[0], rest = arr.slice(1);
-      rest.unshift(rest.pop()); arr = [fixed, ...rest];
-    }
-    const wantedRounds = state.numRounds; let rounds = [];
-    for(let k=0; rounds.length<wantedRounds; k++){
-      for(const rr of cycleRounds){ rounds.push(rr.map(p=>({...p}))); if(rounds.length>=wantedRounds) break; }
-    }
-    state.schedule = [];
-    for(let r=0; r<rounds.length; r++){
-      let order = 1; for(const p of rounds[r]){ state.schedule.push({ a:p.a, b:p.b, scoreA:null, scoreB:null, round:r+1, order:order++ }); }
-    }
-    state.currentIndex = 0;
-  }
-
-  function atualizarClassificacao(){
-    state.teams.forEach(t => t.stats = {J:0, V:0, D:0, PF:0, PS:0});
-    state.schedule.forEach(g => {
-        if(g.scoreA == null || g.scoreB == null) return;
-        const A = state.teams[g.a], B = state.teams[g.b];
-        A.stats.J++; B.stats.J++; A.stats.PF += g.scoreA; A.stats.PS += g.scoreB; B.stats.PF += g.scoreB; B.stats.PS += g.scoreA;
-        if(g.scoreA > g.scoreB) { A.stats.V++; B.stats.D++; } else if(g.scoreB > g.scoreA) { B.stats.V++; A.stats.D++; }
-    });
-    el("standingsTable").querySelector("tbody").innerHTML = state.teams.map(t => { const saldo = t.stats.PF - t.stats.PS; const perc = t.stats.J ? Math.round((t.stats.V / t.stats.J) * 100) : 0; return {...t, ...t.stats, saldo, perc}; })
-      .sort((a,b) => (b.V - a.V) || (b.saldo - a.saldo) || (b.PF - a.PF))
-      .map(r => `<tr><td style="color:${r.color}; font-weight:700;">${r.name}</td><td class="right">${r.J}</td><td class="right">${r.V}</td><td class="right">${r.PF}</td><td class="right">${r.PS}</td><td class="right">${r.saldo}</td><td class="right">${r.perc}%</td></tr>`).join("");
-  }
-
-  function renderCurrentMatch(){
-    const g=state.schedule[state.currentIndex];
-    if(!g){ if(state.schedule.length > 0) iniciarFinais(); return; }
-    const A=state.teams[g.a], B=state.teams[g.b];
-    el("roundInfo").innerText = `Rodada ${g.round} â€” Jogo ${g.order}`;
-    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="scoreA" type="number" min="0" placeholder="0" value="${g.scoreA == null ? '' : g.scoreA}"/><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreA == null ? '-' : g.scoreA}</div>`;
-    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="scoreB" type="number" min="0" placeholder="0" value="${g.scoreB == null ? '' : g.scoreB}"/><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreB == null ? '-' : g.scoreB}</div>`;
-    el("currentMatch").innerHTML = `<div class="score-grid"><div class="team-side"><div>${teamChip(A)}</div>${renderPlayersList(A.players)}</div><div class="vs">vs</div><div class="team-side" style="align-items:flex-end"><div>${teamChip(B)}</div>${renderPlayersList(B.players)}</div></div><div style="margin-top:12px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div>`;
-    if(isAdmin) attachScoreButtonListeners('#currentMatch', 'scoreA', 'scoreB');
-    el('nextMatchBtn').disabled = g.scoreA === null;
-  }
-
-  el("saveOnlyBtn").addEventListener("click", ()=>{
-    const g = state.schedule[state.currentIndex];
-    const a=parseInt(el("scoreA").value,10), b=parseInt(el("scoreB").value,10);
-    if(isNaN(a)||isNaN(b)){alert("Digite os pontos.");return;}
-    if(a === b){alert("A partida nÃ£o pode terminar empatada. Lance o placar final com um vencedor.");return;}
-    g.scoreA=a;g.scoreB=b;
-    atualizarClassificacao(); renderAgenda();
-    el('nextMatchBtn').disabled = false;
-    saveStateToCloud();
-  });
-  el("nextMatchBtn").addEventListener("click", ()=>{
-    state.currentIndex++;
-    if (state.currentIndex >= state.schedule.length) { iniciarFinais(); } else { renderCurrentMatch(); saveStateToCloud(); }
-  });
-
-  function teamChip(t){ return `<span class="chip"><span class="dot" style="background:${t.color}"></span><b style="color:${t.color}">${t.name}</b></span>`; }
-  function renderPlayersList(players){
-    if(!players||!players.length) return `<div class="players-list"><ul><li><em class="mini muted">-</em></li></ul></div>`;
-    return `<div class="players-list"><ul>${players.map(p=>`<li>${p.name}</li>`).join("")}</ul></div>`;
-  }
-  const attachScoreButtonListeners = (sel, idA, idB) => {
-    document.querySelector(sel).querySelectorAll('button[data-op]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const tgt = el(btn.dataset.target === 'scoreA' ? idA : idB);
-        let v = parseInt(tgt.value, 10) || 0;
-        if (btn.dataset.op === 'plus') v++; else if (btn.dataset.op === 'minus' && v > 0) v--;
-        tgt.value = v;
-      });
-    });
-  };
-
-  function renderAgenda(){
-    const container = el("agenda"); container.innerHTML = ""; const byRound = {};
-    state.schedule.forEach((g, i) => {
-      if (!byRound[g.round]) byRound[g.round] = [];
-      byRound[g.round].push({ ...g, i });
-    });
-    Object.keys(byRound).sort((a, b) => a - b).forEach(r => {
-        const card = document.createElement('div'); card.className = "card"; card.style.marginBottom = "8px";
-        let html = `<b>Rodada ${r}</b>`;
-        html += byRound[r].sort((x, y) => (x.order || 0) - (y.order || 0)).map(g => {
-            const A = state.teams[g.a], B = state.teams[g.b];
-            const pA = A.players.map(p => p.name).join(', '), pB = B.players.map(p => p.name).join(', ');
-            const editBtn = isAdmin ? `<div style="text-align:center; margin-top:8px;"><button class="small secondary" data-edit="${g.i}">Editar Placar</button></div>` : '';
-            return `<div class="agenda-game" style="border-bottom:1px solid #2a3242; padding-bottom:10px; margin-bottom:10px;">
-              <div class="mini muted" style="text-align:center; margin-bottom:4px">Jogo ${g.order}</div>
-              <div style="display:flex; justify-content:space-between; align-items:center; gap:8px">
-                <div style="flex:1; text-align:left; overflow:hidden;">${teamChip(A)}<div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pA}">${pA}</div></div>
-                <div style="white-space:nowrap; font-weight:bold; font-size:1.1rem; padding:0 4px;">${g.scoreA == null ? '-' : g.scoreA} x ${g.scoreB == null ? '-' : g.scoreB}</div>
-                <div style="flex:1; text-align:right; overflow:hidden;">${teamChip(B)}<div class="mini muted" style="margin-top:2px; font-size:0.75rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${pB}">${pB}</div></div>
-              </div>${editBtn}</div>`;
-        }).join('');
-        card.innerHTML = html; container.appendChild(card);
-    });
-  }
-
-  el("agenda").addEventListener("click", e => {
-    if (!isAdmin) return;
-    if (e.target.matches('button[data-edit]')) {
-        const idx = parseInt(e.target.dataset.edit, 10);
-        if (document.getElementById(`editor-${idx}`)) return;
-        const g = state.schedule[idx];
-        const editorHtml = `<div class="game-editor" id="editor-${idx}" style="margin-top:8px; padding-top:8px; border-top:1px dashed #444; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center;">
-                <input type="number" value="${g.scoreA == null ? 0 : g.scoreA}" id="ea-${idx}" placeholder="Pts A"><input type="number" value="${g.scoreB == null ? 0 : g.scoreB}" id="eb-${idx}" placeholder="Pts B"><button class="small" data-save="${idx}">Salvar</button></div>`;
-        e.target.closest('.agenda-game').insertAdjacentHTML('beforeend', editorHtml);
-        e.target.parentElement.style.display = 'none';
-    }
-    if (e.target.matches('button[data-save]')) {
-        const idx = parseInt(e.target.dataset.save, 10);
-        const g = state.schedule[idx], valA = document.getElementById(`ea-${idx}`).value, valB = document.getElementById(`eb-${idx}`).value;
-        if (valA === '' || valB === '') return alert("Preencha os pontos.");
-        const scoreA = parseInt(valA, 10), scoreB = parseInt(valB, 10);
-        if (scoreA === scoreB) return alert("A partida nÃ£o pode terminar empatada. Lance o placar final com um vencedor.");
-        g.scoreA = scoreA; g.scoreB = scoreB;
-        atualizarClassificacao(); renderAgenda(); if (state.currentIndex === idx && state.uiSection === 'matches') renderCurrentMatch(); saveStateToCloud();
-    }
-  });
-
-  function iniciarFinais(){
-    atualizarClassificacao();
-    const ranking = state.teams.map((t,i)=>({ i, name:t.name, color:t.color, players:t.players, stats:{...t.stats} })).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
-    state.finals = [];
-    if (ranking.length >= 4) { state.finals.push({ label:"3Âº lugar", a:ranking[2].i, b:ranking[3].i }); state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); }
-    else if (ranking.length >= 2) { state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); }
-    else { alert("Times insuficientes."); buildPodium(); state.uiSection='podium'; refreshUI(); saveStateToCloud(); return; }
-    state.finals.forEach(f => { f.scoreA = null; f.scoreB = null; });
-    state._rankingSnapshot = ranking; state.finalsIndex = 0; state.uiSection = 'finals'; refreshUI(); saveStateToCloud();
-  }
-  function renderFinalMatch(){
-    const f=state.finals[state.finalsIndex]; if(!f){buildPodium(); state.uiSection='podium'; refreshUI(); return;} const A=state.teams[f.a], B=state.teams[f.b];
-    const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="fscoreA" type="number" min="0" value="${f.scoreA==null ? '' : f.scoreA}"><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd">${f.scoreA==null ? '-' : f.scoreA}</div>`;
-    const controlsB = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreB">-</button><input id="fscoreB" type="number" min="0" value="${f.scoreB==null ? '' : f.scoreB}"><button class="secondary" data-op="plus" data-target="scoreB">+</button></div>` : `<div class="kbd">${f.scoreB==null ? '-' : f.scoreB}</div>`;
-    el("finalsMatch").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;align-items:center"><div>${teamChip(A)}</div><div class="mini muted">${f.label}</div><div>${teamChip(B)}</div></div><div style="margin-top:10px" class="row cols-2"><div><label>Pontos ${A.name}</label>${controlsA}</div><div><label>Pontos ${B.name}</label>${controlsB}</div></div></div>`;
-    if(isAdmin) attachScoreButtonListeners('#finalsMatch', 'fscoreA', 'fscoreB');
-  }
-  el("saveFinalBtn").addEventListener("click", ()=>{
-    const f=state.finals[state.finalsIndex]; if(!f) return;
-    const a=parseInt(el("fscoreA").value,10), b=parseInt(el("fscoreB").value,10);
-    if(isNaN(a)||isNaN(b)){alert("Digite.");return;}
-    if(a === b){alert("A partida nÃ£o pode terminar empatada. Lance o placar final com um vencedor.");return;}
-    f.scoreA=a; f.scoreB=b; state.finalsIndex++;
-    if(state.finalsIndex >= state.finals.length){ buildPodium(); state.uiSection='podium'; refreshUI(); } else { renderFinalMatch(); }
-    saveStateToCloud();
-  });
-
-  function buildPodium(){
-    let podiumHTML = ''; const placed = new Set();
-    const finalG=state.finals.find(x=>x.label==="Final"); const thirdG=state.finals.find(x=>x.label.includes("3Âº"));
-    const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
-    const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
-    const champ=getW(finalG), vice=getL(finalG), third=getW(thirdG), fourth=getL(thirdG);
-
-    if (champ) { podiumHTML += `<div class="status good"><b>ðŸ† 1Âº LUGAR:</b> ${champ.name}</div>`; placed.add(champ.name); }
-    if (vice) { podiumHTML += `<div class="status"><b>ðŸ¥ˆ 2Âº LUGAR:</b> ${vice.name}</div>`; placed.add(vice.name); }
-    if (third) { podiumHTML += `<div class="status"><b>ðŸ¥‰ 3Âº LUGAR:</b> ${third.name}</div>`; placed.add(third.name); }
-
-    if (state._rankingSnapshot) {
-      let rank = placed.size + 1;
-      state._rankingSnapshot.forEach(r => { if (!placed.has(r.name)) { podiumHTML += `<div class="status"><b>${rank}Âº LUGAR:</b> ${r.name}</div>`; placed.add(r.name); rank++; } });
-    }
-    el("podiumBox").innerHTML = podiumHTML || '<div class="status">IndisponÃ­vel.</div>';
-  }
-
-  function exportAsJpeg(htmlContent, filename, options = {}) {
-    const overlay = document.createElement('div'); overlay.id = 'export-overlay'; overlay.innerText = 'Gerando imagem...'; document.body.appendChild(overlay);
-    const iframe = document.createElement('iframe'); iframe.style.position = 'absolute'; iframe.style.left = '-9999px'; iframe.style.width = options.width || '800px'; iframe.style.height = '1px'; document.body.appendChild(iframe);
-    iframe.contentWindow.document.open(); iframe.contentWindow.document.write(htmlContent); iframe.contentWindow.document.close();
-    setTimeout(() => { html2canvas(iframe.contentWindow.document.body, { scale: 2, useCORS: true, backgroundColor: options.dark ? '#0f1115' : '#ffffff' }).then(canvas => { const link = document.createElement('a'); link.download = filename; link.href = canvas.toDataURL("image/jpeg", 0.92); link.click(); document.body.removeChild(iframe); document.body.removeChild(overlay); }); }, 1000);
-  }
-
-  function getTeamsExportHtml(isDark) {
-     const bg = isDark ? '#0f1115' : '#ffffff'; const txtColor = isDark ? '#eef2f6' : '#000000';
-     const nameStyle = (color) => `color:${color}; font-weight:bold; font-size:1.1rem; ${!isDark ? 'text-shadow: 0px 0px 1px rgba(0,0,0,0.5);' : ''}`;
-     const style = `<style>body{font-family:sans-serif;background:${bg};color:${txtColor};padding:20px}h1{text-align:center}.team-box{border:1px dashed #555;padding:10px;margin-bottom:10px;page-break-inside:avoid;border-radius:8px}ul{margin:5px 0 0;padding-left:20px; color:${isDark?'#9aa4b2':'#444'}}</style>`;
-     let html = `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>EscalaÃ§Ã£o dos Times</h1>`;
-     state.teams.forEach(t => { html += `<div class="team-box"><span style="${nameStyle(t.color)}">${t.name}</span> <strong style="font-size:0.9rem">(${t.players.reduce((a,b)=>a+b.skill,0)}â­)</strong><ul>${t.players.map(p=>`<li>${p.name} (${p.skill}â­)</li>`).join('')}</ul></div>`; });
-     return html + `<footer style="padding:18px 16px 28px; color:#8aa0b7; text-align:center; font-size:0.82rem; border-top:1px solid #1b2230; margin-top:20px;">
-  ? 2026 Jo?o Paz. CrieSeuVolei. Todos os direitos reservados.
-</footer>
-</body></html>`;
-  }
-  el("exportTeamsPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'times.pdf',jsPDF:{format:'a4'}}).from(getTeamsExportHtml(false)).save());
-  el("exportTeamsJpegBtn").addEventListener("click", ()=> exportAsJpeg(getTeamsExportHtml(true),'times.jpeg',{dark:true,width:'500px'}));
-
-  function getAgendaExportHtml(format) {
-      const isPdf = format === 'pdf';
-      const theme = isPdf ? { bg: '#ffffff', card: '#f2f2f2', border: '#000', text: '#000', subtext: '#444' } : { bg: '#0f1115', card: '#171a21', border: '#2a3242', text: '#eef2f6', subtext: '#9aa4b2' };
-      const w = isPdf ? '100%' : '540px';
-      const tStyle = (c) => `color:${c}; font-weight:bold; font-size:1.1rem; ${isPdf ? 'text-shadow:0 0 1px rgba(0,0,0,0.5)':''}`;
-      let body = ''; const byRound = {}; state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
-      Object.keys(byRound).sort((a,b)=>a-b).forEach(r => {
-          body += `<div class="round"><div class="rtitle">Rodada ${r}</div>`;
-          byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
-               const A = state.teams[g.a], B = state.teams[g.b];
-               body += `<div class="game"><div style="flex:1;text-align:left;padding-right:5px"><div style="${tStyle(A.color)}">${A.name}</div><div class="players">${A.players.map(p=>p.name).join(', ')}</div></div><div style="align-self:center;padding:0 10px;font-family:monospace;font-weight:bold;font-size:1.2rem;white-space:nowrap">${g.scoreA==null ? '' : g.scoreA} x ${g.scoreB==null ? '' : g.scoreB}</div><div style="flex:1;text-align:right;padding-left:5px"><div style="${tStyle(B.color)}">${B.name}</div><div class="players">${B.players.map(p=>p.name).join(', ')}</div></div></div>`;
-          });
-          body += '</div>';
-      });
-      const style = `<style>body{font-family:sans-serif;background:${theme.bg};color:${theme.text};padding:10px;width:${w}}.round{background:${theme.card};border:1px solid ${theme.border};margin-bottom:10px;padding:10px;border-radius:8px;page-break-inside:avoid}.rtitle{border-bottom:1px solid #777;margin-bottom:8px;font-weight:bold;text-transform:uppercase}.game{display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px dashed #444}.game:last-child{border-bottom:none}.players{font-size:0.75rem;color:${theme.subtext};margin-top:2px;line-height:1.2}</style>`;
-      return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1 style="text-align:center">Agenda</h1>${body}</body></html>`;
-  }
-  el("exportAgendaPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'agenda.pdf',jsPDF:{format:'a4'}}).from(getAgendaExportHtml('pdf')).save());
-  el("exportAgendaJpegBtn").addEventListener("click", ()=> exportAsJpeg(getAgendaExportHtml('jpeg'),'agenda.jpeg',{dark:true,width:'540px'}));
-
-  function getFullReportHtml(dark) {
-    const bg = dark ? '#0f1115' : '#f8f9fa'; const text = dark ? '#eef2f6' : '#212529';
-    const cardBg = dark ? '#171a21' : '#ffffff'; const cardBorder = dark ? '#2a3242' : '#dee2e6';
-    const borderColor = dark ? '#333' : '#dee2e6'; const width = dark ? '800px' : '100%';
-
-    let agendaHtml = ''; const byRound = {}; state.schedule.forEach(g => { (byRound[g.round] = byRound[g.round] || []).push(g); });
-    Object.keys(byRound).sort((a,b)=>a-b).forEach(r => {
-        agendaHtml += `<div class="round-block"><div class="round-title">Rodada ${r}</div>`;
-        byRound[r].sort((x,y)=>(x.order||0)-(y.order||0)).forEach(g => {
-            const A = state.teams[g.a], B = state.teams[g.b];
-            agendaHtml += `<div class="match-row"><div class="team-left"><span class="dot" style="background:${A.color}"></span> ${A.name}</div><div class="score-badge">${g.scoreA==null ? '' : g.scoreA} : ${g.scoreB==null ? '' : g.scoreB}</div><div class="team-right">${B.name} <span class="dot" style="background:${B.color}"></span></div></div>`;
+      if (!state.tournaments.length) {
+        state.tournaments.push({
+          id: uuid(),
+          name: 'Pelada da Semana',
+          ownerEmail: 'admin@crieseuvolei.com',
+          adminEmails: ['admin@crieseuvolei.com'],
+          coAdmins: [],
+          isPublic: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          setup: { players: 12, teams: 4, rounds: 4, playersList: Array.from({ length: 12 }, (_, index) => ({ id: index, name: `Jogador ${index + 1}`, skill: 3 })), teamsList: Array.from({ length: 4 }, (_, index) => ({ id: index, name: `Time ${index + 1}`, members: [] })), schedule: [], currentIndex: 0 }
         });
-        agendaHtml += `</div>`;
-    });
+        state.selectedTournamentId = state.tournaments[0].id;
+      }
 
-    const ranking = state.teams.map(t=>({...t})).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
-    let rankingTable = `<table class="std-table"><thead><tr><th>Time</th><th>J</th><th>V</th><th>PF</th><th>PS</th><th>Saldo</th></tr></thead><tbody>`;
-    ranking.forEach(t => { rankingTable += `<tr><td style="text-align:left;font-weight:bold;color:${dark ? t.color : '#000'}">${!dark ? `<span class="dot" style="background:${t.color}"></span>` : ''} ${t.name}</td><td>${t.stats.J}</td><td>${t.stats.V}</td><td>${t.stats.PF}</td><td>${t.stats.PS}</td><td>${t.stats.PF - t.stats.PS}</td></tr>`; });
-    rankingTable += `</tbody></table>`;
-
-    let finalsHtml = '';
-    if (state.finals.length > 0) {
-        state.finals.forEach(f => {
-             const A = state.teams[f.a], B = state.teams[f.b];
-             finalsHtml += `<div class="final-row"><b>${f.label}:</b> <span style="color:${A.color}">${A.name}</span> <b>(${f.scoreA==null ? '-' : f.scoreA})</b> x <b>(${f.scoreB==null ? '-' : f.scoreB})</b> <span style="color:${B.color}">${B.name}</span></div>`;
-        });
-    } else { finalsHtml = '<div style="color:#777; font-style:italic">Jogos finais nÃ£o realizados.</div>'; }
-
-    let podiumHtml = ''; const getW = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA>f.scoreB?state.teams[f.a]:state.teams[f.b]):null; const getL = f => f&&f.scoreA!=null&&f.scoreB!=null?(f.scoreA<f.scoreB?state.teams[f.a]:state.teams[f.b]):null;
-    const fin = state.finals.find(x => x.label === "Final"); const thi = state.finals.find(x => x.label.includes("3Âº"));
-    const podiumList = []; const placedNames = new Set();
-    if (fin) { const champ = getW(fin), vice = getL(fin); if (champ) { podiumList.push({ t: champ, label: '1Âº LUGAR', css: 'gold', icon: 'ðŸ†' }); placedNames.add(champ.name); } if (vice) { podiumList.push({ t: vice, label: '2Âº LUGAR', css: 'silver', icon: 'ðŸ¥ˆ' }); placedNames.add(vice.name); } }
-    if (thi) { const third = getW(thi); if (third) { podiumList.push({ t: third, label: '3Âº LUGAR', css: 'bronze', icon: 'ðŸ¥‰' }); placedNames.add(third.name); } }
-    if (state._rankingSnapshot) { let currentRank = podiumList.length + 1; state._rankingSnapshot.forEach(r => { if (!placedNames.has(r.name)) { podiumList.push({ t: r, label: `${currentRank}Âº LUGAR`, css: 'normal', icon: '' }); placedNames.add(r.name); currentRank++; } }); }
-    if (podiumList.length === 0) podiumHtml = '<div style="padding:10px">PÃ³dio indisponÃ­vel.</div>';
-    podiumList.forEach(w => { podiumHtml += `<div class="podium-bar ${w.css}"><div class="podium-title">${w.icon} ${w.label}: ${w.t.name}</div><div class="podium-players">(${w.t.players.map(p=>p.name).join(', ')})</div></div>`; });
-
-    const style = `<style>body{font-family:'Inter',sans-serif;background:${bg};color:${text};padding:20px;width:${width};margin:0 auto}h1{text-align:center;margin-bottom:20px;font-size:1.5rem}h2{font-size:1.1rem;margin:0 0 10px 0;border-bottom:1px solid ${borderColor};padding-bottom:5px}.section-card{background:${cardBg};border:1px solid ${cardBorder};border-radius:8px;padding:15px;margin-bottom:20px;box-shadow:0 2px 4px rgba(0,0,0,0.05);page-break-inside:avoid}.round-block{border-bottom:1px solid ${borderColor};padding-bottom:10px;margin-bottom:10px}.round-block:last-child{border-bottom:none;margin-bottom:0}.round-title{font-weight:bold;font-size:0.9rem;margin-bottom:5px;color:${dark?'#ccc':'#555'}}.match-row{display:flex;justify-content:space-between;align-items:center;font-size:0.9rem;padding:4px 0}.score-badge{background:${dark?'#2a3242':'#e9ecef'};padding:2px 8px;border-radius:4px;font-weight:bold;font-family:monospace}.team-left{flex:1;text-align:right;padding-right:10px}.team-right{flex:1;text-align:left;padding-left:10px}.dot{height:8px;width:8px;background-color:#bbb;border-radius:50%;display:inline-block}.std-table{width:100%;border-collapse:collapse;font-size:0.85rem}.std-table th{text-align:center;background:${dark?'#252a33':'#f1f3f5'};padding:6px;font-weight:600}.std-table td{text-align:center;padding:6px;border-bottom:1px solid ${borderColor}}.std-table tr:last-child td{border-bottom:none}.podium-bar{padding:10px 15px;border-radius:6px;margin-bottom:8px;color:#000;display:flex;flex-direction:column;border:1px solid #ccc}.podium-title{font-weight:bold;font-size:1rem}.podium-players{font-size:0.85rem;margin-top:2px;opacity:0.85}.gold{background-color:#fff3cd;border:1px solid #ffeeba;color:#856404}.silver{background-color:#e2e3e5;border:1px solid #d6d8db;color:#383d41}.bronze{background-color:#f8d7da;border:1px solid #f5c6cb;color:#721c24}.normal{background-color:${dark ? '#2a3242' : '#f8f9fa'}; color:${dark ? '#fff' : '#000'}; border-color:${dark ? '#444' : '#ddd'}}.final-row{font-size:1rem;margin-bottom:5px}</style>`;
-    return `<!DOCTYPE html><html><head><meta charset="utf-8">${style}</head><body><h1>Crie seu vÃ´lei â€” RelatÃ³rio</h1><div class="section-card"><h2>Agenda</h2>${agendaHtml}</div><div class="section-card"><h2>ClassificaÃ§Ã£o das Rodadas</h2>${rankingTable}</div><div class="section-card"><h2>Finais</h2>${finalsHtml}</div><div class="section-card"><h2>PÃ³dio Completo</h2>${podiumHtml}</div></body></html>`;
-  }
-  el("exportFullPdfBtn").addEventListener("click", ()=> html2pdf().set({margin:10,filename:'relatorio_completo.pdf',jsPDF:{unit:'mm',format:'a4'}}).from(getFullReportHtml(false)).save());
-  el("exportFullJpegBtn").addEventListener("click", ()=> exportAsJpeg(getFullReportHtml(false),'relatorio_completo.jpeg',{dark:false,width:'800px'}));
-
-  setLanguage(currentLanguage);
-  checkUser();
-  loadTournamentsForCurrentUser();
-  renderPublicTournaments();
-  if (selectedTournamentId) loadStateFromCloud();
-})();
-</script>
+      bindEvents();
+      render();
+    })();
+  </script>
 </body>
 </html>
-

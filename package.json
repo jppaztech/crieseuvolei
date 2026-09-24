@@ -9,6 +9,7 @@
     "serve": "npx http-server . -p 8000"
   },
   "devDependencies": {
-    "http-server": "^14.1.1"
+    "http-server": "^14.1.1",
+    "netlify-cli": "^27.9.0"
   }
 }

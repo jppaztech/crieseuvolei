@@ -1,222 +1,152 @@
-# 🏐 CrieSeuVolei - Gerenciador de Peladas de Vôlei
+# CrieSeuVôlei
 
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Made with Supabase](https://img.shields.io/badge/Made%20with-Supabase-blue.svg)
-![HTML5](https://img.shields.io/badge/HTML5-orange.svg)
-![CSS3](https://img.shields.io/badge/CSS3-blue.svg)
-![JavaScript](https://img.shields.io/badge/JavaScript-yellow.svg)
-![Responsive Design](https://img.shields.io/badge/Responsive-Design-orange.svg)
-![Status: Active](https://img.shields.io/badge/Status-Active-success.svg)
+Aplicação web para criar e acompanhar torneios de vôlei, com gestão de placar, criação de torneios por usuários autenticados, convite de co-admins por torneio e visualização pública para espectadores.
 
-Uma aplicação web moderna e responsiva para gerenciar placar e resultado de partidas de vôlei em tempo real. Perfeita para peladas, treinos e competições amistosas.
+Website: https://crieseuvolei.netlify.app/
 
-Suporte de idioma: PT-BR e EN-US.
+Suporte: PT-BR e EN-US.
 
-## 🌐 Website
-Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
+## Visão geral
 
-Para rodar localmente com Node.js:
+O CrieSeuVôlei foi pensado para uso coletivo e realista:
+
+- qualquer pessoa pode criar sua conta;
+- o criador do torneio passa a ser responsável por ele;
+- o responsável pode convidar co-criadores;
+- espectadores podem acompanhar torneios públicos sem login;
+- o dono da plataforma continua com acesso de manutenção geral.
+
+A aplicação foi estruturada para funcionar em cenário multiusuário e multi-torneio, com isolamento por entidade e controle de acesso por torneio.
+
+## Funcionalidades principais
+
+- criação de torneios
+- cadastro e login com Supabase Auth
+- convite de co-admins por e-mail ou WhatsApp
+- painel de administração por torneio
+- acompanhamento público de torneios em andamento
+- busca por nome do torneio
+- registro de partidas e placar
+- exibição do nome do torneio no topo da interface durante partidas
+- suporte de idioma PT-BR e EN-US
+- landing page moderna e responsiva
+
+## Stack
+
+- HTML5
+- CSS3
+- JavaScript
+- Supabase Auth + Postgres
+- Netlify
+- Node.js para execução local
+
+## Requisitos
+
+- Node.js 18+
+- npm
+- projeto Supabase configurado
+- acesso a URL pública do Netlify
+
+## Execução local
 
 ```bash
 npm install
 npm run dev
 ```
 
-## 📋 Sumário
+Acesse:
 
-- [Características](#-características)
-- [Stack Tecnológico](#️-stack-tecnológico)
-- [Tecnologias Utilizadas](#️-tecnologias-utilizadas)
-- [Pré-requisitos](#-pré-requisitos)
-- [Instalação](#-instalação)
-- [Como Usar](#-como-usar)
-- [Funcionalidades](#-funcionalidades)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Configuração do Supabase](#-configuração-do-supabase)
-- [Contribuindo](#-contribuindo)
-- [Troubleshooting](#-troubleshooting)
-- [Licença](#-licença)
+```text
+http://localhost:8000
+```
 
-## ✨ Características
+## Variáveis de ambiente
 
-- ⚡ **Gerenciamento em Tempo Real** - Atualizações instantâneas do placar e estatísticas
-- 📱 **Design Responsivo** - Funciona perfeitamente em desktop, tablet e celular
-- 🎨 **Interface Dark Mode** - Tema escuro moderno e agradável aos olhos
-- ⚖️ **Sorteio Inteligente** - Distribuição automática de times baseada no nível de habilidade (1 a 5 ⭐)
-- 📅 **Agenda Automática** - Geração de partidas no formato Round-Robin (todos contra todos)
-- 🏆 **Classificação Dinâmica** - Tabela atualizada em tempo real com saldo de pontos e aproveitamento
-- 👑 **Finais e Pódio** - Chaveamento automático dos melhores colocados e tela de premiação
-- 📊 **Estatísticas Detalhadas** - Rastreamento de pontuação, sets e performance
-- 🖨️ **Exportar para PDF** - Gere relatórios das partidas em PDF
-- 💾 **Sincronização na Nuvem** - Dados salvos automaticamente via Supabase
-- 🔄 **Sincronização em Tempo Real** - Múltiplos dispositivos sincronizados
-- 🎯 **Interface Intuitiva** - Fácil de usar, sem necessidade de treinamento
+Crie um arquivo `.env` ou use as variáveis do painel do Netlify com os valores do projeto Supabase:
 
-## 🛠️ Stack Tecnológico
+```env
+SUPABASE_URL=https://SEU_PROJETO.supabase.co
+SUPABASE_KEY=SEU_PUBLISHABLE_KEY
+SUPABASE_SECRET_KEY=SEU_SECRET_KEY
+APP_BASE_URL=http://localhost:8000
+APP_LANGUAGE_DEFAULT=pt-BR
+```
 
-| Tecnologia | Uso |
-|---|---|
-| **HTML5** | Estrutura e marcação semântica |
-| **CSS3** | Estilização com variáveis CSS e Grid/Flexbox |
-| **JavaScript Vanilla** | Lógica da aplicação e interatividade |
-| **Supabase** | Backend e banco de dados em tempo real |
-| **html2canvas** | Captura e renderização de elementos DOM |
-| **html2pdf.js** | Geração de documentos PDF |
-| **Google Fonts** | Tipografia (Inter) |
+Observações:
 
-## 🛠️ Tecnologias Utilizadas
+- nunca exponha `SUPABASE_SECRET_KEY` no cliente;
+- use autenticação e RLS no Supabase para controle real de acesso;
+- `APP_LANGUAGE_DEFAULT` pode ser `pt-BR` ou `en-US`.
 
-<p align="left">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original.svg" alt="HTML5" width="50" height="50"/>
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/css3/css3-original.svg" alt="CSS3" width="50" height="50"/>
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" alt="JavaScript" width="50" height="50"/>
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/supabase/supabase-original.svg" alt="Supabase" width="50" height="50"/>
-</p>
+## Configuração do Supabase
 
-## 📦 Pré-requisitos
+1. Crie um projeto no Supabase.
+2. Configure a autenticação de e-mail.
+3. Ative as políticas RLS para os dados dos torneios.
+4. Aplique o schema de banco em `supabase/schema.sql`.
+5. Confirme que as variáveis de ambiente e a URL pública do site estão corretas.
 
-- Navegador web moderno (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
-- Node.js 18+ (para rodar localmente com `npm run dev` e manter o ambiente JS pronto para uso)
-- Conexão com a internet (para sincronização em nuvem)
-- Projeto no [Supabase](https://supabase.com) configurado conforme a seção abaixo (necessário para login, persistência, convites e sincronização)
+## Fluxo do produto
 
-## 🚀 Instalação
+### Usuário visitante
 
-### Opção 1: Instalação Local Simples
+- acessa a landing page;
+- vê torneios públicos em andamento;
+- pode buscar pelo nome do torneio;
+- acompanha placares sem login.
+
+### Responsável do torneio
+
+- cria conta;
+- cria o torneio;
+- convida co-admins;
+- registra/finaliza partidas;
+- gerencia pontos e informações do evento.
+
+### Co-admin
+
+- recebe convite;
+- acessa o mesmo torneio;
+- pode editar e atualizar o torneio conforme permissão.
+
+### Manutenção da plataforma
+
+- o responsável pela aplicação possui acesso geral para manutenção, upgrades e suporte técnico.
+
+## Deploy no Netlify
+
+O projeto já está preparado para publicação no Netlify com a seguinte estrutura:
+
+- `netlify.toml`
+- `package.json`
+- variáveis de ambiente no painel do Netlify
+
+Comandos úteis:
 
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/jppaztech/crieseuvolei.git
-cd crieseuvolei
-
-# 2. Abra o arquivo index.html em seu navegador
-# No macOS:
-open index.html
-
-# No Linux:
-xdg-open index.html
-
-# No Windows:
-start index.html
+npx netlify-cli deploy --prod
 ```
 
-### Opção 2: Com Servidor Local (Recomendado)
+## Checklist de produção
 
-```bash
-# Node.js / npm
-npm install
-npm run dev
-```
+- [x] landing page mais acolhedora
+- [x] fluxo de criação de torneio
+- [x] acompanhamento público
+- [x] suporte PT-BR / EN-US
+- [x] nome do torneio visível durante as partidas
+- [x] cadastro e login com autenticação
+- [x] modelo multi-torneio e multiusuário
+- [x] convite de co-admins
+- [x] documentação atualizada
+- [x] configuração de deploy no Netlify
 
-Depois acesse: `http://localhost:8000`
+## Direitos autorais
 
-Alternativa sem Node:
+© 2026 João Paz. Todos os direitos reservados sobre a criação e manutenção desta aplicação.
 
-```bash
-# Usando Python 3
-python3 -m http.server 8000
+## Licença
 
-# Usando PHP
-php -S localhost:8000
-```
-
-### Opção 3: Deploy na Nuvem
-
-#### Vercel
-```bash
-npm install -g vercel
-vercel
-```
-
-#### Netlify
-```bash
-npm install -g netlify-cli
-netlify deploy
-```
-
-#### GitHub Pages
-O projeto pode ser publicado pelo GitHub Pages após habilitar a opção **Settings >
-Pages** e selecionar a branch e a pasta de publicação. O endereço final depende da
-configuração do repositório; ele não é criado automaticamente apenas por clonar o projeto.
-
-## 📖 Como Usar
-
-### Início Rápido
-
-1. **Acesse a aplicação** em seu navegador
-2. **Crie uma nova partida** preenchendo os dados dos times
-3. **Atualize o placar** usando os botões de incremento/decremento
-4. **Acompanhe em tempo real** em múltiplos dispositivos
-5. **Exporte o resultado** como PDF quando a partida terminar
-
-### Interface Principal
-
-```
-┌─────────────────────────────────────────┐
-│  🏐 Peladas de Vôlei - Ao Vivo          │
-├─────────────────────────────────────────┤
-│                                         │
-│  [ 1) Cadastro ]  [ 2) Rodadas ]        │
-│  [ 3) Finais   ]  [ 4) Pódio   ]        │
-│                                         │
-│  ┌─ Cadastro e Sorteio ──────────────┐  │
-│  │ • Defina Jogadores, Times e Rods. │  │
-│  │ • Dê notas de Habilidade (1 a 5⭐)│  │
-│  │ • Sorteio Equilibrado Automático  │  │
-│  └───────────────────────────────────┘  │
-│                                         │
-│  ┌─ Painel de Jogo (Ao Vivo) ────────┐  │
-│  │ • Placar dinâmico (+ e -)         │  │
-│  │ • Classificação c/ Saldo de Pts   │  │
-│  │ • Agenda Completa e Finais        │  │
-│  └───────────────────────────────────┘  │
-└─────────────────────────────────────────┘
-```
-
-## 🎯 Funcionalidades
-
-### Gerenciamento de Torneio e Placar
-- ✅ Sorteio equilibrado de jogadores (por estrelas)
-- ✅ Geração automática de rodadas (todos contra todos)
-- ✅ Incrementar/decrementar pontos ao vivo
-- ✅ Tabela de classificação com saldo de pontos
-- ✅ Chaveamento automático para Finais e 3º lugar
-
-### Dados e Estatísticas
-- ⚠️ O placar atual registra o resultado final da partida; pontuação por set ainda está planejada
-- ✅ Acompanhar performance em tempo real
-- ✅ Comparação entre times
-
-### Exportação
-- ✅ Gerar PDF com resultado final
-- ✅ Incluir data, hora e local
-- ✅ Capturar layout completo
-
-### Sincronização
-- ✅ Salvar dados na nuvem (Supabase)
-- ✅ Sincronizar entre dispositivos
-- ⚠️ O histórico de torneios ainda está planejado; o estado atual usa uma partida compartilhada
-
-## 📁 Estrutura do Projeto
-
-```
-crieseuvolei/
-├── index.html          # Arquivo principal (HTML + CSS + JS)
-├── README.md           # Este arquivo
-└── LICENSE             # Licença MIT
-```
-
-## ⚙️ Configuração do Supabase
-
-### 1. Criar Projeto no Supabase
-
-```bash
-# Visite https://supabase.com
-# Crie um novo projeto
-# Copie as credenciais do projeto
-```
-
-### 2. Configurar as credenciais
+Este projeto está licenciado sob a MIT License.
 
 Como esta é uma aplicação HTML estática, a URL do projeto e a chave **publishable/anon**
 são informadas na inicialização do cliente em `index.html`:

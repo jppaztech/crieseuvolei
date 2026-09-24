@@ -10,8 +10,17 @@
 
 Uma aplicação web moderna e responsiva para gerenciar placar e resultado de partidas de vôlei em tempo real. Perfeita para peladas, treinos e competições amistosas.
 
-## 🌐 Website (necessário login admin)
+Suporte de idioma: PT-BR e EN-US.
+
+## 🌐 Website
 Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
+
+Para rodar localmente com Node.js:
+
+```bash
+npm install
+npm run dev
+```
 
 ## 📋 Sumário
 
@@ -67,8 +76,9 @@ Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
 ## 📦 Pré-requisitos
 
 - Navegador web moderno (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
+- Node.js 18+ (para rodar localmente com `npm run dev` e manter o ambiente JS pronto para uso)
 - Conexão com a internet (para sincronização em nuvem)
-- Projeto no [Supabase](https://supabase.com) configurado conforme a seção abaixo (necessário para login, persistência e sincronização)
+- Projeto no [Supabase](https://supabase.com) configurado conforme a seção abaixo (necessário para login, persistência, convites e sincronização)
 
 ## 🚀 Instalação
 
@@ -93,17 +103,22 @@ start index.html
 ### Opção 2: Com Servidor Local (Recomendado)
 
 ```bash
+# Node.js / npm
+npm install
+npm run dev
+```
+
+Depois acesse: `http://localhost:8000`
+
+Alternativa sem Node:
+
+```bash
 # Usando Python 3
 python3 -m http.server 8000
-
-# Usando Node.js (http-server)
-npx http-server
 
 # Usando PHP
 php -S localhost:8000
 ```
-
-Depois acesse: `http://localhost:8000`
 
 ### Opção 3: Deploy na Nuvem
 
@@ -217,54 +232,64 @@ A chave publishable/anon pode aparecer no navegador, mas nunca coloque uma chave
 
 ### 3. Criar Tabelas no Banco de Dados
 
-Use o schema multi-torneio abaixo para permitir que várias pessoas criem e gerenciem seus torneios em paralelo:
+Use o schema pronto em `supabase/schema.sql` para permitir que várias pessoas criem, convidem e gerenciem seus torneios em paralelo:
 
 ```sql
--- Torneios independentes por usuário / grupo
-CREATE TABLE tournaments (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  owner_email TEXT NOT NULL,
-  scorer_emails TEXT[] NOT NULL DEFAULT '{}',
-  game_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL UNIQUE,
+  display_name TEXT,
+  is_admin BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Mantém compatibilidade com o modelo antigo, caso alguma instalação ainda use app_state
-CREATE TABLE app_state (
-  id INTEGER PRIMARY KEY,
-  game_data JSONB NOT NULL,
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+CREATE TABLE IF NOT EXISTS public.tournaments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  owner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  owner_email TEXT NOT NULL,
+  scorer_emails TEXT[] NOT NULL DEFAULT '{}',
+  invite_emails TEXT[] NOT NULL DEFAULT '{}',
+  is_public BOOLEAN NOT NULL DEFAULT TRUE,
+  game_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-ALTER TABLE tournaments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE app_state ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS public.tournament_members (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tournament_id UUID NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  email TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('owner', 'editor', 'viewer')) DEFAULT 'editor',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (tournament_id, user_id),
+  UNIQUE (tournament_id, email)
+);
 
--- Exemplo de política mínima: leitura pública para estado compartilhado, mas a regra final deve ser reforçada
--- com RLS por usuário/torneio quando a aplicação passar a ter autenticação de produção em escala real.
-CREATE POLICY "Leitura pública dos torneios"
-  ON tournaments FOR SELECT USING (true);
-
-CREATE POLICY "Autenticado pode gravar torneios"
-  ON tournaments FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Autenticado pode atualizar torneios"
-  ON tournaments FOR UPDATE USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
-CREATE POLICY "Autenticado pode deletar torneios"
-  ON tournaments FOR DELETE USING (auth.role() = 'authenticated');
-
-CREATE POLICY "Leitura pública do estado legado"
-  ON app_state FOR SELECT USING (true);
-
-CREATE POLICY "Admin autenticado pode gravar estado legado"
-  ON app_state FOR ALL
-  USING (auth.role() = 'authenticated')
-  WITH CHECK (auth.role() = 'authenticated');
-
--- No painel do Supabase, adicione tournaments e app_state à publicação supabase_realtime.
+CREATE TABLE IF NOT EXISTS public.tournament_invites (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tournament_id UUID NOT NULL REFERENCES public.tournaments(id) ON DELETE CASCADE,
+  inviter_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  invited_email TEXT NOT NULL,
+  role TEXT NOT NULL CHECK (role IN ('editor', 'viewer')) DEFAULT 'editor',
+  status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'expired')) DEFAULT 'pending',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (tournament_id, invited_email)
+);
 ```
+
+O fluxo real de autenticação e co-criação funciona assim:
+
+- qualquer pessoa pode criar uma conta no app;
+- o primeiro usuário autenticado a criar ou assumir um torneio vira responsável;
+- o responsável pode convidar co-criadores por e-mail;
+- os operadores autorizados podem editar o torneio sem virar administradores globais;
+- o público pode visualizar o painel de torneios em andamento, mas não alterar dados.
 
 Crie pelo menos um usuário em **Authentication > Users** para o login administrativo.
 O primeiro carregamento pode mostrar um aviso se a tabela, as políticas ou o Realtime
@@ -278,11 +303,22 @@ os valores públicos do cliente (URL e chave publishable do Supabase):
 ```bash
 SUPABASE_URL=https://seu-projeto.supabase.co
 SUPABASE_KEY=sua-chave-publishable
+APP_BASE_URL=https://seu-site.netlify.app
+APP_LANGUAGE_DEFAULT=pt-BR
 ```
 
 No Netlify ou Vercel, mantenha isso em **Environment variables**; nunca exponha uma
 `service_role` ou segredo no HTML. Essa aplicação é um front-end estático e depende dos
 controles de acesso e RLS do banco para manter o ambiente seguro.
+
+Checklist de deploy em Netlify:
+
+- [ ] criar projeto no Netlify com o repositório do app;
+- [ ] confirmar que `netlify.toml` está no repositório;
+- [ ] definir `SUPABASE_URL` e `SUPABASE_KEY` como variáveis do ambiente;
+- [ ] confirmar que a função de login e o painel público estão ativos;
+- [ ] validar o domínio final e testar o login em produção;
+- [ ] verificar se o app atualiza mensagem de idioma PT-BR / EN-US corretamente.
 
 ### Modelo para uso geral e multi-torneios
 
@@ -318,6 +354,19 @@ CREATE TABLE tournaments (
 ```
 
 Esse modelo já atende ao caso de vários usuários e vários torneios simultâneos. Se em algum momento a base crescer demais, a otimização pode ser feita mantendo apenas o torneio ativo mais recente por responsável, sem perder a capacidade de criar múltiplos torneios no mesmo sistema.
+
+## ✅ Checklist de preparação para uso e deploy
+
+- [ ] Node.js 18+ disponível para uso local com `npm run dev`;
+- [ ] `npm install` executado com sucesso;
+- [ ] `supabase/schema.sql` aplicado no projeto do Supabase;
+- [ ] políticas RLS criadas para `profiles`, `tournaments`, `tournament_members` e `tournament_invites`;
+- [ ] usuário administrativo autenticado no Supabase;
+- [ ] a app acessa a URL do projeto e a chave pública do Supabase sem expor segredo;
+- [ ] tela pública com torneios em andamento funcional;
+- [ ] criação de conta, login e convite de co-criador funcionando;
+- [ ] ruído de ícones/teclas e pontuação sem empate devidamente validado;
+- [ ] deploy em Netlify validado com o domínio final e acessos reais.
 
 ## 🤝 Contribuindo
 

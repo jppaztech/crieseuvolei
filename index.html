@@ -132,7 +132,17 @@
         <button id="addScorerBtn" class="secondary">Adicionar operador</button>
       </div>
     </div>
+    <div class="row cols-2" style="margin-top:8px;">
+      <div>
+        <label id="inviteEmailLabel">E-mail do co-criador</label>
+        <input id="inviteEmailInput" type="email" placeholder="co-criador@exemplo.com" autocomplete="off" />
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button id="addInviteBtn" class="secondary">Convidar co-criador</button>
+      </div>
+    </div>
     <div id="adminAccessList" style="margin-top:8px;"></div>
+    <div id="inviteList" style="margin-top:8px;"></div>
   </div>
 </div>
 
@@ -327,9 +337,12 @@
       spectatorTitle: 'Torneios em andamento',
       permissions: 'Permissões do torneio',
       operatorEmail: 'E-mail do operador',
+      inviteEmail: 'E-mail do co-criador',
       addOperator: 'Adicionar operador',
+      addInvite: 'Convidar co-criador',
       responsible: 'Responsável',
       operator: 'Operador',
+      guest: 'Convidado',
       watchMode: 'Modo Espectador',
       withoutLogin: 'Faça login para criar e gerenciar torneios.',
       noTournaments: 'Nenhum torneio ainda. Crie o primeiro para começar.',
@@ -352,9 +365,12 @@
       spectatorTitle: 'Tournaments in progress',
       permissions: 'Tournament permissions',
       operatorEmail: 'Operator email',
+      inviteEmail: 'Co-creator email',
       addOperator: 'Add operator',
+      addInvite: 'Invite co-creator',
       responsible: 'Owner',
       operator: 'Operator',
+      guest: 'Invited',
       watchMode: 'Viewer mode',
       withoutLogin: 'Log in to create and manage tournaments.',
       noTournaments: 'No tournaments yet. Create the first one to begin.',
@@ -372,6 +388,7 @@
     currentIndex:0, finals:[], finalsIndex:0,
     ownerEmail: '',
     scorerEmails: [],
+    inviteEmails: [],
     _rankingSnapshot: null,
     uiStep: 'stepParams',
     uiSection: 'setup'
@@ -389,8 +406,14 @@
     next.scorerEmails = Array.isArray(next.scorerEmails)
       ? [...new Set(next.scorerEmails.map(normalizeEmail).filter(Boolean))]
       : [];
+    next.inviteEmails = Array.isArray(next.inviteEmails)
+      ? [...new Set(next.inviteEmails.map(normalizeEmail).filter(Boolean))]
+      : [];
     if (next.ownerEmail && next.scorerEmails.includes(next.ownerEmail)) {
       next.scorerEmails = next.scorerEmails.filter(email => email !== next.ownerEmail);
+    }
+    if (next.ownerEmail && next.inviteEmails.includes(next.ownerEmail)) {
+      next.inviteEmails = next.inviteEmails.filter(email => email !== next.ownerEmail);
     }
     return next;
   }
@@ -402,7 +425,10 @@
       ownerEmail: normalizeEmail(state.ownerEmail || nextState.ownerEmail || ''),
       scorerEmails: Array.isArray(nextState.scorerEmails)
         ? nextState.scorerEmails
-        : Array.isArray(state.scorerEmails) ? state.scorerEmails : []
+        : Array.isArray(state.scorerEmails) ? state.scorerEmails : [],
+      inviteEmails: Array.isArray(nextState.inviteEmails)
+        ? nextState.inviteEmails
+        : Array.isArray(state.inviteEmails) ? state.inviteEmails : []
     });
   }
 
@@ -422,7 +448,9 @@
     if (el('btnLoginAction')) el('btnLoginAction').innerText = isAdmin ? t.logoutAdmin : t.loginAdmin;
     if (el('tournamentPermissionsLabel')) el('tournamentPermissionsLabel').innerText = t.permissions;
     if (el('scorerEmailLabel')) el('scorerEmailLabel').innerText = t.operatorEmail;
+    if (el('inviteEmailLabel')) el('inviteEmailLabel').innerText = t.inviteEmail;
     if (el('addScorerBtn')) el('addScorerBtn').innerText = t.addOperator;
+    if (el('addInviteBtn')) el('addInviteBtn').innerText = t.addInvite;
     if (el('tournamentsLabel')) el('tournamentsLabel').innerText = t.tournamentListTitle;
     if (el('newTournamentLabel')) el('newTournamentLabel').innerText = t.tournamentName;
     if (el('createTournamentBtn')) el('createTournamentBtn').innerText = t.createTournament;
@@ -447,16 +475,18 @@
     return normalizeEmail(user ? user.email : '');
   }
 
-  function buildTournamentMeta(name, ownerEmail, scorerEmails = [], gameData = {}) {
+  function buildTournamentMeta(name, ownerEmail, scorerEmails = [], inviteEmails = [], gameData = {}) {
     const cleanName = String(name || '').trim() || 'Meu torneio';
     const owner = normalizeEmail(ownerEmail);
     const members = Array.isArray(scorerEmails) ? scorerEmails.map(normalizeEmail).filter(Boolean) : [];
+    const invited = Array.isArray(inviteEmails) ? inviteEmails.map(normalizeEmail).filter(Boolean) : [];
     return {
       id: crypto.randomUUID ? crypto.randomUUID() : `tournament-${Date.now()}-${Math.random().toString(16).slice(2)}`,
       name: cleanName,
       owner_email: owner,
       scorer_emails: [...new Set(members.filter(email => email !== owner))],
-      game_data: normalizeStateShape({ ...baseState(), ...gameData, ownerEmail: owner, scorerEmails: members.filter(email => email !== owner) })
+      invite_emails: [...new Set(invited.filter(email => email !== owner && !members.includes(email)))],
+      game_data: normalizeStateShape({ ...baseState(), ...gameData, ownerEmail: owner, scorerEmails: members.filter(email => email !== owner), inviteEmails: invited.filter(email => email !== owner && !members.includes(email)) })
     };
   }
 
@@ -523,6 +553,24 @@
     }
   }
 
+  function renderInviteList() {
+    const list = el('inviteList');
+    if (!list) return;
+    const inviteEmails = Array.isArray(state.inviteEmails) ? state.inviteEmails.map(normalizeEmail).filter(Boolean) : [];
+    if (!inviteEmails.length) {
+      list.innerHTML = '<div class="status">Nenhum convite pendente para este torneio.</div>';
+      return;
+    }
+
+    list.innerHTML = inviteEmails.map(email => `
+      <span class="access-chip">
+        <span>${translations[currentLanguage].guest}</span>
+        <span>${email}</span>
+        <button class="small secondary" data-remove-invite="${email}">Remover</button>
+      </span>
+    `).join('');
+  }
+
   function renderAdminAccessList() {
     const list = el("adminAccessList");
     if (!list) return;
@@ -567,6 +615,7 @@
       roleLabel.innerText = '';
     }
     renderAdminAccessList();
+    renderInviteList();
   }
 
   function ensureOwnerAssignment(email) {
@@ -650,7 +699,7 @@
 
     const tournamentInput = el('newTournamentNameInput');
     const name = String((tournamentInput ? tournamentInput.value : '') || '').trim() || 'Meu torneio';
-    const payload = { ...buildTournamentMeta(name, currentEmail, [], {}), updated_at: new Date().toISOString() };
+    const payload = { ...buildTournamentMeta(name, currentEmail, [], state.inviteEmails || [], {}), updated_at: new Date().toISOString() };
     const { data, error } = await supabase.from('tournaments').insert({
       id: payload.id,
       name: payload.name,
@@ -668,7 +717,7 @@
     selectedTournamentId = payload.id;
     localStorage.setItem(STORAGE_TOURNAMENT_KEY, selectedTournamentId);
     selectedTournamentMeta = { ...payload, id: payload.id };
-    state = normalizeStateShape({ ...payload.game_data, ownerEmail: payload.owner_email, scorerEmails: payload.scorer_emails });
+    state = normalizeStateShape({ ...payload.game_data, ownerEmail: payload.owner_email, scorerEmails: payload.scorer_emails, inviteEmails: Array.isArray(payload.game_data.inviteEmails) ? payload.game_data.inviteEmails : [] });
     el('newTournamentNameInput').value = '';
     await loadTournamentsForCurrentUser();
     if (selectedTournamentId) await loadStateFromCloud();
@@ -714,15 +763,31 @@
   el("addScorerBtn").addEventListener("click", () => {
     const email = normalizeEmail(el("scorerEmailInput").value);
     if (!email) {
-      alert('Informe um e-mail de operador vÃ¡lido.');
+      alert('Informe um e-mail de operador válido.');
       return;
     }
     if (normalizeEmail(state.ownerEmail) === email) {
-      alert('Este e-mail jÃ¡ Ã© o responsÃ¡vel da partida.');
+      alert('Este e-mail já é o responsável da partida.');
       return;
     }
     state.scorerEmails = Array.isArray(state.scorerEmails) ? [...new Set([...state.scorerEmails.map(normalizeEmail), email].filter(Boolean))] : [email];
     el("scorerEmailInput").value = '';
+    updateAdminStatus();
+    saveStateToCloud();
+  });
+
+  el("addInviteBtn").addEventListener("click", () => {
+    const email = normalizeEmail(el("inviteEmailInput").value);
+    if (!email) {
+      alert('Informe um e-mail de co-criador válido.');
+      return;
+    }
+    if ([normalizeEmail(state.ownerEmail), ...(state.scorerEmails || [])].includes(email)) {
+      alert('Este e-mail já está autorizado neste torneio.');
+      return;
+    }
+    state.inviteEmails = Array.isArray(state.inviteEmails) ? [...new Set([...state.inviteEmails.map(normalizeEmail), email].filter(Boolean))] : [email];
+    el("inviteEmailInput").value = '';
     updateAdminStatus();
     saveStateToCloud();
   });
@@ -732,6 +797,15 @@
     if (!button) return;
     const email = normalizeEmail(button.dataset.removeScorer);
     state.scorerEmails = (state.scorerEmails || []).map(normalizeEmail).filter(item => item && item !== email);
+    updateAdminStatus();
+    saveStateToCloud();
+  });
+
+  document.getElementById('inviteList').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-remove-invite]');
+    if (!button) return;
+    const email = normalizeEmail(button.dataset.removeInvite);
+    state.inviteEmails = (state.inviteEmails || []).map(normalizeEmail).filter(item => item && item !== email);
     updateAdminStatus();
     saveStateToCloud();
   });
@@ -843,7 +917,8 @@
       uiSection: visibleSection ? visibleSection.id : state.uiSection,
       uiStep: visibleStep ? visibleStep.id : state.uiStep,
       ownerEmail: normalizeEmail(state.ownerEmail || getSessionUserEmail()),
-      scorerEmails: Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : []
+      scorerEmails: Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : [],
+      inviteEmails: Array.isArray(state.inviteEmails) ? state.inviteEmails.map(normalizeEmail).filter(Boolean) : []
     });
 
     const currentTournament = tournamentList.find(item => item.id === selectedTournamentId) || selectedTournamentMeta;
@@ -869,7 +944,13 @@
     }
     if (data && data.game_data && Object.keys(data.game_data).length > 0) {
         selectedTournamentMeta = data;
-        state = normalizeStateShape({ ...baseState(), ...data.game_data, ownerEmail: data.owner_email || (data.game_data && data.game_data.ownerEmail) || state.ownerEmail, scorerEmails: Array.isArray(data.scorer_emails) ? data.scorer_emails : (data.game_data && Array.isArray(data.game_data.scorerEmails) ? data.game_data.scorerEmails : []) });
+        state = normalizeStateShape({
+          ...baseState(),
+          ...data.game_data,
+          ownerEmail: data.owner_email || (data.game_data && data.game_data.ownerEmail) || state.ownerEmail,
+          scorerEmails: Array.isArray(data.scorer_emails) ? data.scorer_emails : (data.game_data && Array.isArray(data.game_data.scorerEmails) ? data.game_data.scorerEmails : []),
+          inviteEmails: Array.isArray(data.game_data && data.game_data.inviteEmails) ? data.game_data.inviteEmails : []
+        });
         if (state.ownerEmail && state.scorerEmails.includes(state.ownerEmail)) {
           state.scorerEmails = state.scorerEmails.filter(email => email !== state.ownerEmail);
         }
@@ -889,7 +970,13 @@
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'tournaments' }, payload => {
         if (payload.new && payload.new.id === selectedTournamentId) {
             selectedTournamentMeta = payload.new;
-            state = normalizeStateShape({ ...baseState(), ...payload.new.game_data, ownerEmail: payload.new.owner_email || (payload.new.game_data && payload.new.game_data.ownerEmail) || state.ownerEmail, scorerEmails: Array.isArray(payload.new.scorer_emails) ? payload.new.scorer_emails : (payload.new.game_data && Array.isArray(payload.new.game_data.scorerEmails) ? payload.new.game_data.scorerEmails : []) });
+            state = normalizeStateShape({
+              ...baseState(),
+              ...payload.new.game_data,
+              ownerEmail: payload.new.owner_email || (payload.new.game_data && payload.new.game_data.ownerEmail) || state.ownerEmail,
+              scorerEmails: Array.isArray(payload.new.scorer_emails) ? payload.new.scorer_emails : (payload.new.game_data && Array.isArray(payload.new.game_data.scorerEmails) ? payload.new.game_data.scorerEmails : []),
+              inviteEmails: Array.isArray(payload.new.game_data && payload.new.game_data.inviteEmails) ? payload.new.game_data.inviteEmails : []
+            });
             refreshUI();
         }
         if (payload.new) {

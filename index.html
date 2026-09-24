@@ -18,41 +18,41 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:'Inter', system-ui,-apple-system,sans-serif;
       background:var(--bg);color:var(--text);line-height:1.35}
-  
+
   /* Layout Básico */
   header{padding:14px 16px;border-bottom:1px solid #1f2430;background:#0c0e13;position:sticky;top:0;z-index:10; display:flex; justify-content:space-between; align-items:center;}
   h1{margin:0;font-size:1.15rem}
   main{padding:12px;display:grid;gap:var(--gap);max-width:980px;margin:0 auto}
   .card{background:var(--card);border:1px solid #2a3242;border-radius:var(--radius);padding:12px}
-  
+
   /* Inputs e Botões */
   .row{display:grid;gap:8px}
   .row.cols-2{grid-template-columns:1fr 1fr}
   .row.cols-3{grid-template-columns:1fr 1fr 1fr}
   @media (max-width:720px){ .row.cols-2, .row.cols-3{grid-template-columns:1fr} }
-  
+
   label{font-size:var(--small);color:var(--muted)}
-  
+
   input, select{width:100%;padding:10px;background:#0e121a;border:1px solid #293042;border-radius:10px;color:var(--text);font-size:1rem}
   input[type="number"]{text-align:center}
-  
+
   /* CORREÇÃO DA COR DE AUTOFILL E PLACEHOLDER (Rodadas) */
   input:-webkit-autofill,
-  input:-webkit-autofill:hover, 
-  input:-webkit-autofill:focus, 
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
   input:-webkit-autofill:active {
       -webkit-box-shadow: 0 0 0 30px #0e121a inset !important;
       -webkit-text-fill-color: var(--text) !important;
       transition: background-color 5000s ease-in-out 0s;
   }
   /* Garante que o placeholder seja cinza escuro/muted */
-  input::placeholder, 
-  input::-webkit-input-placeholder, 
-  input::-moz-placeholder { 
-      color: #475569 !important; 
-      opacity: 1 !important; 
+  input::placeholder,
+  input::-webkit-input-placeholder,
+  input::-moz-placeholder {
+      color: #475569 !important;
+      opacity: 1 !important;
   }
-  
+
   button{width:100%;padding:12px;border:0;border-radius:10px;background:var(--accent);color:#08140c;font-weight:700;font-size:1rem;cursor:pointer; transition: opacity 0.2s;}
   button:hover{opacity:0.9;}
   button:disabled{background:#2b3344;color:#9aa4b2;cursor:not-allowed;}
@@ -60,7 +60,7 @@
   button.secondary{background:#2b3344;color:#d9e1ea}
   button.warn{background:var(--warn);color:#201600}
   button.danger{background:var(--danger);color:#fff}
-  
+
   /* Elementos Visuais */
   .team-block{border:1px dashed #2a3346;border-radius:12px;padding:10px}
   .chip{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;background:#0d1118;border:1px solid #283244}
@@ -71,7 +71,7 @@
   .flex{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .muted{color:var(--muted)}
   .hidden{display:none !important}
-  
+
   /* Tabelas e Scores */
   table{width:100%;border-collapse:collapse;font-size:0.95rem}
   th,td{padding:8px;border-bottom:1px solid #16202a;text-align:left}
@@ -83,20 +83,23 @@
   .score-input-group button{width:36px;padding:10px 0;font-size:1.1rem;border-radius:0}
   .score-input-group button:first-of-type{border-radius:10px 0 0 10px}
   .score-input-group button:last-of-type{border-radius:0 10px 10px 0}
-  
+
   /* Agenda */
   .agenda-game{border-bottom: 1px solid #2a3242; padding-bottom: 8px; margin-bottom: 8px;}
   .agenda-game:last-child{border-bottom:0;}
   .game-editor{margin-top:8px;padding-top:8px;border-top:1px dashed #2a3346;display:grid;grid-template-columns:1fr 1fr 80px;gap:8px}
-  
+
   /* Overlay de Exportação e Login */
   #export-overlay, #login-overlay {position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);color:white;display:flex;justify-content:center;align-items:center;z-index:9999;}
   #login-box {background:var(--card); padding:20px; border-radius:12px; width:90%; max-width:350px; border:1px solid #2a3242; text-align:center;}
-  
+
   /* Classes para controle de Admin */
   body:not(.is-admin) .admin-only { display: none !important; }
   .login-btn { background:transparent; border:1px solid #2a3242; color:#fff; padding:6px 12px; width:auto; font-size:0.8rem; }
   .logout-btn { background:var(--danger); font-size:0.8rem; width:auto; padding:6px 12px; }
+  #cloudStatus{position:fixed;right:12px;bottom:12px;max-width:360px;padding:10px 12px;border:1px solid #7f1d1d;border-radius:10px;background:#450a0a;color:#fecaca;z-index:10000;font-size:.85rem;}
+  .access-chip{display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border-radius:999px;background:#0d1118;border:1px solid #283244;margin:4px 4px 0 0;}
+  .access-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 </style>
 </head>
 <body>
@@ -107,6 +110,25 @@
     <button id="btnLoginAction" class="login-btn">Admin Login</button>
   </div>
 </header>
+<div id="cloudStatus" class="hidden" role="alert"></div>
+<div id="adminAccessBox" class="card hidden" style="margin:12px auto 0; max-width:980px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;">
+    <b>Permissões da partida</b>
+    <span id="currentRoleLabel" class="mini muted"></span>
+  </div>
+  <div class="row" style="margin-top:10px;">
+    <div class="row cols-2">
+      <div>
+        <label>E-mail do operador</label>
+        <input id="scorerEmailInput" type="email" placeholder="operador@exemplo.com" autocomplete="off" />
+      </div>
+      <div style="display:flex; align-items:flex-end;">
+        <button id="addScorerBtn" class="secondary">Adicionar operador</button>
+      </div>
+    </div>
+    <div id="adminAccessList" style="margin-top:8px;"></div>
+  </div>
+</div>
 
 <main>
   <section id="setup" class="card">
@@ -163,13 +185,13 @@
   <section id="matches" class="card hidden">
     <h2>2) Rodadas (Ao Vivo)</h2>
     <div id="roundInfo" class="status">Carregando...</div>
-    
+
     <div id="currentMatch" class="card" style="margin:12px 0"></div>
-    
+
     <div class="card" style="margin-bottom:12px">
       <b>Classificação</b>
       <div style="margin-top:8px;overflow:auto">
-        
+
 <table id="standingsTable">
   <thead>
     <tr>
@@ -184,7 +206,7 @@
   </thead>
   <tbody></tbody>
 </table>
-        
+
       </div>
     </div>
 
@@ -203,7 +225,7 @@
             <button id="exportAgendaPdfBtn" class="small secondary">PDF</button>
         </div>
     </div>
-    
+
     <div class="row admin-only" style="margin-top:12px; display:grid; grid-auto-flow:column; gap:8px;">
         <button id="backToPreviewBtn" class="secondary">Voltar Setup</button>
         <button id="goToHomeBtn" class="warn">Resetar Tudo</button>
@@ -254,19 +276,117 @@
   const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
   const TEAM_COLORS = ["#ef4444","#22c55e","#3b82f6","#eab308","#a855f7","#06b6d4","#f97316","#84cc16"];
-  
-  // Estado padrão
-  let state = { 
-    numPlayers:0, numTeams:0, numRounds:0, 
-    players:[], teams:[], schedule:[], 
-    currentIndex:0, finals:[], finalsIndex:0, 
+
+  const baseState = () => ({
+    numPlayers:0, numTeams:0, numRounds:0,
+    players:[], teams:[], schedule:[],
+    currentIndex:0, finals:[], finalsIndex:0,
+    ownerEmail: '',
+    scorerEmails: [],
     _rankingSnapshot: null,
-    uiStep: 'stepParams', 
+    uiStep: 'stepParams',
     uiSection: 'setup'
-  };
+  });
+
+  let state = baseState();
 
   let isAdmin = false;
   const el = id => document.getElementById(id);
+  const normalizeEmail = (value) => String(value || '').trim().toLowerCase();
+
+  function normalizeStateShape(rawState = {}) {
+    const next = { ...baseState(), ...rawState };
+    next.ownerEmail = normalizeEmail(next.ownerEmail);
+    next.scorerEmails = Array.isArray(next.scorerEmails)
+      ? [...new Set(next.scorerEmails.map(normalizeEmail).filter(Boolean))]
+      : [];
+    if (next.ownerEmail && next.scorerEmails.includes(next.ownerEmail)) {
+      next.scorerEmails = next.scorerEmails.filter(email => email !== next.ownerEmail);
+    }
+    return next;
+  }
+
+  function preserveAccessState(nextState = {}) {
+    return normalizeStateShape({
+      ...baseState(),
+      ...nextState,
+      ownerEmail: normalizeEmail(state.ownerEmail || nextState.ownerEmail || ''),
+      scorerEmails: Array.isArray(nextState.scorerEmails)
+        ? nextState.scorerEmails
+        : Array.isArray(state.scorerEmails) ? state.scorerEmails : []
+    });
+  }
+
+  function renderAdminAccessList() {
+    const list = el("adminAccessList");
+    if (!list) return;
+    const ownerEmail = normalizeEmail(state.ownerEmail);
+    const scorerEmails = Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : [];
+    const entries = [];
+
+    if (ownerEmail) {
+      entries.push({ type: 'owner', email: ownerEmail, role: 'Responsável' });
+    }
+    scorerEmails.forEach(email => {
+      if (email && email !== ownerEmail) entries.push({ type: 'scorer', email, role: 'Operador' });
+    });
+
+    if (!entries.length) {
+      list.innerHTML = '<div class="status">Nenhum operador cadastrado. O primeiro usuário autenticado assume a função de responsável pela partida.</div>';
+      return;
+    }
+
+    list.innerHTML = entries.map(item => `
+      <span class="access-chip">
+        <span>${item.role}</span>
+        <span>${item.email}</span>
+        ${item.type === 'scorer' ? `<button class="small secondary" data-remove-scorer="${item.email}">Remover</button>` : ''}
+      </span>
+    `).join('');
+  }
+
+  function updateAdminStatus() {
+    const box = el('adminAccessBox');
+    const roleLabel = el('currentRoleLabel');
+    if (!box || !roleLabel) return;
+
+    if (isAdmin) {
+      box.classList.remove('hidden');
+      const owner = normalizeEmail(state.ownerEmail);
+      const me = normalizeEmail((supabase.auth.getSession && supabase.auth.getSession().data.session?.user?.email) || '');
+      const role = owner && me && owner === me ? 'Responsável da partida' : 'Operador autorizado';
+      roleLabel.innerText = role;
+    } else {
+      box.classList.add('hidden');
+      roleLabel.innerText = '';
+    }
+    renderAdminAccessList();
+  }
+
+  function ensureOwnerAssignment(email) {
+    if (!email) return;
+    state = normalizeStateShape({
+      ...state,
+      ownerEmail: normalizeEmail(state.ownerEmail || email),
+      scorerEmails: Array.isArray(state.scorerEmails) ? state.scorerEmails : []
+    });
+  }
+
+  function isAuthorizedAdmin(user) {
+    if (!user) return false;
+    const currentEmail = normalizeEmail(user.email);
+    if (!currentEmail) return false;
+
+    const ownerEmail = normalizeEmail(state.ownerEmail);
+    const scorerEmails = Array.isArray(state.scorerEmails) ? state.scorerEmails.map(normalizeEmail).filter(Boolean) : [];
+
+    if (!ownerEmail && !scorerEmails.length) {
+      state = normalizeStateShape({ ...state, ownerEmail: currentEmail });
+      return true;
+    }
+
+    return currentEmail === ownerEmail || scorerEmails.includes(currentEmail);
+  }
 
   // --- AUTENTICAÇÃO ---
   el("btnLoginAction").addEventListener("click", () => {
@@ -277,7 +397,7 @@
     }
   });
   el("cancelLoginBtn").addEventListener("click", () => el("login-overlay").classList.add("hidden"));
-  
+
   el("doLoginBtn").addEventListener("click", async () => {
     const email = el("email").value;
     const password = el("password").value;
@@ -291,9 +411,38 @@
     }
   });
 
+  el("addScorerBtn").addEventListener("click", () => {
+    const email = normalizeEmail(el("scorerEmailInput").value);
+    if (!email) {
+      alert('Informe um e-mail de operador válido.');
+      return;
+    }
+    if (normalizeEmail(state.ownerEmail) === email) {
+      alert('Este e-mail já é o responsável da partida.');
+      return;
+    }
+    state.scorerEmails = Array.isArray(state.scorerEmails) ? [...new Set([...state.scorerEmails.map(normalizeEmail), email].filter(Boolean))] : [email];
+    el("scorerEmailInput").value = '';
+    updateAdminStatus();
+    saveStateToCloud();
+  });
+
+  document.getElementById('adminAccessList').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-remove-scorer]');
+    if (!button) return;
+    const email = normalizeEmail(button.dataset.removeScorer);
+    state.scorerEmails = (state.scorerEmails || []).map(normalizeEmail).filter(item => item && item !== email);
+    updateAdminStatus();
+    saveStateToCloud();
+  });
+
   async function checkUser() {
     const { data: { user } } = await supabase.auth.getUser();
-    isAdmin = !!user;
+    if (user) {
+      ensureOwnerAssignment(user.email);
+    }
+
+    isAdmin = isAuthorizedAdmin(user);
     if (isAdmin) {
         document.body.classList.add('is-admin');
         el("btnLoginAction").innerText = "Sair (Admin)";
@@ -305,34 +454,68 @@
         el("btnLoginAction").classList.remove("logout-btn");
         el("readOnlyMsg").classList.remove("hidden");
     }
+
+    if (user && !state.ownerEmail) {
+      state.ownerEmail = normalizeEmail(user.email);
+    }
+    if (user && state.ownerEmail && (state.ownerEmail === normalizeEmail(user.email) || state.scorerEmails.includes(normalizeEmail(user.email)))) {
+      saveStateToCloud();
+    }
+
+    updateAdminStatus();
   }
 
   // --- SINCRONIZAÇÃO (REALTIME) ---
   async function saveStateToCloud() {
-    if (!isAdmin) return; 
-    state.uiSection = document.querySelector('main > section:not(.hidden)').id;
-    const visibleStep = document.querySelector('#setup > div[id]:not(.hidden)');
-    if (visibleStep) state.uiStep = visibleStep.id;
+    if (!isAdmin) return;
+    state = normalizeStateShape({
+      ...state,
+      uiSection: document.querySelector('main > section:not(.hidden)')?.id || state.uiSection,
+      uiStep: document.querySelector('#setup > div[id]:not(.hidden)')?.id || state.uiStep
+    });
 
-    await supabase.from('app_state').upsert({ id: 1, game_data: state });
+    const { error } = await supabase.from('app_state').upsert({ id: 1, game_data: state });
+    if (error) reportCloudError("Não foi possível salvar o estado do torneio.", error);
   }
 
   async function loadStateFromCloud() {
     const { data, error } = await supabase.from('app_state').select('game_data').eq('id', 1).single();
+    if (error && error.code !== 'PGRST116') {
+        reportCloudError("Não foi possível carregar o estado do torneio.", error);
+        return;
+    }
     if (data && data.game_data && Object.keys(data.game_data).length > 0) {
-        state = data.game_data;
+        state = normalizeStateShape({ ...state, ...data.game_data });
+        if (state.ownerEmail && state.scorerEmails.includes(state.ownerEmail)) {
+          state.scorerEmails = state.scorerEmails.filter(email => email !== state.ownerEmail);
+        }
+        const { data: { user } } = await supabase.auth.getUser();
+        checkUser();
         refreshUI();
     }
+  }
+
+  function reportCloudError(message, error) {
+    console.error(message, error);
+    const status = el("cloudStatus");
+    status.textContent = `${message} Verifique a configuração e as permissões do Supabase.`;
+    status.classList.remove("hidden");
+    setTimeout(() => status.classList.add("hidden"), 8000);
   }
 
   supabase.channel('public:app_state')
     .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'app_state' }, payload => {
         if (payload.new && payload.new.game_data) {
-            state = payload.new.game_data;
+            state = normalizeStateShape({ ...state, ...payload.new.game_data });
+            checkUser();
             refreshUI();
         }
     })
-    .subscribe();
+    .subscribe((status, error) => {
+        if (error || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            reportCloudError("A sincronização em tempo real está indisponível.", error || status);
+        }
+    });
 
   // --- REGRAS DE UI ---
   function refreshUI() {
@@ -344,16 +527,16 @@
         document.querySelectorAll('#setup > div[id]').forEach(d => d.classList.add('hidden'));
         const step = el(state.uiStep) || el('stepParams');
         step.classList.remove('hidden');
-        
+
         if(state.numPlayers) el('numPlayers').value = state.numPlayers;
         if(state.numTeams) el('numTeams').value = state.numTeams;
         if(state.numRounds) el('numRounds').value = state.numRounds;
-        
+
         if(state.uiStep === 'stepPlayers') renderPlayersForm();
         if(state.uiStep === 'stepTeams') renderTeamsForm();
         if(state.uiStep === 'stepTeamPreview') renderTeamPreview();
     }
-    
+
     if (state.uiSection === 'matches') {
         atualizarClassificacao();
         renderAgenda();
@@ -370,18 +553,18 @@
     const p = parseInt(el("numPlayers").value, 10);
     const t = parseInt(el("numTeams").value, 10);
     const r = parseInt(el("numRounds").value, 10);
-    
+
     // --- REGRAS ORIGINAIS RESTAURADAS (Com validação para garantir igualdade) ---
     if (!p || !t || !r) { alert("Preencha todos os números."); return; }
     if (t < 3) { alert("Mínimo 3 times."); return; }
     if (p < t * 2) { alert("Número de jogadores insuficiente."); return; }
-    
+
     // IMPORTANTE: Para a regra original (soma) funcionar, não pode haver sobra.
     if (p % t !== 0) { alert("A quantidade de jogadores deve ser múltiplo do número de times (ex: 12 jog / 3 times = 4 cada). Ajuste os números."); return; }
-    
+
     state.numPlayers = p; state.numTeams = t; state.numRounds = r;
     state.uiStep = 'stepPlayers';
-    
+
     renderPlayersForm(); refreshUI(); saveStateToCloud();
   });
 
@@ -426,9 +609,9 @@
   el("backToPreviewBtn").addEventListener("click", () => { state.uiSection = 'setup'; state.uiStep = 'stepTeamPreview'; refreshUI(); saveStateToCloud(); });
   el("backToMatchesBtn").addEventListener("click", () => { state.uiSection = 'matches'; refreshUI(); saveStateToCloud(); });
   el("backToFinalsBtn").addEventListener("click", () => { state.uiSection = 'finals'; refreshUI(); saveStateToCloud(); });
-  
-  el("resetParamsBtn").addEventListener("click", () => { 
-      el("numPlayers").value = ""; el("numTeams").value = ""; el("numRounds").value = ""; 
+
+  el("resetParamsBtn").addEventListener("click", () => {
+      el("numPlayers").value = ""; el("numTeams").value = ""; el("numRounds").value = "";
       state.numPlayers = 0; state.numTeams = 0; state.numRounds = 0;
   });
   el("resetPlayersBtn").addEventListener("click", () => {
@@ -440,15 +623,25 @@
      for(let t=0; t<state.numTeams; t++){ state.teams.push({ name: `Time ${t + 1}`, color: TEAM_COLORS[t % TEAM_COLORS.length], players: [], stats: {} }); }
      renderTeamsForm(); saveStateToCloud();
   });
-  el("goToHomeBtn").addEventListener("click", () => { 
-    if(confirm("Tem certeza? Isso apagará todo o progresso atual.")) { 
-        state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
-        refreshUI(); saveStateToCloud(); 
+  el("goToHomeBtn").addEventListener("click", () => {
+    if(confirm("Tem certeza? Isso apagará todo o progresso atual.")) {
+        state = preserveAccessState({
+          numPlayers:0, numTeams:0, numRounds:0,
+          players:[], teams:[], schedule:[],
+          currentIndex:0, finals:[], finalsIndex:0,
+          uiStep:'stepParams', uiSection:'setup'
+        });
+        refreshUI(); saveStateToCloud();
     }
   });
   el("newTournamentBtn").addEventListener("click", () => {
       if(confirm("Começar novo torneio apagará os dados do atual. Confirmar?")) {
-        state = { numPlayers:0, numTeams:0, numRounds:0, players:[], teams:[], schedule:[], currentIndex:0, finals:[], uiStep:'stepParams', uiSection:'setup' }; 
+        state = preserveAccessState({
+          numPlayers:0, numTeams:0, numRounds:0,
+          players:[], teams:[], schedule:[],
+          currentIndex:0, finals:[], finalsIndex:0,
+          uiStep:'stepParams', uiSection:'setup'
+        });
         refreshUI(); saveStateToCloud();
       }
   });
@@ -476,20 +669,20 @@
         container.innerHTML += `<div class="team-block"><div class="chip"><span class="dot" style="background:${team.color}"></span><b style="color:${team.color}">${team.name} (${totalSkill}⭐)</b></div>${renderPlayersList(team.players)}</div>`;
     });
   }
-  
+
   // --- LÓGICA DO JOGO (SORTEIO ORIGINAL RESTAURADO) ---
   function distribuirPorSomaEquilibrada() {
     // 1. Ordena os jogadores do melhor para o pior
     const sortedPlayers = [...state.players].sort((a, b) => b.skill - a.skill);
-    
+
     // 2. Limpa os times e o placar de habilidades
     state.teams.forEach(t => t.players = []);
     const teamSkillSums = new Array(state.numTeams).fill(0);
-    
+
     // 3. Distribui sempre para o time que tem a menor soma de habilidades no momento
     sortedPlayers.forEach(player => {
         const minSumIndex = teamSkillSums.indexOf(Math.min(...teamSkillSums));
-        state.teams[minSumIndex].players.push(player); 
+        state.teams[minSumIndex].players.push(player);
         teamSkillSums[minSumIndex] += player.skill;
     });
   }
@@ -514,13 +707,13 @@
     }
     state.currentIndex = 0;
   }
-  
+
   function atualizarClassificacao(){
     state.teams.forEach(t => t.stats = {J:0, V:0, D:0, PF:0, PS:0});
-    state.schedule.forEach(g => { 
-        if(g.scoreA == null || g.scoreB == null) return; 
-        const A = state.teams[g.a], B = state.teams[g.b]; 
-        A.stats.J++; B.stats.J++; A.stats.PF += g.scoreA; A.stats.PS += g.scoreB; B.stats.PF += g.scoreB; B.stats.PS += g.scoreA; 
+    state.schedule.forEach(g => {
+        if(g.scoreA == null || g.scoreB == null) return;
+        const A = state.teams[g.a], B = state.teams[g.b];
+        A.stats.J++; B.stats.J++; A.stats.PF += g.scoreA; A.stats.PS += g.scoreB; B.stats.PF += g.scoreB; B.stats.PS += g.scoreA;
         if(g.scoreA > g.scoreB) { A.stats.V++; B.stats.D++; } else if(g.scoreB > g.scoreA) { B.stats.V++; A.stats.D++; }
     });
     el("standingsTable").querySelector("tbody").innerHTML = state.teams.map(t => { const saldo = t.stats.PF - t.stats.PS; const perc = t.stats.J ? Math.round((t.stats.V / t.stats.J) * 100) : 0; return {...t, ...t.stats, saldo, perc}; })
@@ -529,8 +722,8 @@
   }
 
   function renderCurrentMatch(){
-    const g=state.schedule[state.currentIndex]; 
-    if(!g){ if(state.schedule.length > 0) iniciarFinais(); return; } 
+    const g=state.schedule[state.currentIndex];
+    if(!g){ if(state.schedule.length > 0) iniciarFinais(); return; }
     const A=state.teams[g.a], B=state.teams[g.b];
     el("roundInfo").innerText = `Rodada ${g.round} — Jogo ${g.order}`;
     const controlsA = isAdmin ? `<div class="score-input-group"><button class="secondary" data-op="minus" data-target="scoreA">-</button><input id="scoreA" type="number" min="0" placeholder="0" value="${g.scoreA ?? ''}"/><button class="secondary" data-op="plus" data-target="scoreA">+</button></div>` : `<div class="kbd" style="font-size:1.5rem">${g.scoreA ?? '-'}</div>`;
@@ -543,9 +736,10 @@
   el("saveOnlyBtn").addEventListener("click", ()=>{
     const g = state.schedule[state.currentIndex];
     const a=parseInt(el("scoreA").value,10), b=parseInt(el("scoreB").value,10);
-    if(isNaN(a)||isNaN(b)){alert("Digite os pontos.");return;} 
+    if(isNaN(a)||isNaN(b)){alert("Digite os pontos.");return;}
+    if(a === b){alert("A partida não pode terminar empatada. Lance o placar final com um vencedor.");return;}
     g.scoreA=a;g.scoreB=b;
-    atualizarClassificacao(); renderAgenda(); 
+    atualizarClassificacao(); renderAgenda();
     el('nextMatchBtn').disabled = false;
     saveStateToCloud();
   });
@@ -571,7 +765,7 @@
   };
 
   function renderAgenda(){
-    const container = el("agenda"); container.innerHTML = ""; const byRound = {}; 
+    const container = el("agenda"); container.innerHTML = ""; const byRound = {};
     state.schedule.forEach((g, i) => { (byRound[g.round] ??= []).push({ ...g, i }); });
     Object.keys(byRound).sort((a, b) => a - b).forEach(r => {
         const card = document.createElement('div'); card.className = "card"; card.style.marginBottom = "8px";
@@ -594,20 +788,22 @@
 
   el("agenda").addEventListener("click", e => {
     if (!isAdmin) return;
-    if (e.target.matches('button[data-edit]')) { 
+    if (e.target.matches('button[data-edit]')) {
         const idx = parseInt(e.target.dataset.edit, 10);
         if (document.getElementById(`editor-${idx}`)) return;
-        const g = state.schedule[idx]; 
+        const g = state.schedule[idx];
         const editorHtml = `<div class="game-editor" id="editor-${idx}" style="margin-top:8px; padding-top:8px; border-top:1px dashed #444; display:grid; grid-template-columns:1fr 1fr auto; gap:8px; align-items:center;">
                 <input type="number" value="${g.scoreA ?? 0}" id="ea-${idx}" placeholder="Pts A"><input type="number" value="${g.scoreB ?? 0}" id="eb-${idx}" placeholder="Pts B"><button class="small" data-save="${idx}">Salvar</button></div>`;
         e.target.closest('.agenda-game').insertAdjacentHTML('beforeend', editorHtml);
         e.target.parentElement.style.display = 'none';
     }
-    if (e.target.matches('button[data-save]')) { 
+    if (e.target.matches('button[data-save]')) {
         const idx = parseInt(e.target.dataset.save, 10);
         const g = state.schedule[idx], valA = document.getElementById(`ea-${idx}`).value, valB = document.getElementById(`eb-${idx}`).value;
         if (valA === '' || valB === '') return alert("Preencha os pontos.");
-        g.scoreA = parseInt(valA, 10); g.scoreB = parseInt(valB, 10);
+        const scoreA = parseInt(valA, 10), scoreB = parseInt(valB, 10);
+        if (scoreA === scoreB) return alert("A partida não pode terminar empatada. Lance o placar final com um vencedor.");
+        g.scoreA = scoreA; g.scoreB = scoreB;
         atualizarClassificacao(); renderAgenda(); if (state.currentIndex === idx && state.uiSection === 'matches') renderCurrentMatch(); saveStateToCloud();
     }
   });
@@ -616,8 +812,8 @@
     atualizarClassificacao();
     const ranking = state.teams.map((t,i)=>({ i, name:t.name, color:t.color, players:t.players, stats:{...t.stats} })).sort((a,b)=> (b.stats.V - a.stats.V) || ((b.stats.PF - b.stats.PS) - (a.stats.PF - a.stats.PS)) || (b.stats.PF - a.stats.PF));
     state.finals = [];
-    if (ranking.length >= 4) { state.finals.push({ label:"3º lugar", a:ranking[2].i, b:ranking[3].i }); state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); } 
-    else if (ranking.length >= 2) { state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); } 
+    if (ranking.length >= 4) { state.finals.push({ label:"3º lugar", a:ranking[2].i, b:ranking[3].i }); state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); }
+    else if (ranking.length >= 2) { state.finals.push({ label:"Final", a:ranking[0].i, b:ranking[1].i }); }
     else { alert("Times insuficientes."); buildPodium(); state.uiSection='podium'; refreshUI(); saveStateToCloud(); return; }
     state.finals.forEach(f => { f.scoreA = null; f.scoreB = null; });
     state._rankingSnapshot = ranking; state.finalsIndex = 0; state.uiSection = 'finals'; refreshUI(); saveStateToCloud();
@@ -632,7 +828,9 @@
   el("saveFinalBtn").addEventListener("click", ()=>{
     const f=state.finals[state.finalsIndex]; if(!f) return;
     const a=parseInt(el("fscoreA").value,10), b=parseInt(el("fscoreB").value,10);
-    if(isNaN(a)||isNaN(b)){alert("Digite.");return;} f.scoreA=a; f.scoreB=b; state.finalsIndex++;
+    if(isNaN(a)||isNaN(b)){alert("Digite.");return;}
+    if(a === b){alert("A partida não pode terminar empatada. Lance o placar final com um vencedor.");return;}
+    f.scoreA=a; f.scoreB=b; state.finalsIndex++;
     if(state.finalsIndex >= state.finals.length){ buildPodium(); state.uiSection='podium'; refreshUI(); } else { renderFinalMatch(); }
     saveStateToCloud();
   });
@@ -647,7 +845,7 @@
     if (champ) { podiumHTML += `<div class="status good"><b>🏆 1º LUGAR:</b> ${champ.name}</div>`; placed.add(champ.name); }
     if (vice) { podiumHTML += `<div class="status"><b>🥈 2º LUGAR:</b> ${vice.name}</div>`; placed.add(vice.name); }
     if (third) { podiumHTML += `<div class="status"><b>🥉 3º LUGAR:</b> ${third.name}</div>`; placed.add(third.name); }
-    
+
     if (state._rankingSnapshot) {
       let rank = placed.size + 1;
       state._rankingSnapshot.forEach(r => { if (!placed.has(r.name)) { podiumHTML += `<div class="status"><b>${rank}º LUGAR:</b> ${r.name}</div>`; placed.add(r.name); rank++; } });

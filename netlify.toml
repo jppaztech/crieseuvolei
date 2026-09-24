@@ -1,0 +1,7 @@
+[build]
+  publish = "."
+  command = "echo 'Static site ready'"
+
+[context.production.environment]
+  SUPABASE_URL = "https://seu-projeto.supabase.co"
+  SUPABASE_KEY = "sua-chave-publishable"

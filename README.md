@@ -68,7 +68,7 @@ Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
 
 - Navegador web moderno (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
 - Conexão com a internet (para sincronização em nuvem)
-- Conta no [Supabase](https://supabase.com) (opcional, para funcionalidades cloud)
+- Projeto no [Supabase](https://supabase.com) configurado conforme a seção abaixo (necessário para login, persistência e sincronização)
 
 ## 🚀 Instalação
 
@@ -76,7 +76,7 @@ Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
 
 ```bash
 # 1. Clone o repositório
-git clone https://github.com/seu-usuario/crieseuvolei.git
+git clone https://github.com/jppaztech/crieseuvolei.git
 cd crieseuvolei
 
 # 2. Abra o arquivo index.html em seu navegador
@@ -120,10 +120,9 @@ netlify deploy
 ```
 
 #### GitHub Pages
-```bash
-# O repositório será servido automaticamente em:
-# https://seu-usuario.github.io/crieseuvolei
-```
+O projeto pode ser publicado pelo GitHub Pages após habilitar a opção **Settings >
+Pages** e selecionar a branch e a pasta de publicação. O endereço final depende da
+configuração do repositório; ele não é criado automaticamente apenas por clonar o projeto.
 
 ## 📖 Como Usar
 
@@ -169,7 +168,7 @@ netlify deploy
 - ✅ Chaveamento automático para Finais e 3º lugar
 
 ### Dados e Estatísticas
-- ✅ Visualizar pontuação por set
+- ⚠️ O placar atual registra o resultado final da partida; pontuação por set ainda está planejada
 - ✅ Acompanhar performance em tempo real
 - ✅ Comparação entre times
 
@@ -181,7 +180,7 @@ netlify deploy
 ### Sincronização
 - ✅ Salvar dados na nuvem (Supabase)
 - ✅ Sincronizar entre dispositivos
-- ✅ Recuperar histórico de partidas
+- ⚠️ O histórico de torneios ainda está planejado; o estado atual usa uma partida compartilhada
 
 ## 📁 Estrutura do Projeto
 
@@ -189,11 +188,7 @@ netlify deploy
 crieseuvolei/
 ├── index.html          # Arquivo principal (HTML + CSS + JS)
 ├── README.md           # Este arquivo
-├── LICENSE             # Licença MIT
-├── .git/               # Controle de versão
-└── [opcional: assets/]
-    ├── css/           # Estilos adicionais (se aplicável)
-    └── js/            # Scripts externos (se aplicável)
+└── LICENSE             # Licença MIT
 ```
 
 ## ⚙️ Configuração do Supabase
@@ -206,15 +201,19 @@ crieseuvolei/
 # Copie as credenciais do projeto
 ```
 
-### 2. Adicionar Variáveis de Ambiente
+### 2. Configurar as credenciais
 
-No `index.html`, localize a inicialização do Supabase:
+Como esta é uma aplicação HTML estática, a URL do projeto e a chave **publishable/anon**
+são informadas na inicialização do cliente em `index.html`:
 
 ```javascript
-const supabaseUrl = 'https://seu-projeto.supabase.co'
-const supabaseKey = 'sua-chave-publica'
-const supabase = supabase.createClient(supabaseUrl, supabaseKey)
+const SUPABASE_URL = 'https://seu-projeto.supabase.co'
+const SUPABASE_KEY = 'sua-chave-publishable'
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY)
 ```
+
+A chave publishable/anon pode aparecer no navegador, mas nunca coloque uma chave
+`service_role` no frontend. A proteção deve ser feita com autenticação e RLS.
 
 ### 3. Criar Tabelas no Banco de Dados
 
@@ -227,8 +226,82 @@ CREATE TABLE app_state (
 );
 
 -- Inserir a linha inicial que o sistema vai atualizar
-INSERT INTO app_state (id, game_data) VALUES (1, '{}');
+INSERT INTO app_state (id, game_data) VALUES (1, '{"ownerEmail":"responsavel@exemplo.com","scorerEmails":["operador@exemplo.com"]}'::jsonb);
+
+-- RLS: espectadores podem ler; somente usuários autenticados podem gravar.
+ALTER TABLE app_state ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Leitura pública do estado"
+  ON app_state FOR SELECT USING (true);
+CREATE POLICY "Admin autenticado pode gravar"
+  ON app_state FOR ALL
+  USING (auth.role() = 'authenticated')
+  WITH CHECK (auth.role() = 'authenticated');
+
+-- No painel do Supabase, adicione app_state à publicação supabase_realtime.
 ```
+
+Crie pelo menos um usuário em **Authentication > Users** para o login administrativo.
+O primeiro carregamento pode mostrar um aviso se a tabela, as políticas ou o Realtime
+ainda não estiverem configurados.
+
+### 4. Configuração do deploy em Netlify / Vercel
+
+Para uso real em produção, configure as variáveis de ambiente do deploy e mantenha apenas
+os valores públicos do cliente (URL e chave publishable do Supabase):
+
+```bash
+SUPABASE_URL=https://seu-projeto.supabase.co
+SUPABASE_KEY=sua-chave-publishable
+```
+
+No Netlify ou Vercel, mantenha isso em **Environment variables**; nunca exponha uma
+`service_role` ou segredo no HTML. Essa aplicação é um front-end estático e depende dos
+controles de acesso e RLS do banco para manter o ambiente seguro.
+
+### Modelo para uso geral
+
+O modelo implementado no código agora segue a decisão de uso geral:
+
+- o primeiro usuário autenticado vira o **responsável da partida**;
+- ele pode adicionar outros e-mails como **operadores de placar**;
+- operadores podem lançar e corrigir pontos, mas não assumem a gestão global da aplicação;
+- o usuário criador da aplicação continua sendo um responsável geral para manutenção e suporte, mas não precisa ser o único operador de todos os torneios;
+- a lista de responsável e operadores é preservada durante reinícios de torneio/partida, para que a administração compartilhada continue consistente mesmo quando o estado do torneio é zerado.
+
+Para o estado atual, essa autorização é controlada pelo JSON do `game_data`, com campos como:
+
+```json
+{
+  "ownerEmail": "responsavel@exemplo.com",
+  "scorerEmails": ["operador1@exemplo.com", "operador2@exemplo.com"]
+}
+```
+
+Esse modelo é um passo funcional para uso compartilhado, e a evolução natural é migrar para
+`transactions`/`tournaments` e `tournament_members` quando houver múltiplos torneios independentes.
+
+Exemplo de estrutura futura:
+
+```sql
+CREATE TABLE tournaments (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  owner_id UUID NOT NULL REFERENCES auth.users(id),
+  game_data JSONB NOT NULL DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE tournament_members (
+  tournament_id UUID NOT NULL REFERENCES tournaments(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  role TEXT NOT NULL CHECK (role IN ('owner', 'scorer', 'viewer')),
+  PRIMARY KEY (tournament_id, user_id)
+);
+```
+
+As políticas devem permitir `SELECT` para membros, escrita de placar para
+`owner`/`scorer` e alterações administrativas somente para `owner`. Essa migração
+deve ser feita antes de oferecer criação de torneios independentes em produção.
 
 ## 🤝 Contribuindo
 
@@ -241,7 +314,7 @@ Contribuições são bem-vindas! Siga os passos abaixo:
 
 ### 2. Clone Seu Fork
 ```bash
-git clone https://github.com/seu-usuario/crieseuvolei.git
+git clone https://github.com/jppaztech/crieseuvolei.git
 cd crieseuvolei
 ```
 
@@ -375,15 +448,15 @@ As cores e estilos podem ser customizados editando as variáveis CSS no `index.h
 
 - **Tamanho do arquivo**: ~50KB (HTML + CSS + JS)
 - **Tempo de carregamento**: < 2s em conexão 4G
-- **Compatibilidade**: 95%+ dos navegadores modernos
-- **Acessibilidade**: WCAG 2.1 Level AA
+- **Compatibilidade**: voltado para navegadores modernos; ainda não há matriz de testes automatizada
+- **Acessibilidade**: melhorias são mantidas no código, mas a conformidade WCAG 2.1 AA ainda não foi auditada
 
 ## 🔐 Segurança
 
-- Todas as credenciais devem ser mantidas seguras
-- Nunca compartilhe suas chaves do Supabase
-- Use variáveis de ambiente em produção
-- Implemente autenticação apropriada
+- Nunca coloque uma chave `service_role` ou outro segredo no frontend
+- Use somente a chave publishable/anon no HTML e proteja os dados com RLS
+- Restrinja a gravação de `app_state` a usuários autenticados
+- Revise as políticas e usuários do Supabase antes de publicar
 
 ## 📞 Suporte
 - **Email**: jpsantospaz@hotmail.com  
@@ -407,6 +480,8 @@ Mantido e supervisionado por João Paz.
 
 ### v1.1
 - [ ] Sistema de rankings e histórico
+- [ ] Histórico de torneios separados por usuário
+- [ ] Pontuação por sets e critérios de desempate
 - [ ] Temas adicionais
 - [ ] Notificações em tempo real
 - [ ] Integração com WhatsApp/Telegram
@@ -427,15 +502,8 @@ Mantido e supervisionado por João Paz.
 
 **Desenvolvido com ❤️ por um amante de vôlei**
 
-## Autor
-João Paz – [LinkedIn](https://www.linkedin.com/in/joaospaz) | [GitHub](https://github.com/jppaztech) | [Email](mailto:jpsantospaz@hotmail.com) | WhatsApp: +55 81 99885-5027
-
-## Contato
-Para dúvidas, sugestões ou oportunidades de colaboração, entre em contato por e-mail, WhatsApp ou conecte-se comigo pelo LinkedIn.
-
 ## Contribuição
 Contribuições são bem-vindas!  
 Se você deseja melhorar este projeto, faça um fork do repositório e envie um pull request.  
 **Importante:** qualquer alteração, mesmo pequena, deve ser aprovada previamente por mim antes de ser incorporada.  
 Para mudanças maiores, abra uma issue primeiro para discutirmos o que você gostaria de modificar.
-

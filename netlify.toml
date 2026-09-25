@@ -1,13 +1,6 @@
 [build]
   publish = "."
-  command = "npm install --silent"
-
-[context.production.environment]
-  SUPABASE_URL = "https://seu-projeto.supabase.co"
-  SUPABASE_KEY = "sua-chave-publishable"
-  SUPABASE_SECRET_KEY = "sua-chave-secreta"
-  APP_BASE_URL = "https://crieseuvolei.netlify.app"
-  APP_LANGUAGE_DEFAULT = "pt-BR"
+  command = "npm run build"
 
 [[redirects]]
   from = "/*"

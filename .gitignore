@@ -1,0 +1,6 @@
+node_modules/
+runtime-config.js
+.env
+.env.*
+!.env.example
+.netlify/

@@ -2,11 +2,13 @@
   "name": "crieseuvolei",
   "version": "1.1.0",
   "private": true,
-  "description": "Aplicação web para gerir peladas e torneios de vôlei com autenticação, co-criação e visualização pública.",
+  "description": "Aplicação web para criar torneios de vôlei, lançar resultados e acompanhar jogos ao vivo.",
   "scripts": {
-    "dev": "npx http-server . -p 8000",
+    "build": "node scripts/generate-config.cjs",
+    "dev": "npm run build && npx http-server . -p 8000",
     "start": "npx http-server . -p 8000",
-    "serve": "npx http-server . -p 8000"
+    "serve": "npm run dev",
+    "test": "node --check scripts/generate-config.cjs && node --check scripts/check-inline-script.cjs && node scripts/check-inline-script.cjs"
   },
   "devDependencies": {
     "http-server": "^14.1.1",

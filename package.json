@@ -11,7 +11,6 @@
     "test": "node --check scripts/generate-config.cjs && node --check scripts/check-inline-script.cjs && node scripts/check-inline-script.cjs"
   },
   "devDependencies": {
-    "http-server": "^14.1.1",
-    "netlify-cli": "^27.9.0"
+    "http-server": "^14.1.1"
   }
 }

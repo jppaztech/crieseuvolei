@@ -1,4 +1,6 @@
 -- Execute no SQL Editor do Supabase. Pode ser reaplicado sem apagar torneios.
+BEGIN;
+
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS public.profiles (
@@ -350,8 +352,14 @@ GRANT SELECT (id, tournament_id, inviter_id, invited_email, role, status, create
 
 REVOKE ALL ON FUNCTION public.create_tournament_invite(UUID, TEXT, TEXT) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.accept_tournament_invite(UUID) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.is_platform_admin() FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_tournament_member(UUID) FROM PUBLIC;
+REVOKE ALL ON FUNCTION public.is_tournament_editor(UUID) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.create_tournament_invite(UUID, TEXT, TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.accept_tournament_invite(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.is_platform_admin() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_tournament_member(UUID) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_tournament_editor(UUID) TO authenticated;
 
 DO $$
 BEGIN
@@ -362,3 +370,5 @@ BEGIN
   END IF;
 END;
 $$;
+
+COMMIT;

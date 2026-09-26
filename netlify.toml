@@ -2,6 +2,12 @@
   publish = "."
   command = "npm run build"
 
+[context.production.environment]
+  SUPABASE_URL = "https://cymkeazbvhxtstaxaqdc.supabase.co"
+  SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Nd_pwhW8NPXYTPqMMgycCA_XcKAZCDA"
+  APP_BASE_URL = "https://crieseuvolei.netlify.app"
+  APP_LANGUAGE_DEFAULT = "pt-BR"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

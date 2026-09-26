@@ -28,8 +28,8 @@ O contrato visual está documentado em [`DESIGN.md`](DESIGN.md); os tokens para 
 ## Desenvolvimento local
 
 1. Instale Node.js 18 ou superior.
-2. Copie `.env.example` para `.env` e preencha os valores do Supabase.
-3. Carregue as variáveis no terminal (o projeto não carrega `.env` automaticamente):
+2. Use `.env.example` como referência. Os comandos npm não carregam arquivos `.env` automaticamente.
+3. Defina as variáveis no terminal antes de iniciar:
 
 ```powershell
 $env:SUPABASE_URL="https://SEU_PROJETO.supabase.co"
@@ -64,7 +64,7 @@ O responsável ou co-admin informa o e-mail da pessoa. O Supabase grava um convi
 
 ## Netlify
 
-O site deve estar vinculado ao repositório e usar `netlify.toml`. No painel **Site configuration > Environment variables**, configure para o contexto de produção:
+O site deve estar vinculado ao repositório e usar `netlify.toml`. URL, chave publishable, URL base e idioma padrão estão declarados no contexto de produção desse arquivo; se usar variáveis do painel **Site configuration > Environment variables**, mantenha os mesmos nomes/valores para que a configuração do site não diverja do repositório:
 
 | Variável | Valor |
 |---|---|
@@ -73,13 +73,15 @@ O site deve estar vinculado ao repositório e usar `netlify.toml`. No painel **S
 | `APP_BASE_URL` | `https://crieseuvolei.netlify.app` |
 | `APP_LANGUAGE_DEFAULT` | `pt-BR` ou `en-US` |
 
-Não configure `SUPABASE_SECRET_KEY` ou `service_role` neste site estático. O build de produção falha explicitamente se URL/chave pública estiverem ausentes.
+`SUPABASE_PUBLISHABLE_KEY` é uma chave pública, destinada ao navegador, e não concede acesso sem as políticas RLS. Não configure `SUPABASE_SECRET_KEY` ou `service_role` neste site estático. O build de produção falha explicitamente se URL/chave pública estiverem ausentes.
 
-Para publicar manualmente em uma sessão Netlify autenticada:
+O deploy contínuo do repositório é preferível. Para publicar manualmente, instale/execute o CLI oficial em uma sessão Netlify autenticada:
 
 ```bash
-npx netlify-cli deploy --prod --dir .
+npx netlify-cli@latest deploy --prod --dir .
 ```
+
+O Netlify CLI não é uma dependência da aplicação; assim, ferramentas de publicação não entram no bundle nem ampliam a superfície de dependências do site. A aplicação usa `http-server` somente para desenvolvimento.
 
 ## Modelo de acesso
 
@@ -92,16 +94,28 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 
 ## Checklist de publicação
 
+- [x] Reinstalar dependências pelo lockfile com `npm ci`.
+- [x] Rodar `npm test`.
+- [x] Rodar `npm audit` sem vulnerabilidades conhecidas.
+- [x] Rodar build local via Netlify CLI no contexto `production`.
 - [ ] Aplicar `supabase/schema.sql` no projeto Supabase de produção.
 - [ ] Configurar Site URL e Redirect URLs no Supabase Auth.
 - [ ] Revisar template de confirmação e remetente de e-mail no Supabase.
-- [ ] Configurar as quatro variáveis públicas no Netlify.
-- [ ] Confirmar que o build de produção concluiu.
+- [x] Declarar URL e credencial publishable do Supabase, URL base e idioma no `netlify.toml`.
+- [ ] Confirmar que o deploy atualizado concluiu no site de produção.
 - [ ] Testar cadastro, confirmação, login, redefinição de senha e logout.
 - [ ] Testar criação de torneio, convite/aceite com outra conta e isolamento entre usuários.
 - [ ] Testar visibilidade pública, pesquisa, placar ao vivo e bloqueio de empate.
 - [ ] Conferir o site publicado em desktop e celular.
-- [ ] Instalar a PWA e confirmar que o shell abre offline; validar que operações exibem estado sem conexão.
+- [ ] Instalar a PWA de produção e confirmar que o shell abre offline; validar que operações exibem estado sem conexão.
+
+`npm test`, `npm run build` e `npm audit` verificam localmente sintaxe, traduções, manifesto/service worker, contratos estáticos de RLS/convite, bloqueio de chaves secretas, build e vulnerabilidades conhecidas. Esses testes não substituem a validação de duas contas no projeto Supabase real.
+
+### Estado desta publicação
+
+Em 25/09/2026, `npm ci`, `npm test`, `npm audit` (zero vulnerabilidades) e `netlify build --context production` passaram localmente. Uma consulta somente leitura ao endpoint de torneios de produção retornou erro de schema, indicando que faltam colunas exigidas pela versão nova. Por segurança, o frontend atualizado **não foi publicado** antes da migração. O domínio continuou respondendo HTTP 200 com a versão anterior. Cadastro, convites, isolamento e gravação de placar ainda não foram validados em produção.
+
+Para concluir, um operador precisa executar `supabase/schema.sql` no SQL Editor do projeto Supabase (ou fornecer acesso administrativo Supabase pelo ambiente seguro) e disponibilizar autenticação válida do site Netlify. Depois, refazer o checklist completo com duas contas de teste antes de anunciar o release.
 
 ## Direitos autorais e licença
 

@@ -53,7 +53,7 @@ npm run build
 1. Em **SQL Editor**, aplique `supabase/schema.sql`. O script é reaplicável e atualiza as tabelas/políticas existentes sem apagar torneios.
 2. Em **Authentication > URL Configuration**, defina `https://crieseuvolei.netlify.app/` como Site URL e permita `https://crieseuvolei.netlify.app/**` em Redirect URLs. Para desenvolvimento, permita também `http://localhost:8000/**`.
 3. Habilite confirmação de e-mail. O redirecionamento após a confirmação volta à aplicação; o usuário poderá então entrar.
-4. Para personalizar a mensagem de confirmação, copie `supabase/templates/confirmation.html` para **Authentication > Email Templates > Confirm signup**. O template usa `{{ .ConfirmationURL }}` do Supabase.
+4. O template de confirmação em português e inglês está aplicado em **Authentication > Email Templates > Confirm signup**. A origem versionada é `supabase/templates/confirmation.html`; preserve `{{ .ConfirmationURL }}` ao editá-lo.
 5. O dono da aplicação só recebe acesso de manutenção geral se um operador confiável definir `app_metadata.platform_admin = true` para a conta dele no painel/API administrativa do Supabase. Não use `user_metadata` para esta permissão: o próprio usuário pode editar esse campo.
 
 O schema aplica isolamento por `owner_id`/membro, limita leitura pública a torneios `live` e fecha a tabela legada `app_state` removendo suas políticas antigas. Criar/aceitar convites é feito por funções SQL com validação da sessão e do e-mail autenticado. Os dados de e-mail do responsável não são expostos na consulta pública de torneios.
@@ -100,9 +100,11 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 - [x] Rodar build local via Netlify CLI no contexto `production`.
 - [x] Aplicar o schema versionado no projeto Supabase de produção e confirmar tabelas, funções RPC, RLS e permissões por coluna.
 - [x] Configurar Site URL e Redirect URLs no Supabase Auth.
-- [ ] Revisar template de confirmação e remetente de e-mail no Supabase.
+- [x] Aplicar e conferir o assunto e template bilingue de confirmação no Supabase Auth.
+- [ ] Configurar um provedor SMTP próprio para remetente personalizado e maior volume; o projeto ainda usa o envio padrão do Supabase.
 - [x] Declarar URL e credencial publishable do Supabase, URL base e idioma no `netlify.toml`.
-- [ ] Confirmar que o deploy atualizado concluiu no site de produção.
+- [x] Publicar a versão de múltiplos torneios no site de produção pelo fluxo GitHub → Netlify.
+- [x] Verificar em produção o HTML inicial, configuração pública, manifesto PWA e consulta REST de torneios ao vivo.
 - [ ] Testar cadastro, confirmação, login, redefinição de senha e logout.
 - [ ] Testar criação de torneio, convite/aceite com outra conta e isolamento entre usuários.
 - [ ] Testar visibilidade pública, pesquisa, placar ao vivo e bloqueio de empate.
@@ -113,9 +115,9 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 
 ### Estado desta publicação
 
-Em 25/09/2026, o schema de produção foi aplicado por uma sessão autenticada do Supabase Management API. A verificação remota confirmou as quatro tabelas de torneios/perfis, RLS habilitado, políticas de isolamento, funções de convite e permissões por coluna: espectadores não podem escrever nem ler e-mails privados; usuários autenticados podem criar torneios. O endpoint público REST reconhece a tabela. As URLs de autenticação do Supabase também foram atualizadas para o domínio de produção e o endereço local de desenvolvimento.
+Em 26/09/2026, o schema de produção foi aplicado por uma sessão autenticada do Supabase Management API. A verificação remota confirmou as quatro tabelas de torneios/perfis, RLS habilitado, políticas de isolamento, funções de convite e permissões por coluna: espectadores não podem escrever nem ler e-mails privados; usuários autenticados podem criar torneios. O endpoint público REST reconhece a tabela. As URLs de autenticação e o assunto/template bilingue de confirmação também foram atualizados no Supabase.
 
-O deploy da versão atualizada ainda depende de integrar esta branch à branch `main`, configurada como branch de produção no Netlify, e aguardar a build/publicação remota. A build do Netlify deve executar `npm run build` a partir do `netlify.toml`. Cadastro/confirmação de e-mail e aceite de convite com duas contas distintas ainda precisam de validação ponta a ponta; as verificações de banco e API não substituem esse teste com caixas de e-mail acessíveis. Não anunciar a publicação como concluída até confirmar o novo deploy e percorrer o checklist acima.
+A versão foi publicada em produção via merge para `main`, branch configurada no Netlify. A build remota e o deploy preview passaram; a verificação da URL de produção confirmou HTTP 200 na página inicial, configuração pública e manifesto PWA. A consulta REST de torneios públicos também respondeu sem expor registros privados (não havia torneios ao vivo no instante da verificação). O fluxo real de cadastro, confirmação, redefinição de senha, convite/aceite e isolamento com duas contas ainda precisa de teste ponta a ponta com caixas de e-mail acessíveis; a validação das políticas e endpoints não substitui essa etapa. O envio ainda usa o serviço padrão do Supabase, sem SMTP próprio.
 
 ## Direitos autorais e licença
 

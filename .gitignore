@@ -4,3 +4,4 @@ runtime-config.js
 .env.*
 !.env.example
 .netlify/
+supabase/.temp/

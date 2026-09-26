@@ -98,8 +98,8 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 - [x] Rodar `npm test`.
 - [x] Rodar `npm audit` sem vulnerabilidades conhecidas.
 - [x] Rodar build local via Netlify CLI no contexto `production`.
-- [ ] Aplicar `supabase/schema.sql` no projeto Supabase de produção.
-- [ ] Configurar Site URL e Redirect URLs no Supabase Auth.
+- [x] Aplicar o schema versionado no projeto Supabase de produção e confirmar tabelas, funções RPC, RLS e permissões por coluna.
+- [x] Configurar Site URL e Redirect URLs no Supabase Auth.
 - [ ] Revisar template de confirmação e remetente de e-mail no Supabase.
 - [x] Declarar URL e credencial publishable do Supabase, URL base e idioma no `netlify.toml`.
 - [ ] Confirmar que o deploy atualizado concluiu no site de produção.
@@ -113,9 +113,9 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 
 ### Estado desta publicação
 
-Em 25/09/2026, `npm ci`, `npm test`, `npm audit` (zero vulnerabilidades) e `netlify build --context production` passaram localmente. Uma consulta somente leitura ao endpoint de torneios de produção retornou erro de schema, indicando que faltam colunas exigidas pela versão nova. Por segurança, o frontend atualizado **não foi publicado** antes da migração. O domínio continuou respondendo HTTP 200 com a versão anterior. Cadastro, convites, isolamento e gravação de placar ainda não foram validados em produção.
+Em 25/09/2026, o schema de produção foi aplicado por uma sessão autenticada do Supabase Management API. A verificação remota confirmou as quatro tabelas de torneios/perfis, RLS habilitado, políticas de isolamento, funções de convite e permissões por coluna: espectadores não podem escrever nem ler e-mails privados; usuários autenticados podem criar torneios. O endpoint público REST reconhece a tabela. As URLs de autenticação do Supabase também foram atualizadas para o domínio de produção e o endereço local de desenvolvimento.
 
-Para concluir, um operador precisa executar `supabase/schema.sql` no SQL Editor do projeto Supabase (ou fornecer acesso administrativo Supabase pelo ambiente seguro) e disponibilizar autenticação válida do site Netlify. Depois, refazer o checklist completo com duas contas de teste antes de anunciar o release.
+O deploy da versão atualizada ainda depende de integrar esta branch à branch `main`, configurada como branch de produção no Netlify, e aguardar a build/publicação remota. A build do Netlify deve executar `npm run build` a partir do `netlify.toml`. Cadastro/confirmação de e-mail e aceite de convite com duas contas distintas ainda precisam de validação ponta a ponta; as verificações de banco e API não substituem esse teste com caixas de e-mail acessíveis. Não anunciar a publicação como concluída até confirmar o novo deploy e percorrer o checklist acima.
 
 ## Direitos autorais e licença
 

@@ -64,10 +64,21 @@ CREATE TABLE IF NOT EXISTS public.tournament_invites (
   invited_email TEXT NOT NULL,
   role TEXT NOT NULL CHECK (role IN ('editor', 'viewer')) DEFAULT 'editor',
   status TEXT NOT NULL CHECK (status IN ('pending', 'accepted', 'rejected', 'expired')) DEFAULT 'pending',
+  invite_token TEXT,
+  expires_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (tournament_id, invited_email)
 );
+
+ALTER TABLE public.tournament_invites ADD COLUMN IF NOT EXISTS invite_token TEXT;
+ALTER TABLE public.tournament_invites ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+CREATE UNIQUE INDEX IF NOT EXISTS tournament_invites_invite_token_unique
+  ON public.tournament_invites (invite_token)
+  WHERE invite_token IS NOT NULL;
+UPDATE public.tournament_invites
+SET status = 'expired', updated_at = NOW()
+WHERE status = 'pending' AND invite_token IS NULL;
 
 CREATE OR REPLACE FUNCTION public.is_platform_admin()
 RETURNS BOOLEAN
@@ -110,9 +121,13 @@ AS $$
     );
 $$;
 
+DROP FUNCTION IF EXISTS public.create_tournament_invite(UUID, TEXT, TEXT);
+DROP FUNCTION IF EXISTS public.accept_tournament_invite(UUID);
+
 CREATE OR REPLACE FUNCTION public.create_tournament_invite(
   p_tournament_id UUID,
   p_invited_email TEXT,
+  p_invite_token TEXT,
   p_role TEXT DEFAULT 'editor'
 )
 RETURNS UUID
@@ -129,6 +144,9 @@ BEGIN
   IF v_email = '' OR v_email !~ '^[^@[:space:]]+@[^@[:space:]]+\.[^@[:space:]]+$' THEN
     RAISE EXCEPTION 'invalid email address';
   END IF;
+  IF p_invite_token IS NULL OR p_invite_token !~ '^[A-Za-z0-9_-]{43}$' THEN
+    RAISE EXCEPTION 'invalid invite token';
+  END IF;
   IF lower(COALESCE(auth.jwt()->>'email', '')) = v_email THEN
     RAISE EXCEPTION 'cannot invite your own account';
   END IF;
@@ -143,19 +161,21 @@ BEGIN
     RAISE EXCEPTION 'user is already a tournament member';
   END IF;
 
-  INSERT INTO public.tournament_invites (tournament_id, inviter_id, invited_email, role, status)
-  VALUES (p_tournament_id, auth.uid(), v_email, p_role, 'pending')
+  INSERT INTO public.tournament_invites (tournament_id, inviter_id, invited_email, role, status, invite_token, expires_at)
+  VALUES (p_tournament_id, auth.uid(), v_email, p_role, 'pending', p_invite_token, NOW() + INTERVAL '30 days')
   ON CONFLICT (tournament_id, invited_email)
   DO UPDATE SET inviter_id = EXCLUDED.inviter_id,
                 role = EXCLUDED.role,
                 status = 'pending',
+                invite_token = EXCLUDED.invite_token,
+                expires_at = EXCLUDED.expires_at,
                 updated_at = NOW()
   RETURNING id INTO v_invite_id;
   RETURN v_invite_id;
 END;
 $$;
 
-CREATE OR REPLACE FUNCTION public.accept_tournament_invite(p_tournament_id UUID)
+CREATE OR REPLACE FUNCTION public.accept_tournament_invite(p_invite_token TEXT)
 RETURNS UUID
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = public, auth, pg_temp
@@ -163,38 +183,35 @@ AS $$
 DECLARE
   v_email TEXT := lower(COALESCE(auth.jwt()->>'email', ''));
   v_role TEXT;
+  v_tournament_id UUID;
+  v_invite_id UUID;
 BEGIN
-  IF auth.uid() IS NULL OR v_email = '' THEN
+  IF auth.uid() IS NULL OR v_email = '' OR p_invite_token IS NULL THEN
     RAISE EXCEPTION 'sign in with the invited account';
   END IF;
 
-  SELECT ti.role INTO v_role
+  SELECT ti.id, ti.tournament_id, ti.role INTO v_invite_id, v_tournament_id, v_role
   FROM public.tournament_invites ti
-  WHERE ti.tournament_id = p_tournament_id
+  WHERE ti.invite_token = p_invite_token
     AND lower(ti.invited_email) = v_email
     AND ti.status = 'pending'
+    AND ti.expires_at > NOW()
   FOR UPDATE;
 
   IF v_role IS NULL THEN
-    IF EXISTS (
-      SELECT 1 FROM public.tournament_members tm
-      WHERE tm.tournament_id = p_tournament_id AND tm.user_id = auth.uid()
-    ) THEN
-      RETURN p_tournament_id;
-    END IF;
-    RAISE EXCEPTION 'no pending invitation for this account';
+    RAISE EXCEPTION 'no valid invitation for this account';
   END IF;
 
   INSERT INTO public.tournament_members (tournament_id, user_id, email, role)
-  VALUES (p_tournament_id, auth.uid(), v_email, v_role)
+  VALUES (v_tournament_id, auth.uid(), v_email, v_role)
   ON CONFLICT (tournament_id, user_id)
   DO UPDATE SET email = EXCLUDED.email, role = EXCLUDED.role;
 
   UPDATE public.tournament_invites
-  SET status = 'accepted', updated_at = NOW()
-  WHERE tournament_id = p_tournament_id AND lower(invited_email) = v_email;
+  SET status = 'accepted', invite_token = NULL, updated_at = NOW()
+  WHERE id = v_invite_id;
 
-  RETURN p_tournament_id;
+  RETURN v_tournament_id;
 END;
 $$;
 
@@ -350,13 +367,13 @@ GRANT SELECT (id, tournament_id, user_id, email, role, created_at)
 GRANT SELECT (id, tournament_id, inviter_id, invited_email, role, status, created_at, updated_at)
   ON public.tournament_invites TO authenticated;
 
-REVOKE ALL ON FUNCTION public.create_tournament_invite(UUID, TEXT, TEXT) FROM PUBLIC, anon;
-REVOKE ALL ON FUNCTION public.accept_tournament_invite(UUID) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.create_tournament_invite(UUID, TEXT, TEXT, TEXT) FROM PUBLIC, anon;
+REVOKE ALL ON FUNCTION public.accept_tournament_invite(TEXT) FROM PUBLIC, anon;
 REVOKE ALL ON FUNCTION public.is_platform_admin() FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.is_tournament_member(UUID) FROM PUBLIC;
 REVOKE ALL ON FUNCTION public.is_tournament_editor(UUID) FROM PUBLIC;
-GRANT EXECUTE ON FUNCTION public.create_tournament_invite(UUID, TEXT, TEXT) TO authenticated;
-GRANT EXECUTE ON FUNCTION public.accept_tournament_invite(UUID) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.create_tournament_invite(UUID, TEXT, TEXT, TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.accept_tournament_invite(TEXT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_platform_admin() TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.is_tournament_member(UUID) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.is_tournament_editor(UUID) TO authenticated;

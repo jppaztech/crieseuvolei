@@ -13,6 +13,10 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
   <script src="/runtime-config.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js" defer></script>
+  <script src="/assets/tournament-engine.js"></script>
+  <script src="/assets/report-exporter.js"></script>
   <style>
     :root {
       color-scheme: light;
@@ -109,6 +113,43 @@
     .workspace-head { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 19px 22px; background: var(--court-dark); color: white; }
     .workspace-head h2 { font-size: 1.35rem; }
     .workspace-head .button { color: white; border-color: rgba(255,255,255,.45); }
+    .workspace-head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+    .workflow-nav { display: flex; flex-wrap: wrap; gap: 7px; padding: 14px 22px 0; }
+    .workflow-step { min-height: 36px; padding: 7px 11px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); background: white; font-size: .83rem; font-weight: 700; }
+    .workflow-step[aria-current="step"] { color: white; background: var(--court); border-color: var(--court); }
+    .workflow-step:disabled { opacity: .55; cursor: not-allowed; }
+    .screen-content { padding: 22px; }
+    .screen-content h3 { margin-bottom: 8px; }
+    .screen-actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 18px; }
+    .screen-intro { max-width: 68ch; color: var(--muted); }
+    .roster-list, .team-grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin-top: 16px; }
+    .team-card { padding: 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+    .team-card h4 { margin: 0 0 8px; color: var(--team-color, var(--court-dark)); }
+    .team-card ul { margin: 0; padding-left: 20px; }
+    .team-card li { padding: 3px 0; }
+    .standing-wrap { margin-top: 20px; overflow-x: auto; }
+    .standing-table { width: 100%; border-collapse: collapse; white-space: nowrap; }
+    .standing-table th, .standing-table td { padding: 9px 10px; text-align: right; border-bottom: 1px solid var(--line); }
+    .standing-table th:first-child, .standing-table td:first-child { text-align: left; }
+    .standing-table th { color: var(--muted); font-size: .81rem; }
+    .match-list { display: grid; gap: 10px; margin-top: 16px; }
+    .match-card { padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: white; }
+    .match-card.match-complete { background: #f5f8f5; }
+    .match-meta { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-bottom: 10px; color: var(--muted); font-size: .83rem; }
+    .match-teams { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: start; gap: 12px; }
+    .match-team:last-child { text-align: right; }
+    .match-team strong { display: block; color: var(--team-color, var(--ink)); }
+    .match-team small { display: block; margin-top: 4px; color: var(--muted); line-height: 1.4; }
+    .match-result { padding: 0 5px; font-size: 1.05rem; font-variant-numeric: tabular-nums; font-weight: 800; white-space: nowrap; }
+    .match-editor { display: flex; flex-wrap: wrap; align-items: end; gap: 9px; margin-top: 12px; }
+    .match-editor .input { width: 82px; }
+    .table-lock-note { margin-top: 14px; padding: 12px; border: 1px solid #e5d9b9; border-radius: 8px; background: #fff8e8; color: #654b18; }
+    .podium-list { display: grid; gap: 10px; margin-top: 16px; }
+    .podium-place { display: grid; grid-template-columns: 78px minmax(0,1fr); gap: 12px; align-items: start; padding: 13px; border: 1px solid var(--line); border-radius: 10px; background: var(--soft); }
+    .podium-place:first-child { border-color: #e7ca79; background: #fff5d8; }
+    .podium-rank { font-weight: 800; }
+    .invite-link { padding: 10px 12px; overflow-wrap: anywhere; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); font-size: .86rem; }
+    .export-host { position: fixed; z-index: 100; top: 12px; left: 12px; width: min(800px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 10px; background: #fff; box-shadow: 0 14px 48px rgba(23,37,31,.24); }
     .workspace-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
     .work-section { padding: 23px; }
     .work-section + .work-section { border-left: 1px solid var(--line); }
@@ -166,9 +207,14 @@
       .owned-list, .team-grid, .score-grid { grid-template-columns: 1fr; }
       .inline-form { align-items: stretch; flex-direction: column; }
       .workspace-head { align-items: flex-start; padding: 16px; }
+      .workspace-head-actions { justify-content: flex-end; }
+      .workflow-nav, .screen-content { padding-inline: 14px; }
       .workspace-head h2 { font-size: 1.1rem; }
       .workspace-head .button { min-height: 38px; padding: 7px 10px; font-size: .82rem; }
-      .work-section { padding: 17px 14px; }
+      .roster-list, .team-grid { grid-template-columns: 1fr; }
+      .match-teams { grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); gap: 6px; font-size: .88rem; }
+      .match-editor { align-items: stretch; }
+      .podium-place { grid-template-columns: 62px minmax(0,1fr); }
       .form-grid { grid-template-columns: 1fr 1fr; }
       .match-row { grid-template-columns: 1fr auto 1fr; gap: 6px; font-size: .84rem; }
       .match-row .match-status { grid-column: 1 / -1; color: var(--muted); font-size: .76rem; }
@@ -270,7 +316,10 @@
           <p id="workspaceStatus" class="status-label" style="color:#d8e9dd;margin:0 0 2px"></p>
           <h2 id="workspaceTitle"></h2>
         </div>
-        <button id="closeWorkspace" class="button button-small" type="button" data-i18n="backToTournaments">Voltar aos torneios</button>
+        <div class="workspace-head-actions">
+          <button id="deleteTournament" class="button button-small button-danger" type="button" hidden data-i18n="deleteTournament">Excluir torneio</button>
+          <button id="closeWorkspace" class="button button-small" type="button" data-i18n="backToTournaments">Voltar aos torneios</button>
+        </div>
       </div>
       <div id="workspaceBody" class="workspace-body"></div>
     </section>
@@ -343,28 +392,62 @@
           authEmailRequired: 'Informe um e-mail válido.', authPasswordRequired: 'A senha precisa ter pelo menos 8 caracteres.',
           forgotPassword: 'Esqueceu a senha?', resetSent: 'Enviamos um link para redefinir sua senha.',
           recoveryTitle: 'Definir nova senha', savePassword: 'Salvar nova senha', passwordUpdated: 'Senha atualizada.',
-          signUpSent: 'Conta criada. Confirme seu e-mail pelo link enviado e depois entre no CrieSeuVôlei.',
+          signUpSent: 'Cadastro iniciado. Se a confirmação estiver ativa, confira seu e-mail; caso contrário, entre com seu e-mail e senha.',
+          emailAlreadyRegistered: 'Este e-mail já tem uma conta. Entre ou peça a redefinição da senha.',
           loginError: 'Não foi possível entrar. Confira o e-mail e a senha.', createError: 'Não foi possível criar a conta.',
-          createdTournament: 'Torneio criado. Agora configure jogadores e partidas.', backendMissing: 'Conexão com o Supabase não configurada. Defina SUPABASE_URL e SUPABASE_KEY no ambiente e publique novamente.',
+          createdTournament: 'Torneio criado. Agora configure jogadores e partidas.', backendMissing: 'Conexão com o Supabase não configurada. Defina SUPABASE_URL e SUPABASE_PUBLISHABLE_KEY no ambiente e publique novamente.',
           loadError: 'Não foi possível carregar os torneios. Tente novamente.', tournamentSetup: 'Montar as partidas',
-          playersCount: 'Jogadores', teamsCount: 'Times', roundsCount: 'Rodadas', saveSetup: 'Criar lista de jogadores',
+          playersCount: 'Jogadores', teamsCount: 'Times', roundsCount: 'Rodadas', saveSetup: 'Salvar e continuar',
           playerName: 'Nome do jogador', skill: 'Nível (1 a 5)', teamName: 'Nome do time',
-          balanceTeams: 'Sortear times equilibrados', generateSchedule: 'Gerar tabela de jogos',
+          balanceTeams: 'Sortear times equilibrados', generateSchedule: 'Gerar tabela de partidas',
           matchSchedule: 'Tabela de partidas', scoreCurrent: 'Lançar placar', round: 'Rodada', pending: 'Aguardando',
           saveScore: 'Salvar resultado', scoreTie: 'No vôlei não há empate: informe um placar com um time à frente.',
           invalidScore: 'Informe dois placares válidos e diferentes.', tournamentNameRequired: 'Informe o nome do torneio.',
           saveError: 'Não foi possível salvar. Verifique sua conexão e permissão para este torneio.',
+          concurrentUpdate: 'Outra pessoa atualizou este torneio. Os dados mais recentes foram carregados; revise e tente novamente.',
           tournamentSettings: 'Torneio', saveName: 'Salvar nome', visibilityPublic: 'Visível para espectadores',
-          inviteHeading: 'Convidar co-admin', inviteEmail: 'E-mail do co-admin', createInvite: 'Criar convite',
-          sendEmail: 'Enviar por e-mail', sendWhatsApp: 'Enviar pelo WhatsApp', pendingInvites: 'Convites enviados',
+          tournamentProgress: 'Etapas do torneio', playerRosterHint: 'Informe os nomes e níveis dos jogadores. Os times terão a mesma quantidade de pessoas.',
+          teamNameHint: 'Defina o nome de cada time antes de realizar o sorteio equilibrado.',
+          drawTeamsHint: 'O sorteio distribui jogadores em ordem de nível, equilibrando a soma das habilidades entre os times.',
+          groupStageHint: 'Lance ou corrija os placares da fase de grupos. Os quatro primeiros avançam às semifinais.',
+          playerNamesRequired: 'Preencha o nome de cada jogador antes de continuar.',
+          teamNamesRequired: 'Preencha o nome de cada time antes de realizar o sorteio.',
+          tournamentDeleted: 'Torneio excluído.', readyToClose: 'A final e a disputa de 3º lugar estão registradas. Encerre o torneio para publicar o pódio.',
+          game: 'Jogo',
+          inviteHeading: 'Convidar co-criador', inviteEmail: 'E-mail da pessoa convidada', createInvite: 'Criar link de convite',
+          sendWhatsApp: 'Compartilhar pelo WhatsApp', copyInviteLink: 'Copiar link', pendingInvites: 'Convites pendentes',
+          pending: 'Pendente', accepted: 'Aceito', rejected: 'Recusado', expired: 'Expirado',
           members: 'Administradores', inviteCreated: 'Convite registrado. Compartilhe o link para a pessoa aceitar.',
           inviteAccepted: 'Convite aceito. Você agora pode administrar este torneio.', inviteError: 'Não foi possível aceitar o convite. Entre com o e-mail convidado.',
+          inviteLinkCopied: 'Link copiado. Envie pelo WhatsApp para a pessoa convidada.',
+          inviteExpired: 'Este convite expirou ou já foi utilizado. Peça ao responsável um novo link.',
           spectator: 'Você está acompanhando este torneio.', tournamentNotFound: 'Este torneio não está disponível.',
-          statusUpdateError: 'Não foi possível atualizar o torneio.', playersMinimum: 'Informe ao menos 2 jogadores e 2 times.',
+          statusUpdateError: 'Não foi possível atualizar o torneio.', playersMinimum: 'Configure ao menos quatro times e distribua os jogadores antes de gerar a tabela.',
           emptyMatches: 'Gere a tabela para começar a lançar os resultados.', matchDone: 'Finalizada',
           authRequired: 'Entre para administrar este torneio.', selectLanguage: 'Idioma',
-          inviteSubject: 'Convite para administrar um torneio no CrieSeuVôlei',
-          inviteBody: 'Você foi convidado(a) para ajudar a administrar o torneio "{name}" no CrieSeuVôlei. Entre ou crie sua conta usando este e-mail e abra o link para aceitar: {url}',
+          stepSetup: 'Configurar', stepPlayers: 'Jogadores', stepTeams: 'Times', stepPreview: 'Sorteio', stepGroups: 'Rodadas', stepSemifinals: 'Semifinais', stepFinals: 'Finais', stepPodium: 'Pódio',
+          next: 'Próximo', back: 'Voltar', savePlayers: 'Salvar jogadores', saveTeams: 'Salvar nomes dos times', continueMatches: 'Iniciar fase de grupos',
+          standings: 'Classificação', played: 'J', wins: 'V', pointsFor: 'PF', pointsAgainst: 'PS', pointDifference: 'Saldo',
+          editScore: 'Editar placar', saveEditedScore: 'Salvar placar', closeTournament: 'Encerrar torneio e gerar pódio',
+          confirmCloseTournament: 'Encerrar este torneio e publicar o pódio? Depois disso, o placar ficará somente para consulta.',
+          deleteTournament: 'Excluir torneio', confirmDeleteTournament: 'Excluir este torneio e todos os dados associados? Esta ação não pode ser desfeita.',
+          deleteTournamentError: 'Não foi possível excluir o torneio. Verifique se você é o responsável e tente novamente.',
+          setupLocked: 'A configuração está bloqueada depois que a tabela de partidas foi gerada. Os placares e resultados foram preservados.',
+          setupCountsHint: 'Para as semifinais, cadastre ao menos quatro times. Divida os jogadores igualmente entre os times.',
+          playersMustDivide: 'A quantidade de jogadores precisa ser divisível pelo número de times, com pelo menos dois jogadores por time.',
+          matchesNotReady: 'Registre todos os resultados da fase de grupos antes de avançar.',
+          semifinalsNotReady: 'Registre os resultados das duas semifinais antes de avançar.',
+          finalsNotReady: 'Registre a final e a disputa de 3º lugar antes de encerrar o torneio.',
+          semifinalHeading: 'Semifinais: 1º × 4º e 2º × 3º',
+          finalHeading: 'Disputa de 3º lugar e final',
+          advanceSemifinals: 'Classificar os quatro primeiros', advanceFinals: 'Montar disputa de 3º lugar e final',
+          exportedTeams: 'Times e jogadores', exportedAgenda: 'Agenda completa', exportedPodium: 'Relatório final do torneio',
+          exportJpeg: 'Exportar JPEG', exportPdf: 'Exportar PDF', generatingExport: 'Preparando arquivo para download…',
+          scoreSaved: 'Placar salvo.', tournamentClosed: 'Torneio encerrado. O pódio e os relatórios estão prontos.',
+          noPodium: 'O pódio será liberado depois de encerrar a final e a disputa de 3º lugar.',
+          standingsTieBreak: 'Desempate: vitórias, saldo de pontos e pontos marcados.',
+          inviteBody: 'Você foi convidado(a) para colaborar no torneio "{name}" no CrieSeuVôlei. Este link é exclusivo, vale uma vez e expira em 30 dias. Entre ou crie sua conta com este e-mail para aceitar: {url}',
+          team: 'Time',
           requestError: 'O serviço retornou um erro. Tente novamente.'
         },
         'en-US': {
@@ -388,28 +471,62 @@
           authEmailRequired: 'Enter a valid email address.', authPasswordRequired: 'Password must be at least 8 characters.',
           forgotPassword: 'Forgot password?', resetSent: 'We sent you a password reset link.',
           recoveryTitle: 'Set a new password', savePassword: 'Save new password', passwordUpdated: 'Password updated.',
-          signUpSent: 'Account created. Confirm your email using the link we sent, then sign in.',
+          signUpSent: 'Sign-up started. If confirmation is enabled, check your email; otherwise, sign in with your email and password.',
+          emailAlreadyRegistered: 'This email already has an account. Sign in or reset the password.',
           loginError: 'Could not sign in. Check your email and password.', createError: 'Could not create your account.',
-          createdTournament: 'Tournament created. Set up players and matches next.', backendMissing: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_KEY in the environment, then publish again.',
+          createdTournament: 'Tournament created. Set up players and matches next.', backendMissing: 'Supabase is not configured. Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY in the environment, then publish again.',
           loadError: 'Could not load tournaments. Please try again.', tournamentSetup: 'Set up matches',
-          playersCount: 'Players', teamsCount: 'Teams', roundsCount: 'Rounds', saveSetup: 'Create player list',
+          playersCount: 'Players', teamsCount: 'Teams', roundsCount: 'Rounds', saveSetup: 'Save and continue',
           playerName: 'Player name', skill: 'Skill (1–5)', teamName: 'Team name',
-          balanceTeams: 'Balance teams', generateSchedule: 'Generate schedule',
+          balanceTeams: 'Balance teams', generateSchedule: 'Generate match schedule',
           matchSchedule: 'Match schedule', scoreCurrent: 'Enter score', round: 'Round', pending: 'Upcoming',
           saveScore: 'Save result', scoreTie: 'Volleyball has no ties. Enter a score with one team ahead.',
           invalidScore: 'Enter two valid, different scores.', tournamentNameRequired: 'Enter a tournament name.',
           saveError: 'Could not save. Check your connection and tournament permissions.',
+          concurrentUpdate: 'Someone else updated this tournament. The latest data was loaded; review it and try again.',
           tournamentSettings: 'Tournament', saveName: 'Save name', visibilityPublic: 'Visible to spectators',
-          inviteHeading: 'Invite a co-admin', inviteEmail: 'Co-admin email', createInvite: 'Create invite',
-          sendEmail: 'Send by email', sendWhatsApp: 'Send with WhatsApp', pendingInvites: 'Invitations',
+          tournamentProgress: 'Tournament steps', playerRosterHint: 'Enter each player name and skill level. Teams will have equal roster sizes.',
+          teamNameHint: 'Name each team before drawing balanced rosters.',
+          drawTeamsHint: 'Players are distributed by skill level to balance the combined skill across teams.',
+          groupStageHint: 'Enter or edit group-stage scores. The top four teams advance to the semifinals.',
+          playerNamesRequired: 'Enter every player name before continuing.',
+          teamNamesRequired: 'Enter every team name before drawing balanced rosters.',
+          tournamentDeleted: 'Tournament deleted.', readyToClose: 'The final and third-place match are recorded. Close the tournament to publish the podium.',
+          game: 'Match',
+          inviteHeading: 'Invite a co-organizer', inviteEmail: 'Invitee email', createInvite: 'Create invite link',
+          sendWhatsApp: 'Share with WhatsApp', copyInviteLink: 'Copy link', pendingInvites: 'Pending invites',
+          pending: 'Pending', accepted: 'Accepted', rejected: 'Declined', expired: 'Expired',
           members: 'Admins', inviteCreated: 'Invitation saved. Share the link so the invitee can accept.',
           inviteAccepted: 'Invitation accepted. You can now manage this tournament.', inviteError: 'Could not accept the invite. Sign in with the invited email.',
+          inviteLinkCopied: 'Link copied. Send it to the invitee on WhatsApp.',
+          inviteExpired: 'This invite has expired or was already used. Ask the organizer for a new link.',
           spectator: 'You are watching this tournament.', tournamentNotFound: 'This tournament is unavailable.',
-          statusUpdateError: 'Could not update the tournament.', playersMinimum: 'Enter at least 2 players and 2 teams.',
+          statusUpdateError: 'Could not update the tournament.', playersMinimum: 'Set up at least four teams and distribute the players before generating the schedule.',
           emptyMatches: 'Generate the schedule to start entering results.', matchDone: 'Final',
           authRequired: 'Sign in to manage this tournament.', selectLanguage: 'Language',
-          inviteSubject: 'Invitation to manage a tournament on CrieSeuVôlei',
-          inviteBody: 'You were invited to co-manage "{name}" on CrieSeuVôlei. Sign in or create an account with this email, then open this link to accept: {url}',
+          stepSetup: 'Setup', stepPlayers: 'Players', stepTeams: 'Teams', stepPreview: 'Draw', stepGroups: 'Rounds', stepSemifinals: 'Semifinals', stepFinals: 'Finals', stepPodium: 'Podium',
+          next: 'Next', back: 'Back', savePlayers: 'Save players', saveTeams: 'Save team names', continueMatches: 'Start group stage',
+          standings: 'Standings', played: 'P', wins: 'W', pointsFor: 'PF', pointsAgainst: 'PA', pointDifference: 'Diff.',
+          editScore: 'Edit score', saveEditedScore: 'Save score', closeTournament: 'Close tournament and publish podium',
+          confirmCloseTournament: 'Close this tournament and publish the podium? Scores will then be read-only.',
+          deleteTournament: 'Delete tournament', confirmDeleteTournament: 'Delete this tournament and all associated data? This cannot be undone.',
+          deleteTournamentError: 'Could not delete the tournament. Check that you are the owner and try again.',
+          setupLocked: 'Setup is locked after the schedule is generated. Scores and results have been preserved.',
+          setupCountsHint: 'Enter at least four teams for semifinals. Divide players equally among teams.',
+          playersMustDivide: 'The player count must be divisible by the team count, with at least two players per team.',
+          matchesNotReady: 'Record every group-stage result before advancing.',
+          semifinalsNotReady: 'Record both semifinal results before advancing.',
+          finalsNotReady: 'Record the final and third-place match before closing the tournament.',
+          semifinalHeading: 'Semifinals: 1st vs 4th and 2nd vs 3rd',
+          finalHeading: 'Third-place match and final',
+          advanceSemifinals: 'Seed the top four', advanceFinals: 'Set up third-place match and final',
+          exportedTeams: 'Teams and players', exportedAgenda: 'Full match schedule', exportedPodium: 'Final tournament report',
+          exportJpeg: 'Export JPEG', exportPdf: 'Export PDF', generatingExport: 'Preparing your download…',
+          scoreSaved: 'Score saved.', tournamentClosed: 'Tournament closed. The podium and reports are ready.',
+          noPodium: 'The podium is available after closing the final and third-place match.',
+          standingsTieBreak: 'Tiebreakers: wins, point difference, then points scored.',
+          inviteBody: 'You were invited to co-manage "{name}" on CrieSeuVôlei. This personal link can be used once and expires in 30 days. Sign in or create an account with this email to accept: {url}',
+          team: 'Team',
           requestError: 'The service returned an error. Please try again.'
         }
       };
@@ -422,6 +539,9 @@
         selectedId: new URLSearchParams(location.search).get('t'),
         authMode: 'login',
         lastInvite: null,
+        editingMatch: null,
+        acceptingInviteToken: null,
+        acceptedInviteToken: null,
         client: null,
         subscription: null,
         busy: false
@@ -441,10 +561,7 @@
         state.members.some((member) => member.tournament_id === tournament.id && member.user_id === user().id && member.role === 'editor')
       ));
       const statusText = (status) => tr(status === 'live' ? 'live' : status === 'finished' ? 'finished' : 'draft');
-      const setupOf = (tournament) => ({
-        players: 0, teams: 0, rounds: 0, playersList: [], teamsList: [], schedule: [], currentIndex: 0,
-        ...(tournament.game_data || {})
-      });
+      const setupOf = (tournament) => window.CrieSeuVoleiTournament.normalize(tournament.game_data, tournament.status);
       function announce(message, kind = '') {
         const notice = $('#globalNotice');
         notice.textContent = message;
@@ -543,18 +660,27 @@
         state.invites = invitesResult.data || [];
       }
       async function acceptInviteFromUrl() {
-        const tournamentId = new URLSearchParams(location.search).get('invite');
-        if (!user() || !tournamentId || !state.client) return;
-        const { error } = await state.client.rpc('accept_tournament_invite', { p_tournament_id: tournamentId });
-        if (error) {
-          announce(tr('inviteError'), 'error');
-          return;
+        const inviteToken = new URLSearchParams(location.search).get('invite');
+        if (!user() || !inviteToken || !state.client) return;
+        if (state.acceptedInviteToken === inviteToken || state.acceptingInviteToken === inviteToken) return;
+        state.acceptingInviteToken = inviteToken;
+        try {
+          const { data, error } = await state.client.rpc('accept_tournament_invite', { p_invite_token: inviteToken });
+          if (error) {
+            console.error('Falha ao aceitar convite:', error);
+            announce(tr('inviteError'), 'error');
+            return;
+          }
+          const tournamentId = data;
+          state.acceptedInviteToken = inviteToken;
+          state.selectedId = tournamentId;
+          history.replaceState({}, '', `${location.pathname}?t=${encodeURIComponent(tournamentId)}`);
+          await loadTournaments();
+          await loadTournamentAccess(tournamentId);
+          announce(tr('inviteAccepted'), 'success');
+        } finally {
+          state.acceptingInviteToken = null;
         }
-        state.selectedId = tournamentId;
-        history.replaceState({}, '', `${location.pathname}?t=${encodeURIComponent(tournamentId)}`);
-        await loadTournaments();
-        await loadTournamentAccess(tournamentId);
-        announce(tr('inviteAccepted'), 'success');
       }
       async function afterAuthChanged(session) {
         state.session = session;
@@ -580,10 +706,17 @@
         try {
           if (state.authMode === 'signup') {
             const { data, error } = await state.client.auth.signUp({
-              email, password,
+              email,
+              password,
               options: { emailRedirectTo: authRedirectUrl() }
             });
-            if (error) throw error;
+            if (error) {
+              if (/already registered|already exists/i.test(error.message)) {
+                showAuthMessage(tr('emailAlreadyRegistered'), 'error');
+                return;
+              }
+              throw error;
+            }
             if (data.session) {
               closeAuth();
               await afterAuthChanged(data.session);
@@ -637,7 +770,7 @@
         const email = $('#authEmail').value.trim().toLowerCase();
         if (!email) return showAuthMessage(tr('authEmailRequired'), 'error');
         try {
-          const { error } = await state.client.auth.resetPasswordForEmail(email, { redirectTo: `${baseUrl}/` });
+          const { error } = await state.client.auth.resetPasswordForEmail(email, { redirectTo: authRedirectUrl() });
           if (error) throw error;
           showAuthMessage(tr('resetSent'), 'success');
         } catch (error) {
@@ -652,10 +785,16 @@
           status: tournament.status,
           game_data: tournament.game_data
         };
-        const { error } = await state.client.from('tournaments').update(update).eq('id', tournament.id);
+        const { data, error } = await state.client.from('tournaments').update(update)
+          .eq('id', tournament.id).eq('updated_at', tournament.updated_at).select('id').maybeSingle();
         if (error) {
           console.error('Falha ao salvar torneio:', error);
           announce(tr('saveError'), 'error');
+          return false;
+        }
+        if (!data) {
+          await loadTournaments();
+          announce(tr('concurrentUpdate'), 'error');
           return false;
         }
         await loadTournaments();
@@ -694,82 +833,144 @@
         const tournament = currentTournament();
         if (!tournament || !canManage(tournament)) return;
         const setup = setupOf(tournament);
+        if (setup.phase !== 'setup' || setup.schedule.length) return announce(tr('setupLocked'), 'error');
         setup.players = Math.max(0, Math.min(40, Number($('#playersCount').value) || 0));
         setup.teams = Math.max(0, Math.min(10, Number($('#teamsCount').value) || 0));
         setup.rounds = Math.max(0, Math.min(20, Number($('#roundsCount').value) || 0));
-        if (setup.players < 2 || setup.teams < 2 || setup.rounds < 1) return announce(tr('playersMinimum'), 'error');
+        if (setup.players < 4 || setup.teams < 4 || setup.rounds < 1) return announce(tr('playersMinimum'), 'error');
+        if (setup.players < setup.teams * 2 || setup.players % setup.teams !== 0) return announce(tr('playersMustDivide'), 'error');
         setup.playersList = Array.from({ length: setup.players }, (_, index) => setup.playersList[index] || ({ name: '', skill: 3 }));
         setup.teamsList = Array.from({ length: setup.teams }, (_, index) => setup.teamsList[index] || ({ name: `${state.lang === 'pt-BR' ? 'Time' : 'Team'} ${index + 1}`, members: [] }));
-        setup.schedule = [];
-        setup.currentIndex = 0;
+        setup.phase = 'players';
         tournament.game_data = setup;
-        tournament.status = 'draft';
-        if (await persistTournament(tournament)) await loadTournamentAccess(tournament.id);
+        if (await persistTournament(tournament)) render();
+      }
+      async function savePlayers() {
+        const tournament = currentTournament();
+        if (!tournament || !canManage(tournament)) return;
+        const setup = setupOf(tournament);
+        if (setup.phase !== 'players' || setup.schedule.length) return announce(tr('setupLocked'), 'error');
+        const rows = $$('[data-player-index]').map((row) => ({
+          name: row.querySelector('[data-player-name]').value.trim(),
+          skill: Math.max(1, Math.min(5, Number(row.querySelector('[data-player-skill]').value) || 3))
+        }));
+        if (rows.length !== setup.players || rows.some((player) => !player.name)) {
+          return announce(tr('playerNamesRequired'), 'error');
+        }
+        setup.playersList = rows;
+        setup.phase = 'teams';
+        tournament.game_data = setup;
+        if (await persistTournament(tournament)) render();
+      }
+      async function saveTeamNames() {
+        const tournament = currentTournament();
+        if (!tournament || !canManage(tournament)) return;
+        const setup = setupOf(tournament);
+        if (setup.phase !== 'teams' || setup.schedule.length) return announce(tr('setupLocked'), 'error');
+        const names = $$('[data-team-name]').map((input) => input.value.trim());
+        if (names.length !== setup.teams || names.some((name) => !name)) {
+          return announce(tr('teamNamesRequired'), 'error');
+        }
+        setup.teamsList = names.map((name) => ({ name, members: [] }));
+        setup.phase = 'team-preview';
+        tournament.game_data = setup;
+        if (await persistTournament(tournament)) render();
       }
       async function balanceTeams() {
         const tournament = currentTournament();
         if (!tournament || !canManage(tournament)) return;
         const setup = setupOf(tournament);
-        const rows = $$('[data-player-index]').map((row) => ({
-          name: row.querySelector('[data-player-name]').value.trim(),
-          skill: Math.max(1, Math.min(5, Number(row.querySelector('[data-player-skill]').value) || 3))
-        }));
-        const teams = Array.from({ length: setup.teams }, (_, index) => ({
-          name: $(`[data-team-name="${index}"]`).value.trim() || `${state.lang === 'pt-BR' ? 'Time' : 'Team'} ${index + 1}`,
-          members: []
-        }));
-        const totals = teams.map(() => 0);
-        rows.sort((a, b) => b.skill - a.skill).forEach((player) => {
-          const index = totals.indexOf(Math.min(...totals));
-          teams[index].members.push(player);
-          totals[index] += player.skill;
-        });
-        setup.playersList = rows;
-        setup.teamsList = teams;
+        if (setup.phase !== 'team-preview' || setup.schedule.length) return announce(tr('setupLocked'), 'error');
+        setup.teamsList = window.CrieSeuVoleiTournament.balanceTeams(
+          setup.playersList,
+          setup.teamsList.map((team) => team.name)
+        );
         tournament.game_data = setup;
-        await persistTournament(tournament);
+        if (await persistTournament(tournament)) render();
       }
       async function generateSchedule() {
         const tournament = currentTournament();
         if (!tournament || !canManage(tournament)) return;
         const setup = setupOf(tournament);
-        if (setup.teamsList.length < 2) return announce(tr('playersMinimum'), 'error');
-        const rotation = setup.teamsList.map((_, index) => index);
-        if (rotation.length % 2) rotation.push(null);
-        const matches = [];
-        for (let roundIndex = 0; roundIndex < setup.rounds; roundIndex += 1) {
-          for (let index = 0; index < rotation.length / 2; index += 1) {
-            const a = rotation[index], b = rotation[rotation.length - 1 - index];
-            if (a !== null && b !== null) matches.push({ round: roundIndex + 1, a, b, scoreA: null, scoreB: null, status: 'pending' });
-          }
-          const first = rotation.shift();
-          const last = rotation.pop();
-          rotation.unshift(first);
-          rotation.splice(1, 0, last);
-        }
-        setup.schedule = matches;
-        setup.currentIndex = 0;
+        if (setup.phase !== 'team-preview' || setup.schedule.length) return announce(tr('setupLocked'), 'error');
+        if (setup.teamsList.length < 4 || setup.teamsList.some((team) => !team.members?.length)) return announce(tr('playersMinimum'), 'error');
+        setup.schedule = window.CrieSeuVoleiTournament.createRoundRobinSchedule(setup.teamsList.length, setup.rounds);
+        setup.phase = 'groups';
         tournament.game_data = setup;
         tournament.status = 'live';
-        if (await persistTournament(tournament)) await loadTournamentAccess(tournament.id);
+        if (await persistTournament(tournament)) render();
       }
-      async function saveScore() {
+      async function saveMatchScore(collection, index, scoreA, scoreB) {
         const tournament = currentTournament();
         if (!tournament || !canManage(tournament)) return;
         const setup = setupOf(tournament);
-        const match = setup.schedule[setup.currentIndex];
-        if (!match) return;
-        const scoreA = Number($('#matchScoreA').value), scoreB = Number($('#matchScoreB').value);
-        if (!Number.isInteger(scoreA) || !Number.isInteger(scoreB) || scoreA < 0 || scoreB < 0) return announce(tr('invalidScore'), 'error');
-        if (scoreA === scoreB) return announce(tr('scoreTie'), 'error');
-        match.scoreA = scoreA;
-        match.scoreB = scoreB;
-        match.status = 'done';
-        const next = setup.schedule.findIndex((item, index) => index > setup.currentIndex && item.status !== 'done');
-        setup.currentIndex = next >= 0 ? next : setup.schedule.findIndex((item) => item.status !== 'done');
-        tournament.game_data = setup;
-        if (!setup.schedule.some((item) => item.status !== 'done')) tournament.status = 'finished';
-        await persistTournament(tournament);
+        const matches = collection === 'groups' ? setup.schedule : collection === 'semifinals' ? setup.semifinals : setup.playoffs;
+        const match = matches[index];
+        if (!match || !window.CrieSeuVoleiTournament.validateScore(scoreA, scoreB)) {
+          return announce(scoreA === scoreB ? tr('scoreTie') : tr('invalidScore'), 'error');
+        }
+        if (tournament.status === 'finished' || !['groups', 'semifinals', 'finals'].includes(setup.phase)) return announce(tr('tournamentClosed'), 'error');
+        const nextSetup = { ...setup, [collection === 'groups' ? 'schedule' : collection]: matches.map((item, matchIndex) =>
+          matchIndex === index ? { ...item, scoreA, scoreB, status: 'done' } : item
+        ) };
+        const updated = { ...tournament, game_data: nextSetup };
+        if (await persistTournament(updated)) {
+          state.editingMatch = null;
+          render();
+          announce(tr('scoreSaved'), 'success');
+        }
+      }
+      async function advanceToSemifinals() {
+        const tournament = currentTournament();
+        if (!tournament || !canManage(tournament)) return;
+        const setup = setupOf(tournament);
+        if (setup.phase !== 'groups' || !setup.schedule.length || setup.schedule.some((match) => match.status !== 'done')) {
+          return announce(tr('matchesNotReady'), 'error');
+        }
+        const standings = window.CrieSeuVoleiTournament.calculateStandings(setup.teamsList, setup.schedule);
+        setup.semifinals = window.CrieSeuVoleiTournament.createSemifinals(standings);
+        setup.phase = 'semifinals';
+        if (await persistTournament({ ...tournament, game_data: setup })) render();
+      }
+      async function advanceToFinals() {
+        const tournament = currentTournament();
+        if (!tournament || !canManage(tournament)) return;
+        const setup = setupOf(tournament);
+        if (setup.phase !== 'semifinals' || setup.semifinals.length !== 2 || setup.semifinals.some((match) => match.status !== 'done')) {
+          return announce(tr('semifinalsNotReady'), 'error');
+        }
+        setup.playoffs = window.CrieSeuVoleiTournament.createPlacementMatches(setup.semifinals);
+        setup.phase = 'finals';
+        if (await persistTournament({ ...tournament, game_data: setup })) render();
+      }
+      async function closeTournament() {
+        const tournament = currentTournament();
+        if (!tournament || !canManage(tournament)) return;
+        const setup = setupOf(tournament);
+        if (setup.phase !== 'finals' || setup.playoffs.length !== 2 || setup.playoffs.some((match) => match.status !== 'done')) {
+          return announce(tr('finalsNotReady'), 'error');
+        }
+        if (!window.confirm(tr('confirmCloseTournament'))) return;
+        setup.phase = 'podium';
+        if (await persistTournament({ ...tournament, status: 'finished', game_data: setup })) {
+          render();
+          announce(tr('tournamentClosed'), 'success');
+        }
+      }
+      async function deleteTournament() {
+        const tournament = currentTournament();
+        if (!tournament || tournament.owner_id !== user()?.id) return;
+        if (!window.confirm(tr('confirmDeleteTournament'))) return;
+        const { error } = await state.client.from('tournaments').delete().eq('id', tournament.id);
+        if (error) {
+          console.error('Falha ao excluir torneio:', error);
+          return announce(tr('deleteTournamentError'), 'error');
+        }
+        state.selectedId = null;
+        state.editingMatch = null;
+        history.replaceState({}, '', location.pathname);
+        await loadTournaments();
+        announce(tr('tournamentDeleted'), 'success');
       }
       async function setPublic(value) {
         const tournament = currentTournament();
@@ -782,87 +983,177 @@
         if (!tournament || !canManage(tournament)) return;
         const email = $('#inviteEmailInput').value.trim().toLowerCase();
         if (!email) return announce(tr('authEmailRequired'), 'error');
+        const bytes = crypto.getRandomValues(new Uint8Array(32));
+        const token = btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
         const { data, error } = await state.client.rpc('create_tournament_invite', {
-          p_tournament_id: tournament.id, p_invited_email: email, p_role: 'editor'
+          p_tournament_id: tournament.id, p_invited_email: email, p_role: 'editor', p_invite_token: token
         });
         if (error) {
           console.error('Falha ao criar convite:', error);
           return announce(tr('requestError'), 'error');
         }
-        const url = `${baseUrl}/?invite=${encodeURIComponent(tournament.id)}`;
-        const subject = tr('inviteSubject');
+        const url = `${baseUrl}/?invite=${encodeURIComponent(token)}`;
         const body = tr('inviteBody').replace('{name}', tournament.name).replace('{url}', url);
-        state.lastInvite = { email, url, subject, body };
+        state.lastInvite = { tournamentId: tournament.id, email, url, body };
         await loadTournamentAccess(tournament.id);
         render();
         announce(tr('inviteCreated'), 'success');
       }
+      function renderWorkflowNav(phase) {
+        const steps = [
+          ['setup', 'stepSetup'], ['players', 'stepPlayers'], ['teams', 'stepTeams'], ['team-preview', 'stepPreview'],
+          ['groups', 'stepGroups'], ['semifinals', 'stepSemifinals'], ['finals', 'stepFinals'], ['podium', 'stepPodium']
+        ];
+        const activeIndex = Math.max(0, steps.findIndex(([key]) => key === phase));
+        return `<nav class="workflow-nav" aria-label="${tr('tournamentProgress')}">
+          ${steps.map(([key, label], index) => `<span class="workflow-step" ${key === phase ? 'aria-current="step"' : ''} ${index > activeIndex ? 'aria-disabled="true"' : ''}>${index + 1}. ${tr(label)}</span>`).join('')}
+        </nav>`;
+      }
+      function renderPlayersForm(setup) {
+        return setup.playersList.map((player, index) => `<div class="player-row" data-player-index="${index}">
+          <div class="field"><label for="player-${index}">${tr('playerName')} ${index + 1}</label>
+            <input id="player-${index}" class="input" data-player-name value="${escapeHtml(player.name)}" maxlength="60" required></div>
+          <div class="field"><label for="skill-${index}">${tr('skill')}</label>
+            <select id="skill-${index}" class="select" data-player-skill>${[1,2,3,4,5].map((n) => `<option value="${n}" ${Number(player.skill) === n ? 'selected' : ''}>${n}/5</option>`).join('')}</select></div>
+        </div>`).join('');
+      }
+      function renderRosterCards(teams) {
+        return `<div class="team-grid">${teams.map((team) => `<article class="team-card" style="--team-color:${escapeHtml(team.color || '#236b4d')}">
+          <h4>${escapeHtml(team.name)}</h4><ul>${(team.members || []).map((player) => `<li>${escapeHtml(player.name)} <span class="status-label">· ${tr('skill')} ${Number(player.skill) || 3}/5</span></li>`).join('')}</ul>
+        </article>`).join('')}</div>`;
+      }
+      function renderStandings(teams, schedule) {
+        const standings = window.CrieSeuVoleiTournament.calculateStandings(teams, schedule);
+        return `<div class="standing-wrap"><h3>${tr('standings')}</h3><p class="section-subtitle">${tr('standingsTieBreak')}</p>
+          <table class="standing-table"><thead><tr><th>${tr('teamsCount')}</th><th>${tr('played')}</th><th>${tr('wins')}</th><th>${tr('pointsFor')}</th><th>${tr('pointsAgainst')}</th><th>${tr('pointDifference')}</th></tr></thead>
+          <tbody>${standings.map((team, index) => `<tr><td>${index + 1}. ${escapeHtml(team.name)}</td><td>${team.played}</td><td>${team.wins}</td><td>${team.pointsFor}</td><td>${team.pointsAgainst}</td><td>${team.pointDifference > 0 ? '+' : ''}${team.pointDifference}</td></tr>`).join('')}</tbody></table>
+        </div>`;
+      }
+      function renderMatchCard(match, index, collection, teams, manager, heading) {
+        const a = teams[match.a];
+        const b = teams[match.b];
+        const key = `${collection}:${index}`;
+        const editing = state.editingMatch === key;
+        const canEditScore = manager && tournamentIsOpen() && (match.status !== 'done' || editing);
+        const scoreForm = canEditScore ? `<form class="match-editor" data-score-collection="${collection}" data-score-index="${index}">
+          <label class="field"><span>${escapeHtml(a?.name || '—')}</span><input class="input" name="scoreA" type="number" min="0" step="1" value="${editing ? (match.scoreA ?? '') : ''}" aria-label="${escapeHtml(a?.name || 'A')} — ${tr('pointsFor')}" required></label>
+          <label class="field"><span>${escapeHtml(b?.name || '—')}</span><input class="input" name="scoreB" type="number" min="0" step="1" value="${editing ? (match.scoreB ?? '') : ''}" aria-label="${escapeHtml(b?.name || 'B')} — ${tr('pointsFor')}" required></label>
+          <button class="button button-primary button-small" type="submit">${editing ? tr('saveEditedScore') : tr('saveScore')}</button>
+          ${editing ? `<button class="button button-quiet button-small" type="button" data-cancel-edit>${tr('cancel')}</button>` : ''}
+        </form>` : manager && tournamentIsOpen() && match.status === 'done' ? `<div class="screen-actions"><button class="button button-outline button-small" type="button" data-edit-match="${key}">${tr('editScore')}</button></div>` : '';
+        const playersA = (a?.members || []).map((player) => player.name).join(', ');
+        const playersB = (b?.members || []).map((player) => player.name).join(', ');
+        const result = window.CrieSeuVoleiTournament.validateScore(match.scoreA, match.scoreB)
+          ? `${match.scoreA} : ${match.scoreB}`
+          : '– : –';
+        return `<article class="match-card ${match.status === 'done' ? 'match-complete' : ''}">
+          <div class="match-meta"><strong>${escapeHtml(heading || `${tr('round')} ${match.round} · ${tr('game')} ${match.order || index + 1}`)}</strong><span>${tr(match.status === 'done' ? 'matchDone' : 'pending')}</span></div>
+          <div class="match-teams">
+            <div class="match-team" style="--team-color:${escapeHtml(a?.color || '#236b4d')}"><strong>${escapeHtml(a?.name || '—')}</strong><small>${escapeHtml(playersA)}</small></div>
+            <div class="match-result">${result}</div>
+            <div class="match-team" style="--team-color:${escapeHtml(b?.color || '#236b4d')}"><strong>${escapeHtml(b?.name || '—')}</strong><small>${escapeHtml(playersB)}</small></div>
+          </div>
+          ${scoreForm}
+        </article>`;
+      }
+      function tournamentIsOpen() {
+        return currentTournament()?.status !== 'finished';
+      }
+      function renderMatchList(matches, collection, teams, manager) {
+        return `<div class="match-list">${matches.map((match, index) => renderMatchCard(
+          match, index, collection, teams, manager, match.label || `${tr('round')} ${match.round} · ${tr('game')} ${match.order || index + 1}`
+        )).join('')}</div>`;
+      }
+      function renderExportButtons(kind) {
+        return `<div class="screen-actions">
+          <button class="button button-outline" type="button" data-export="${kind}" data-format="jpeg">${tr('exportJpeg')}</button>
+          <button class="button button-outline" type="button" data-export="${kind}" data-format="pdf">${tr('exportPdf')}</button>
+        </div>`;
+      }
+      function renderTournamentAccess(tournament, manager) {
+        if (!manager) return `<p class="screen-content section-subtitle">${tr('spectator')}</p>`;
+        const members = state.members.filter((item) => item.tournament_id === tournament.id)
+          .map((item) => `<div>${escapeHtml(item.email)} · ${escapeHtml(item.role)}</div>`).join('');
+        const invites = state.invites.map((item) => `<div>${escapeHtml(item.invited_email)} · ${escapeHtml(tr(item.status))}</div>`).join('');
+        const invite = state.lastInvite?.tournamentId === tournament.id ? state.lastInvite : null;
+        return `<details class="screen-content">
+          <summary>${tr('tournamentSettings')} · ${tr('inviteHeading')}</summary>
+          <div class="stack" style="margin-top:14px">
+            <form id="renameForm" class="inline-form"><div class="field field-grow"><label for="tournamentNameEditor">${tr('tournamentName')}</label><input id="tournamentNameEditor" class="input" maxlength="80" value="${escapeHtml(tournament.name)}" required></div><button class="button button-outline" type="submit">${tr('saveName')}</button></form>
+            <label class="field" style="display:flex;align-items:center;gap:9px"><span>${tr('visibilityPublic')}</span><input id="publicToggle" type="checkbox" ${tournament.is_public ? 'checked' : ''}></label>
+            <form id="inviteForm" class="stack">
+              <div class="field"><label for="inviteEmailInput">${tr('inviteEmail')}</label><input id="inviteEmailInput" class="input" type="email" autocomplete="email" required></div>
+              <button class="button button-primary" type="submit">${tr('createInvite')}</button>
+            </form>
+            ${invite ? `<div class="stack"><label>${tr('inviteHeading')} · ${escapeHtml(invite.email)}</label><div class="invite-link" id="inviteLinkText">${escapeHtml(invite.url)}</div>
+              <div class="screen-actions"><button class="button button-outline button-small" type="button" data-copy-invite>${tr('copyInviteLink')}</button>
+              <a class="button button-outline button-small" href="https://wa.me/?text=${encodeURIComponent(invite.body)}" target="_blank" rel="noopener">${tr('sendWhatsApp')}</a></div></div>` : ''}
+            ${members ? `<div class="invite-list"><strong>${tr('members')}</strong>${members}</div>` : ''}
+            ${invites ? `<div class="invite-list"><strong>${tr('pendingInvites')}</strong>${invites}</div>` : ''}
+          </div>
+        </details>`;
+      }
       function createWorkspaceMarkup(tournament) {
         const setup = setupOf(tournament);
         const manager = canManage(tournament);
-        const players = setup.playersList.map((player, index) => `
-          <div class="player-row" data-player-index="${index}">
-            <input class="input" data-player-name value="${escapeHtml(player.name)}" placeholder="${tr('playerName')} ${index + 1}" aria-label="${tr('playerName')} ${index + 1}">
-            <select class="select" data-player-skill aria-label="${tr('skill')}">${[1,2,3,4,5].map((n) => `<option value="${n}" ${Number(player.skill) === n ? 'selected' : ''}>${n}</option>`).join('')}</select>
-          </div>`).join('');
-        const teamNames = setup.teamsList.map((team, index) => `
-          <div class="field"><label for="team-${index}">${tr('teamName')} ${index + 1}</label><input id="team-${index}" class="input" data-team-name="${index}" value="${escapeHtml(team.name)}"></div>`).join('');
-        const matches = setup.schedule.map((match, index) => {
-          const a = setup.teamsList[match.a]?.name || 'A';
-          const b = setup.teamsList[match.b]?.name || 'B';
-          return `<div class="match-row ${index === setup.currentIndex && match.status !== 'done' ? 'current' : ''}">
-            <strong>${escapeHtml(a)}</strong><span class="match-points">${match.scoreA ?? '–'} : ${match.scoreB ?? '–'}</span><strong>${escapeHtml(b)}</strong>
-            <span class="match-status">${tr(match.status === 'done' ? 'matchDone' : 'pending')} · ${tr('round')} ${match.round}</span>
-          </div>`;
-        }).join('');
-        const members = state.members.filter((item) => item.tournament_id === tournament.id)
-          .map((item) => `<div>${escapeHtml(item.email)} · ${escapeHtml(item.role)}</div>`).join('');
-        const invites = state.invites.map((item) => `<div>${escapeHtml(item.invited_email)} · ${escapeHtml(item.status)}</div>`).join('');
-        return `
-          <section class="work-section">
-            <h3>${tr('tournamentSettings')}</h3>
-            ${manager ? `<form id="renameForm" class="stack"><div class="field"><label for="tournamentNameEditor">${tr('tournamentName')}</label><input id="tournamentNameEditor" class="input" maxlength="80" value="${escapeHtml(tournament.name)}"></div><button class="button button-outline" type="submit">${tr('saveName')}</button></form>
-              <label class="field" style="display:flex;align-items:center;gap:9px;margin-top:15px"><span>${tr('visibilityPublic')}</span><input id="publicToggle" type="checkbox" ${tournament.is_public ? 'checked' : ''}></label>` :
-              `<p class="section-subtitle">${tr('spectator')}</p>`}
-          </section>
-          ${manager ? `<section class="work-section">
-            <h3>${tr('inviteHeading')}</h3>
-            <form id="inviteForm" class="stack">
-              <div class="field"><label for="inviteEmailInput">${tr('inviteEmail')}</label><input id="inviteEmailInput" class="input" type="email" required></div>
-              <button class="button button-primary" type="submit">${tr('createInvite')}</button>
-            </form>
-            ${state.lastInvite?.url.startsWith(`${baseUrl}/?invite=${tournament.id}`) ? `<div class="toolbar">
-              <a class="button button-outline button-small" href="mailto:${encodeURIComponent(state.lastInvite.email)}?subject=${encodeURIComponent(state.lastInvite.subject)}&body=${encodeURIComponent(state.lastInvite.body)}">${tr('sendEmail')}</a>
-              <a class="button button-outline button-small" href="https://wa.me/?text=${encodeURIComponent(state.lastInvite.body)}" target="_blank" rel="noopener">${tr('sendWhatsApp')}</a>
-            </div>` : ''}
-            ${members ? `<div class="invite-list"><strong>${tr('members')}</strong>${members}</div>` : ''}
-            ${invites ? `<div class="invite-list"><strong>${tr('pendingInvites')}</strong>${invites}</div>` : ''}
-          </section>` : ''}
-          ${manager ? `<section class="work-section work-section-wide">
-            <h3>${tr('tournamentSetup')}</h3>
-            <form id="setupForm" class="stack">
-              <div class="form-grid">
-                <div class="field"><label for="playersCount">${tr('playersCount')}</label><input id="playersCount" class="input" type="number" min="2" max="40" value="${setup.players || 12}"></div>
-                <div class="field"><label for="teamsCount">${tr('teamsCount')}</label><input id="teamsCount" class="input" type="number" min="2" max="10" value="${setup.teams || 4}"></div>
-                <div class="field"><label for="roundsCount">${tr('roundsCount')}</label><input id="roundsCount" class="input" type="number" min="1" max="20" value="${setup.rounds || 4}"></div>
-              </div>
-              <button class="button button-outline" type="submit">${tr('saveSetup')}</button>
-            </form>
-            ${setup.playersList.length ? `<div class="team-grid" style="margin-top:18px">
-              <div class="team-card"><strong>${tr('playersCount')}</strong><div class="stack" style="margin-top:9px">${players}</div></div>
-              <div class="team-card"><strong>${tr('teamsCount')}</strong><div class="stack" style="margin-top:9px">${teamNames}</div></div>
-            </div>
-            <div class="toolbar"><button id="balanceTeams" class="button button-primary" type="button">${tr('balanceTeams')}</button>${setup.teamsList.some((team) => team.members?.length) ? `<button id="generateSchedule" class="button button-outline" type="button">${tr('generateSchedule')}</button>` : ''}</div>` : ''}
-          </section>` : ''}
-          <section class="work-section work-section-wide">
-            <h3>${tr('matchSchedule')}</h3>
-            ${matches || `<div class="empty">${tr('emptyMatches')}</div>`}
-            ${manager && setup.schedule[setup.currentIndex] && tournament.status !== 'finished' ? `<form id="scoreForm" class="toolbar">
-              <label class="field"><span>${escapeHtml(setup.teamsList[setup.schedule[setup.currentIndex].a]?.name || 'A')}</span><input id="matchScoreA" class="input score-input" type="number" min="0" required></label>
-              <label class="field"><span>${escapeHtml(setup.teamsList[setup.schedule[setup.currentIndex].b]?.name || 'B')}</span><input id="matchScoreB" class="input score-input" type="number" min="0" required></label>
-              <button class="button button-primary" type="submit">${tr('saveScore')}</button>
-            </form>` : ''}
+        const phase = setup.phase;
+        let screen = '';
+        if (phase === 'setup') {
+          screen = `<section class="screen-content"><h3>${tr('tournamentSetup')}</h3><p class="screen-intro">${tr('setupCountsHint')}</p>
+            <form id="setupForm" class="stack"><div class="form-grid">
+              <div class="field"><label for="playersCount">${tr('playersCount')}</label><input id="playersCount" class="input" type="number" min="4" max="40" value="${setup.players || 12}" required></div>
+              <div class="field"><label for="teamsCount">${tr('teamsCount')}</label><input id="teamsCount" class="input" type="number" min="4" max="10" value="${setup.teams || 4}" required></div>
+              <div class="field"><label for="roundsCount">${tr('roundsCount')}</label><input id="roundsCount" class="input" type="number" min="1" max="20" value="${setup.rounds || 4}" required></div>
+            </div><div class="screen-actions"><button class="button button-primary" type="submit">${tr('saveSetup')}</button></div></form>
           </section>`;
+        } else if (phase === 'players') {
+          screen = `<section class="screen-content"><h3>${tr('stepPlayers')}</h3><p class="screen-intro">${tr('playerRosterHint')}</p>
+            ${manager ? `<form id="playersForm" class="stack"><div class="roster-list">${renderPlayersForm(setup)}</div><div class="screen-actions">
+              <button class="button button-quiet" type="button" data-go-phase="setup">${tr('back')}</button><button class="button button-primary" type="submit">${tr('savePlayers')}</button></div></form>` :
+              `<div class="roster-list">${renderPlayersForm(setup)}</div>`}
+          </section>`;
+        } else if (phase === 'teams') {
+          screen = `<section class="screen-content"><h3>${tr('stepTeams')}</h3><p class="screen-intro">${tr('teamNameHint')}</p>
+            ${manager ? `<form id="teamsForm" class="stack"><div class="form-grid">${setup.teamsList.map((team, index) => `<div class="field"><label for="team-${index}">${tr('teamName')} ${index + 1}</label><input id="team-${index}" class="input" data-team-name value="${escapeHtml(team.name)}" maxlength="50" required></div>`).join('')}</div>
+              <div class="screen-actions"><button class="button button-quiet" type="button" data-go-phase="players">${tr('back')}</button><button class="button button-primary" type="submit">${tr('saveTeams')}</button></div></form>` :
+              `<div class="team-grid">${setup.teamsList.map((team) => `<article class="team-card"><h4>${escapeHtml(team.name)}</h4></article>`).join('')}</div>`}
+          </section>`;
+        } else if (phase === 'team-preview') {
+          const drawn = setup.teamsList.some((team) => team.members?.length);
+          screen = `<section class="screen-content"><h3>${tr('stepPreview')}</h3><p class="screen-intro">${tr('drawTeamsHint')}</p>
+            ${drawn ? renderRosterCards(setup.teamsList) : `<div class="empty">${tr('drawTeamsHint')}</div>`}
+            ${manager ? `<div class="screen-actions"><button class="button button-quiet" type="button" data-go-phase="teams">${tr('back')}</button>
+              <button id="balanceTeams" class="button button-outline" type="button">${tr('balanceTeams')}</button>
+              ${drawn ? `<button id="exportTeamsJpeg" class="button button-outline" type="button" data-export="teams" data-format="jpeg">${tr('exportJpeg')}</button><button id="exportTeamsPdf" class="button button-outline" type="button" data-export="teams" data-format="pdf">${tr('exportPdf')}</button>
+              <button id="generateSchedule" class="button button-primary" type="button">${tr('generateSchedule')}</button>` : ''}</div>` : renderRosterCards(setup.teamsList)}
+          </section>`;
+        } else if (phase === 'groups') {
+          const allComplete = setup.schedule.length > 0 && setup.schedule.every((match) => match.status === 'done');
+          screen = `<section class="screen-content"><h3>${tr('stepGroups')}</h3><p class="screen-intro">${tr('groupStageHint')}</p>
+            ${renderStandings(setup.teamsList, setup.schedule)}
+            <div class="section-heading" style="margin-top:22px"><h3>${tr('matchSchedule')}</h3>${renderExportButtons('agenda')}</div>
+            ${renderMatchList(setup.schedule, 'groups', setup.teamsList, manager)}
+            ${allComplete && manager ? `<div class="table-lock-note">${tr('setupLocked')}</div><div class="screen-actions"><button class="button button-primary" type="button" id="advanceSemifinals">${tr('advanceSemifinals')}</button></div>` : ''}
+          </section>`;
+        } else if (phase === 'semifinals') {
+          screen = `<section class="screen-content"><div class="section-heading"><h3>${tr('semifinalHeading')}</h3>${renderExportButtons('agenda')}</div><p class="screen-intro">${tr('standingsTieBreak')}</p>
+            ${renderStandings(setup.teamsList, setup.schedule)}
+            ${renderMatchList(setup.semifinals, 'semifinals', setup.teamsList, manager)}
+            ${setup.semifinals.length === 2 && setup.semifinals.every((match) => match.status === 'done') && manager ? `<div class="screen-actions"><button class="button button-primary" type="button" id="advanceFinals">${tr('advanceFinals')}</button></div>` : ''}
+          </section>`;
+        } else if (phase === 'finals') {
+          screen = `<section class="screen-content"><div class="section-heading"><h3>${tr('finalHeading')}</h3>${renderExportButtons('agenda')}</div>${renderMatchList(setup.playoffs, 'playoffs', setup.teamsList, manager)}
+            ${setup.playoffs.length === 2 && setup.playoffs.every((match) => match.status === 'done') && manager ? `<div class="table-lock-note">${tr('readyToClose')}</div><div class="screen-actions"><button class="button button-danger" type="button" id="closeTournament">${tr('closeTournament')}</button></div>` : ''}
+          </section>`;
+        } else {
+          const standings = window.CrieSeuVoleiTournament.calculateStandings(setup.teamsList, setup.schedule);
+          const podium = window.CrieSeuVoleiTournament.getPodium(setup.playoffs, standings);
+          screen = `<section class="screen-content"><h3>${tr('stepPodium')}</h3>${tournament.status === 'finished' && podium.length ? `<div class="podium-list">${podium.map(({ place, team }) => `<article class="podium-place"><strong class="podium-rank">${place}º</strong><div><strong>${escapeHtml(team?.name || '—')}</strong><span>${escapeHtml((team?.members || []).map((player) => player.name).join(', '))}</span></div></article>`).join('')}</div>` : `<div class="empty">${tr('noPodium')}</div>`}
+            ${tournament.status === 'finished' ? renderExportButtons('podium') : ''}
+            ${renderExportButtons('agenda')}
+          </section>`;
+        }
+        return `${renderWorkflowNav(phase)}${screen}${renderTournamentAccess(tournament, manager)}`;
       }
       function renderLiveList() {
         const query = $('#searchTournament').value.trim().toLocaleLowerCase(state.lang);
@@ -887,6 +1178,7 @@
       function renderWorkspace() {
         const tournament = currentTournament();
         const workspace = $('#workspace');
+        $('#deleteTournament').hidden = !tournament || tournament.owner_id !== user()?.id;
         if (!tournament) {
           workspace.hidden = true;
           return;
@@ -919,6 +1211,70 @@
         });
         render();
         $('#workspace').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      function renderExportTable(standings) {
+        return `<section><h2>${tr('standings')}</h2>
+          <div class="export-standing export-standing-header"><span>#</span><strong>${tr('teamsCount')}</strong><span>${tr('played')}</span><span>${tr('wins')}</span><span>${tr('pointsFor')}</span><span>${tr('pointDifference')}</span></div>
+          ${standings.map((team, index) => `<div class="export-standing">
+          <span>${index + 1}.</span><strong>${escapeHtml(team.name)}</strong><span>${team.played}</span><span>${team.wins}</span>
+          <span>${team.pointsFor}</span><span>${team.pointDifference > 0 ? '+' : ''}${team.pointDifference}</span>
+          </div>`).join('')}</section>`;
+      }
+      async function exportTournament(kind, format) {
+        const tournament = currentTournament();
+        if (!tournament) return;
+        const setup = setupOf(tournament);
+        const reports = window.CrieSeuVoleiReports;
+        const labels = {
+          teams: tr('teamsCount'), skill: tr('skill'), round: tr('round'),
+          generating: tr('generatingExport'), team: tr('team')
+        };
+        const standings = window.CrieSeuVoleiTournament.calculateStandings(setup.teamsList, setup.schedule);
+        let title = tr('exportedAgenda');
+        let sections = [];
+        let filename = `crieseuvolei-${kind}.${format === 'jpeg' ? 'jpg' : 'pdf'}`;
+        if (kind === 'teams') {
+          title = tr('exportedTeams');
+          sections = [reports.teamRosterHtml(setup.teamsList, labels)];
+        } else if (kind === 'podium') {
+          title = tr('exportedPodium');
+          const podium = window.CrieSeuVoleiTournament.getPodium(setup.playoffs, standings);
+          sections = [
+            reports.teamRosterHtml(setup.teamsList, labels),
+            reports.matchRowsHtml([...setup.schedule, ...setup.semifinals, ...setup.playoffs], setup.teamsList, labels),
+            renderExportTable(standings),
+            `<section><h2>${tr('stepPodium')}</h2>${podium.map(({ place, team }) => `<div class="export-podium"><strong>${place}º · ${escapeHtml(team?.name || '—')}</strong><span>${escapeHtml((team?.members || []).map((player) => player.name).join(', '))}</span></div>`).join('')}</section>`
+          ];
+        } else {
+          sections = [
+            reports.matchRowsHtml([...setup.schedule, ...setup.semifinals, ...setup.playoffs], setup.teamsList, labels),
+            renderExportTable(standings)
+          ];
+        }
+        const html = reports.renderHtml(title, tournament.name, sections);
+        await reports.exportFile({ html, format, filename, labels });
+      }
+      async function copyInviteLink() {
+        const invite = state.lastInvite;
+        if (!invite || invite.tournamentId !== currentTournament()?.id) return;
+        if (!navigator.clipboard?.writeText) {
+          window.prompt(tr('copyInviteLink'), invite.url);
+          return;
+        }
+        await navigator.clipboard.writeText(invite.url);
+        announce(tr('inviteLinkCopied'), 'success');
+      }
+      async function setWorkflowPhase(phase) {
+        const tournament = currentTournament();
+        if (!tournament || !canManage(tournament)) return;
+        const setup = setupOf(tournament);
+        if (setup.schedule.length || !['setup', 'players', 'teams', 'team-preview'].includes(phase)) {
+          return announce(tr('setupLocked'), 'error');
+        }
+        const allowedBack = { players: 'setup', teams: 'players', 'team-preview': 'teams' };
+        if (allowedBack[setup.phase] !== phase) return;
+        setup.phase = phase;
+        if (await persistTournament({ ...tournament, game_data: setup })) render();
       }
       function bindEvents() {
         $('#startCreate').addEventListener('click', openCreate);
@@ -953,8 +1309,19 @@
         $('#workspaceBody').addEventListener('submit', async (event) => {
           if (event.target.id === 'renameForm') { event.preventDefault(); runAction(saveTournamentName); }
           if (event.target.id === 'setupForm') { event.preventDefault(); runAction(saveSetup); }
+          if (event.target.id === 'playersForm') { event.preventDefault(); runAction(savePlayers); }
+          if (event.target.id === 'teamsForm') { event.preventDefault(); runAction(saveTeamNames); }
           if (event.target.id === 'inviteForm') { event.preventDefault(); runAction(createInvite); }
-          if (event.target.id === 'scoreForm') { event.preventDefault(); runAction(saveScore); }
+          if (event.target.matches('[data-score-collection]')) {
+            event.preventDefault();
+            const form = event.target;
+            runAction(() => saveMatchScore(
+              form.dataset.scoreCollection,
+              Number(form.dataset.scoreIndex),
+              Number(form.elements.scoreA.value),
+              Number(form.elements.scoreB.value)
+            ));
+          }
         });
         $('#workspaceBody').addEventListener('change', (event) => {
           if (event.target.id === 'publicToggle') runAction(() => setPublic(event.target.checked));
@@ -962,7 +1329,28 @@
         $('#workspaceBody').addEventListener('click', (event) => {
           if (event.target.id === 'balanceTeams') runAction(balanceTeams);
           if (event.target.id === 'generateSchedule') runAction(generateSchedule);
+          if (event.target.id === 'advanceSemifinals') runAction(advanceToSemifinals);
+          if (event.target.id === 'advanceFinals') runAction(advanceToFinals);
+          if (event.target.id === 'closeTournament') runAction(closeTournament);
+          if (event.target.closest('[data-edit-match]')) {
+            state.editingMatch = event.target.closest('[data-edit-match]').dataset.editMatch;
+            render();
+          }
+          if (event.target.closest('[data-cancel-edit]')) {
+            state.editingMatch = null;
+            render();
+          }
+          if (event.target.closest('[data-go-phase]')) {
+            const targetPhase = event.target.closest('[data-go-phase]').dataset.goPhase;
+            runAction(() => setWorkflowPhase(targetPhase));
+          }
+          if (event.target.closest('[data-copy-invite]')) runAction(copyInviteLink);
+          if (event.target.closest('[data-export]')) {
+            const button = event.target.closest('[data-export]');
+            runAction(() => exportTournament(button.dataset.export, button.dataset.format));
+          }
         });
+        $('#deleteTournament').addEventListener('click', () => runAction(deleteTournament));
         document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && !$('#authDialog').hidden) closeAuth(); });
       }
       async function start() {
@@ -990,7 +1378,7 @@
           return;
         }
         await afterAuthChanged(data.session);
-        if (new URLSearchParams(location.search).has('invite') && !data.session) openAuth('login');
+        if (new URLSearchParams(location.search).has('invite') && !data.session) openAuth('signup');
         state.subscription = state.client.channel('tournament-updates')
           .on('postgres_changes', { event: '*', schema: 'public', table: 'tournaments' }, () => {
             loadTournaments().catch((error) => {

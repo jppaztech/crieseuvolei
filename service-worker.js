@@ -1,5 +1,13 @@
-const CACHE_NAME = 'crieseuvolei-shell-v1';
-const APP_SHELL = ['/', '/index.html', '/runtime-config.js', '/manifest.webmanifest', '/assets/volleyball.svg'];
+const CACHE_NAME = 'crieseuvolei-shell-v2';
+const APP_SHELL = [
+  '/',
+  '/index.html',
+  '/runtime-config.js',
+  '/manifest.webmanifest',
+  '/assets/volleyball.svg',
+  '/assets/tournament-engine.js',
+  '/assets/report-exporter.js'
+];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)));

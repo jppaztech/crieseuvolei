@@ -1,8 +1,9 @@
 [build]
   publish = "."
-  command = "npm run build"
+  command = "npm test && npm run build"
 
 [context.production.environment]
+  NODE_VERSION = "20"
   SUPABASE_URL = "https://cymkeazbvhxtstaxaqdc.supabase.co"
   SUPABASE_PUBLISHABLE_KEY = "sb_publishable_Nd_pwhW8NPXYTPqMMgycCA_XcKAZCDA"
   APP_BASE_URL = "https://crieseuvolei.netlify.app"

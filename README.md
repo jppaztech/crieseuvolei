@@ -1,441 +1,123 @@
-# 🏐 CrieSeuVolei - Gerenciador de Peladas de Vôlei
+# CrieSeuVôlei
 
-![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
-![Made with Supabase](https://img.shields.io/badge/Made%20with-Supabase-blue.svg)
-![HTML5](https://img.shields.io/badge/HTML5-orange.svg)
-![CSS3](https://img.shields.io/badge/CSS3-blue.svg)
-![JavaScript](https://img.shields.io/badge/JavaScript-yellow.svg)
-![Responsive Design](https://img.shields.io/badge/Responsive-Design-orange.svg)
-![Status: Active](https://img.shields.io/badge/Status-Active-success.svg)
+Aplicação web para criar torneios de vôlei, organizar jogadores e partidas, lançar resultados e acompanhar jogos ao vivo. A interface está disponível em português do Brasil e inglês dos Estados Unidos.
 
-Uma aplicação web moderna e responsiva para gerenciar placar e resultado de partidas de vôlei em tempo real. Perfeita para peladas, treinos e competições amistosas.
+**Produção:** https://crieseuvolei.netlify.app/
 
-## 🌐 Website (necessário login admin)
-Acesse o projeto online: [CrieSeuVolei](https://crieseuvolei.netlify.app/)
+## O que a aplicação oferece
 
-## 📋 Sumário
+- visitantes acompanham torneios públicos em andamento sem login;
+- usuários criam conta e torneios independentes;
+- responsável e co-admins gerenciam os dados do torneio;
+- convites de co-admin são registrados no banco e compartilhados por e-mail ou WhatsApp;
+- partidas e placares são persistidos no Supabase e atualizados em tempo real;
+- a validação não permite salvar partidas empatadas.
 
-- [Características](#-características)
-- [Stack Tecnológico](#️-stack-tecnológico)
-- [Tecnologias Utilizadas](#️-tecnologias-utilizadas)
-- [Pré-requisitos](#-pré-requisitos)
-- [Instalação](#-instalação)
-- [Como Usar](#-como-usar)
-- [Funcionalidades](#-funcionalidades)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Configuração do Supabase](#-configuração-do-supabase)
-- [Contribuindo](#-contribuindo)
-- [Troubleshooting](#-troubleshooting)
-- [Licença](#-licença)
+O primeiro acesso contém somente as duas ações principais — criar torneio e acompanhar jogos — e uma lista pesquisável dos torneios ao vivo. A configuração de partidas aparece depois de entrar no torneio.
 
-## ✨ Características
+O contrato visual está documentado em [`DESIGN.md`](DESIGN.md); os tokens para ferramentas de design ficam em `.impeccable/design.json`.
 
-- ⚡ **Gerenciamento em Tempo Real** - Atualizações instantâneas do placar e estatísticas
-- 📱 **Design Responsivo** - Funciona perfeitamente em desktop, tablet e celular
-- 🎨 **Interface Dark Mode** - Tema escuro moderno e agradável aos olhos
-- ⚖️ **Sorteio Inteligente** - Distribuição automática de times baseada no nível de habilidade (1 a 5 ⭐)
-- 📅 **Agenda Automática** - Geração de partidas no formato Round-Robin (todos contra todos)
-- 🏆 **Classificação Dinâmica** - Tabela atualizada em tempo real com saldo de pontos e aproveitamento
-- 👑 **Finais e Pódio** - Chaveamento automático dos melhores colocados e tela de premiação
-- 📊 **Estatísticas Detalhadas** - Rastreamento de pontuação, sets e performance
-- 🖨️ **Exportar para PDF** - Gere relatórios das partidas em PDF
-- 💾 **Sincronização na Nuvem** - Dados salvos automaticamente via Supabase
-- 🔄 **Sincronização em Tempo Real** - Múltiplos dispositivos sincronizados
-- 🎯 **Interface Intuitiva** - Fácil de usar, sem necessidade de treinamento
+## Tecnologias
 
-## 🛠️ Stack Tecnológico
+- HTML, CSS e JavaScript sem framework
+- Supabase Auth, Postgres, RLS e Realtime
+- Node.js/npm para gerar configuração e servir localmente
+- PWA instalável com shell offline; login, sincronização e ações do torneio precisam de conexão
+- Netlify para publicação
 
-| Tecnologia | Uso |
+## Desenvolvimento local
+
+1. Instale Node.js 18 ou superior.
+2. Use `.env.example` como referência. Os comandos npm não carregam arquivos `.env` automaticamente.
+3. Defina as variáveis no terminal antes de iniciar:
+
+```powershell
+$env:SUPABASE_URL="https://SEU_PROJETO.supabase.co"
+$env:SUPABASE_PUBLISHABLE_KEY="SUA_CHAVE_PUBLISHABLE"
+$env:APP_BASE_URL="http://localhost:8000"
+$env:APP_LANGUAGE_DEFAULT="pt-BR"
+npm run dev
+```
+
+Abra `http://localhost:8000`. Para verificar sintaxe e configuração:
+
+```bash
+npm test
+npm run build
+```
+
+`runtime-config.js` é gerado durante o build, ignorado pelo Git e contém somente URL/chave publishable, URL base e idioma. A chave publishable/anon é pública por definição; **não** configure chave `secret` ou `service_role` no frontend, no build estático ou no Netlify.
+
+## Configuração obrigatória do Supabase
+
+1. Em **SQL Editor**, aplique `supabase/schema.sql`. O script é reaplicável e atualiza as tabelas/políticas existentes sem apagar torneios.
+2. Em **Authentication > URL Configuration**, defina `https://crieseuvolei.netlify.app/` como Site URL e permita `https://crieseuvolei.netlify.app/**` em Redirect URLs. Para desenvolvimento, permita também `http://localhost:8000/**`.
+3. Habilite confirmação de e-mail. O redirecionamento após a confirmação volta à aplicação; o usuário poderá então entrar.
+4. Para personalizar a mensagem de confirmação, copie `supabase/templates/confirmation.html` para **Authentication > Email Templates > Confirm signup**. O template usa `{{ .ConfirmationURL }}` do Supabase.
+5. O dono da aplicação só recebe acesso de manutenção geral se um operador confiável definir `app_metadata.platform_admin = true` para a conta dele no painel/API administrativa do Supabase. Não use `user_metadata` para esta permissão: o próprio usuário pode editar esse campo.
+
+O schema aplica isolamento por `owner_id`/membro, limita leitura pública a torneios `live` e fecha a tabela legada `app_state` removendo suas políticas antigas. Criar/aceitar convites é feito por funções SQL com validação da sessão e do e-mail autenticado. Os dados de e-mail do responsável não são expostos na consulta pública de torneios.
+
+### Convites
+
+O responsável ou co-admin informa o e-mail da pessoa. O Supabase grava um convite pendente; os botões abrem um e-mail pré-preenchido ou o WhatsApp com o link. O convidado deve criar conta ou entrar **com o mesmo e-mail convidado** e abrir esse link para aceitar. O envio do e-mail é feito pelo aplicativo de e-mail do responsável, não por um serviço transacional próprio do CrieSeuVôlei.
+
+## Netlify
+
+O site deve estar vinculado ao repositório e usar `netlify.toml`. URL, chave publishable, URL base e idioma padrão estão declarados no contexto de produção desse arquivo; se usar variáveis do painel **Site configuration > Environment variables**, mantenha os mesmos nomes/valores para que a configuração do site não diverja do repositório:
+
+| Variável | Valor |
 |---|---|
-| **HTML5** | Estrutura e marcação semântica |
-| **CSS3** | Estilização com variáveis CSS e Grid/Flexbox |
-| **JavaScript Vanilla** | Lógica da aplicação e interatividade |
-| **Supabase** | Backend e banco de dados em tempo real |
-| **html2canvas** | Captura e renderização de elementos DOM |
-| **html2pdf.js** | Geração de documentos PDF |
-| **Google Fonts** | Tipografia (Inter) |
+| `SUPABASE_URL` | URL HTTPS do projeto Supabase |
+| `SUPABASE_PUBLISHABLE_KEY` | chave publishable/anon do projeto |
+| `APP_BASE_URL` | `https://crieseuvolei.netlify.app` |
+| `APP_LANGUAGE_DEFAULT` | `pt-BR` ou `en-US` |
 
-## 🛠️ Tecnologias Utilizadas
+`SUPABASE_PUBLISHABLE_KEY` é uma chave pública, destinada ao navegador, e não concede acesso sem as políticas RLS. Não configure `SUPABASE_SECRET_KEY` ou `service_role` neste site estático. O build de produção falha explicitamente se URL/chave pública estiverem ausentes.
 
-<p align="left">
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/html5/html5-original.svg" alt="HTML5" width="50" height="50"/>
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/css3/css3-original.svg" alt="CSS3" width="50" height="50"/>
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/javascript/javascript-original.svg" alt="JavaScript" width="50" height="50"/>
-  <img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/supabase/supabase-original.svg" alt="Supabase" width="50" height="50"/>
-</p>
-
-## 📦 Pré-requisitos
-
-- Navegador web moderno (Chrome 90+, Firefox 88+, Safari 14+, Edge 90+)
-- Conexão com a internet (para sincronização em nuvem)
-- Conta no [Supabase](https://supabase.com) (opcional, para funcionalidades cloud)
-
-## 🚀 Instalação
-
-### Opção 1: Instalação Local Simples
+O deploy contínuo do repositório é preferível. Para publicar manualmente, instale/execute o CLI oficial em uma sessão Netlify autenticada:
 
 ```bash
-# 1. Clone o repositório
-git clone https://github.com/seu-usuario/crieseuvolei.git
-cd crieseuvolei
-
-# 2. Abra o arquivo index.html em seu navegador
-# No macOS:
-open index.html
-
-# No Linux:
-xdg-open index.html
-
-# No Windows:
-start index.html
+npx netlify-cli@latest deploy --prod --dir .
 ```
 
-### Opção 2: Com Servidor Local (Recomendado)
+O Netlify CLI não é uma dependência da aplicação; assim, ferramentas de publicação não entram no bundle nem ampliam a superfície de dependências do site. A aplicação usa `http-server` somente para desenvolvimento.
 
-```bash
-# Usando Python 3
-python3 -m http.server 8000
+## Modelo de acesso
 
-# Usando Node.js (http-server)
-npx http-server
+- **Espectador:** sem conta, consulta somente torneios públicos em andamento.
+- **Responsável:** cria e controla seu torneio.
+- **Co-admin:** aceita convite direcionado ao e-mail da conta; pode editar aquele torneio, sem acesso global.
+- **Admin da plataforma:** manutenção geral somente com `app_metadata.platform_admin` definido por operador confiável.
 
-# Usando PHP
-php -S localhost:8000
-```
+As políticas RLS no banco são a autoridade final; as verificações da interface são apenas apresentação.
 
-Depois acesse: `http://localhost:8000`
+## Checklist de publicação
 
-### Opção 3: Deploy na Nuvem
+- [x] Reinstalar dependências pelo lockfile com `npm ci`.
+- [x] Rodar `npm test`.
+- [x] Rodar `npm audit` sem vulnerabilidades conhecidas.
+- [x] Rodar build local via Netlify CLI no contexto `production`.
+- [x] Aplicar o schema versionado no projeto Supabase de produção e confirmar tabelas, funções RPC, RLS e permissões por coluna.
+- [x] Configurar Site URL e Redirect URLs no Supabase Auth.
+- [ ] Revisar template de confirmação e remetente de e-mail no Supabase.
+- [x] Declarar URL e credencial publishable do Supabase, URL base e idioma no `netlify.toml`.
+- [ ] Confirmar que o deploy atualizado concluiu no site de produção.
+- [ ] Testar cadastro, confirmação, login, redefinição de senha e logout.
+- [ ] Testar criação de torneio, convite/aceite com outra conta e isolamento entre usuários.
+- [ ] Testar visibilidade pública, pesquisa, placar ao vivo e bloqueio de empate.
+- [ ] Conferir o site publicado em desktop e celular.
+- [ ] Instalar a PWA de produção e confirmar que o shell abre offline; validar que operações exibem estado sem conexão.
 
-#### Vercel
-```bash
-npm install -g vercel
-vercel
-```
+`npm test`, `npm run build` e `npm audit` verificam localmente sintaxe, traduções, manifesto/service worker, contratos estáticos de RLS/convite, bloqueio de chaves secretas, build e vulnerabilidades conhecidas. Esses testes não substituem a validação de duas contas no projeto Supabase real.
 
-#### Netlify
-```bash
-npm install -g netlify-cli
-netlify deploy
-```
+### Estado desta publicação
 
-#### GitHub Pages
-```bash
-# O repositório será servido automaticamente em:
-# https://seu-usuario.github.io/crieseuvolei
-```
+Em 25/09/2026, o schema de produção foi aplicado por uma sessão autenticada do Supabase Management API. A verificação remota confirmou as quatro tabelas de torneios/perfis, RLS habilitado, políticas de isolamento, funções de convite e permissões por coluna: espectadores não podem escrever nem ler e-mails privados; usuários autenticados podem criar torneios. O endpoint público REST reconhece a tabela. As URLs de autenticação do Supabase também foram atualizadas para o domínio de produção e o endereço local de desenvolvimento.
 
-## 📖 Como Usar
+O deploy da versão atualizada ainda depende de integrar esta branch à branch `main`, configurada como branch de produção no Netlify, e aguardar a build/publicação remota. A build do Netlify deve executar `npm run build` a partir do `netlify.toml`. Cadastro/confirmação de e-mail e aceite de convite com duas contas distintas ainda precisam de validação ponta a ponta; as verificações de banco e API não substituem esse teste com caixas de e-mail acessíveis. Não anunciar a publicação como concluída até confirmar o novo deploy e percorrer o checklist acima.
 
-### Início Rápido
+## Direitos autorais e licença
 
-1. **Acesse a aplicação** em seu navegador
-2. **Crie uma nova partida** preenchendo os dados dos times
-3. **Atualize o placar** usando os botões de incremento/decremento
-4. **Acompanhe em tempo real** em múltiplos dispositivos
-5. **Exporte o resultado** como PDF quando a partida terminar
-
-### Interface Principal
-
-```
-┌─────────────────────────────────────────┐
-│  🏐 Peladas de Vôlei - Ao Vivo          │
-├─────────────────────────────────────────┤
-│                                         │
-│  [ 1) Cadastro ]  [ 2) Rodadas ]        │
-│  [ 3) Finais   ]  [ 4) Pódio   ]        │
-│                                         │
-│  ┌─ Cadastro e Sorteio ──────────────┐  │
-│  │ • Defina Jogadores, Times e Rods. │  │
-│  │ • Dê notas de Habilidade (1 a 5⭐)│  │
-│  │ • Sorteio Equilibrado Automático  │  │
-│  └───────────────────────────────────┘  │
-│                                         │
-│  ┌─ Painel de Jogo (Ao Vivo) ────────┐  │
-│  │ • Placar dinâmico (+ e -)         │  │
-│  │ • Classificação c/ Saldo de Pts   │  │
-│  │ • Agenda Completa e Finais        │  │
-│  └───────────────────────────────────┘  │
-└─────────────────────────────────────────┘
-```
-
-## 🎯 Funcionalidades
-
-### Gerenciamento de Torneio e Placar
-- ✅ Sorteio equilibrado de jogadores (por estrelas)
-- ✅ Geração automática de rodadas (todos contra todos)
-- ✅ Incrementar/decrementar pontos ao vivo
-- ✅ Tabela de classificação com saldo de pontos
-- ✅ Chaveamento automático para Finais e 3º lugar
-
-### Dados e Estatísticas
-- ✅ Visualizar pontuação por set
-- ✅ Acompanhar performance em tempo real
-- ✅ Comparação entre times
-
-### Exportação
-- ✅ Gerar PDF com resultado final
-- ✅ Incluir data, hora e local
-- ✅ Capturar layout completo
-
-### Sincronização
-- ✅ Salvar dados na nuvem (Supabase)
-- ✅ Sincronizar entre dispositivos
-- ✅ Recuperar histórico de partidas
-
-## 📁 Estrutura do Projeto
-
-```
-crieseuvolei/
-├── index.html          # Arquivo principal (HTML + CSS + JS)
-├── README.md           # Este arquivo
-├── LICENSE             # Licença MIT
-├── .git/               # Controle de versão
-└── [opcional: assets/]
-    ├── css/           # Estilos adicionais (se aplicável)
-    └── js/            # Scripts externos (se aplicável)
-```
-
-## ⚙️ Configuração do Supabase
-
-### 1. Criar Projeto no Supabase
-
-```bash
-# Visite https://supabase.com
-# Crie um novo projeto
-# Copie as credenciais do projeto
-```
-
-### 2. Adicionar Variáveis de Ambiente
-
-No `index.html`, localize a inicialização do Supabase:
-
-```javascript
-const supabaseUrl = 'https://seu-projeto.supabase.co'
-const supabaseKey = 'sua-chave-publica'
-const supabase = supabase.createClient(supabaseUrl, supabaseKey)
-```
-
-### 3. Criar Tabelas no Banco de Dados
-
-```sql
--- Tabela para guardar o estado global do torneio
-CREATE TABLE app_state (
-  id INTEGER PRIMARY KEY,
-  game_data JSONB NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW()
-);
-
--- Inserir a linha inicial que o sistema vai atualizar
-INSERT INTO app_state (id, game_data) VALUES (1, '{}');
-```
-
-## 🤝 Contribuindo
-
-Contribuições são bem-vindas! Siga os passos abaixo:
-
-### 1. Fork o Repositório
-```bash
-# Clique no botão "Fork" no GitHub
-```
-
-### 2. Clone Seu Fork
-```bash
-git clone https://github.com/seu-usuario/crieseuvolei.git
-cd crieseuvolei
-```
-
-### 3. Crie uma Branch
-```bash
-git checkout -b feature/sua-funcionalidade
-# Exemplo:
-git checkout -b feature/adicionar-tabela-rankings
-```
-
-### 4. Faça Suas Alterações
-```bash
-# Edite os arquivos
-# Teste suas mudanças localmente
-```
-
-### 5. Commit e Push
-```bash
-git add .
-git commit -m "Descrição clara das mudanças"
-# Exemplos de mensagens:
-# - "feat: adicionar tabela de rankings"
-# - "fix: corrigir atualização de placar em tempo real"
-# - "docs: melhorar documentação de setup"
-git push origin feature/sua-funcionalidade
-```
-
-### 6. Abra um Pull Request
-- Vá para o repositório original no GitHub
-- Clique em "New Pull Request"
-- Descreva suas mudanças claramente
-- Aguarde revisão
-
-### Padrão de Commits
-```
-feat:     Nova funcionalidade
-fix:      Correção de bug
-docs:     Alteração na documentação
-style:    Formatação/estilo de código
-refactor: Reorganização de código
-test:     Adição de testes
-```
-
-## 🔧 Troubleshooting
-
-### Problema: Placar não atualiza em tempo real
-
-**Solução:**
-1. Verifique a conexão com a internet
-2. Abra o console do navegador (F12)
-3. Procure por erros de conexão com Supabase
-4. Verifique as credenciais do Supabase
-
-### Problema: PDF não é gerado
-
-**Solução:**
-1. Verifique se as bibliotecas CDN estão carregando:
-   - `html2canvas`
-   - `html2pdf.js`
-2. Certifique-se de que todos os dados estão preenchidos
-3. Tente usar navegador Chrome (melhor suporte)
-
-### Problema: Interface distorcida em mobile
-
-**Solução:**
-1. Limpe o cache do navegador (Ctrl+Shift+Del)
-2. Atualize a página
-3. Verifique se o viewport está configurado corretamente
-4. Teste em incógnito
-
-### Problema: Dados não salvam na nuvem
-
-**Solução:**
-1. Verifique as permissões no Supabase
-2. Valide que as chaves de acesso estão corretas
-3. Verifique a estrutura das tabelas no banco
-4. Procure por erros no console do navegador
-
-## 🐛 Relatando Bugs
-
-Se encontrar um bug, por favor:
-
-1. **Verifique** se o problema já foi reportado em [Issues](../../issues)
-2. **Descreva** o problema detalhadamente
-3. **Inclua** prints ou vídeo do bug
-4. **Liste** os passos para reproduzir
-5. **Especifique** seu navegador e SO
-
-### Template para Issue
-
-```markdown
-## Descrição do Bug
-[Descreva o problema aqui]
-
-## Passos para Reproduzir
-1. 
-2. 
-3. 
-
-## Comportamento Esperado
-[O que deveria acontecer]
-
-## Comportamento Atual
-[O que realmente acontece]
-
-## Ambiente
-- Navegador: 
-- SO: 
-- Versão da App: 
-```
-
-## 🎨 Personalizando o Tema
-
-As cores e estilos podem ser customizados editando as variáveis CSS no `index.html`:
-
-```css
-:root {
-  --bg: #0f1115;           /* Cor de fundo */
-  --card: #171a21;         /* Cor dos cards */
-  --muted: #9aa4b2;        /* Cor muted/secundária */
-  --text: #eef2f6;         /* Cor do texto */
-  --accent: #22c55e;       /* Cor de destaque (verde) */
-  --danger: #ef4444;       /* Cor de alerta/erro */
-  --warn: #f59e0b;         /* Cor de aviso */
-  --gap: 14px;             /* Espaçamento padrão */
-  --radius: 14px;          /* Raio de border-radius */
-}
-```
-
-## 📊 Performance
-
-- **Tamanho do arquivo**: ~50KB (HTML + CSS + JS)
-- **Tempo de carregamento**: < 2s em conexão 4G
-- **Compatibilidade**: 95%+ dos navegadores modernos
-- **Acessibilidade**: WCAG 2.1 Level AA
-
-## 🔐 Segurança
-
-- Todas as credenciais devem ser mantidas seguras
-- Nunca compartilhe suas chaves do Supabase
-- Use variáveis de ambiente em produção
-- Implemente autenticação apropriada
-
-## 📞 Suporte
-- **Email**: jpsantospaz@hotmail.com  
-- **WhatsApp**: +55 81 99885-5027  
-- Para dúvidas ou sugestões, entre em contato diretamente comigo.
-
-## 📄 Licença
-Este projeto está licenciado sob a MIT License – veja o arquivo LICENSE para detalhes.  
-Mantido e supervisionado por João Paz.  
-
-## ✍️ Autor
-- **João Paz** – Desenvolvimento Inicial – [GitHub](https://github.com/jppaztech) | [LinkedIn](https://www.linkedin.com/in/joaospaz)
-
-## 🙏 Agradecimentos
-- [Supabase](https://supabase.com) – Backend em tempo real  
-- [html2canvas](https://html2canvas.hertzen.com/) – Captura de elementos  
-- [html2pdf.js](http://html2pdf.net/) – Geração de PDF  
-- [Google Fonts](https://fonts.google.com/) – Tipografia  
-
-## 🚀 Roadmap
-
-### v1.1
-- [ ] Sistema de rankings e histórico
-- [ ] Temas adicionais
-- [ ] Notificações em tempo real
-- [ ] Integração com WhatsApp/Telegram
-
-### v1.2
-- [ ] Aplicativo mobile nativo
-- [ ] Modo offline
-- [ ] Sincronização automática
-- [ ] Dashboard de estatísticas avançadas
-
-### v2.0
-- [ ] Sistema de usuários e autenticação
-- [ ] Organização de torneios
-- [ ] Chat em tempo real
-- [ ] Análise de performance com IA
-
----
-
-**Desenvolvido com ❤️ por um amante de vôlei**
-
-## Autor
-João Paz – [LinkedIn](https://www.linkedin.com/in/joaospaz) | [GitHub](https://github.com/jppaztech) | [Email](mailto:jpsantospaz@hotmail.com) | WhatsApp: +55 81 99885-5027
-
-## Contato
-Para dúvidas, sugestões ou oportunidades de colaboração, entre em contato por e-mail, WhatsApp ou conecte-se comigo pelo LinkedIn.
-
-## Contribuição
-Contribuições são bem-vindas!  
-Se você deseja melhorar este projeto, faça um fork do repositório e envie um pull request.  
-**Importante:** qualquer alteração, mesmo pequena, deve ser aprovada previamente por mim antes de ser incorporada.  
-Para mudanças maiores, abra uma issue primeiro para discutirmos o que você gostaria de modificar.
-
+© 2026 João Paz — Criação e desenvolvimento do CrieSeuVôlei.
+O código é distribuído sob a licença MIT; consulte `LICENSE`.

@@ -131,7 +131,7 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 - [x] Publicar a versão de múltiplos torneios no site de produção pelo fluxo GitHub → Netlify.
 - [x] Verificar em produção o HTML inicial, configuração pública, manifesto PWA e consulta REST de torneios ao vivo.
 - [x] Passar no deploy preview do Netlify, incluindo `npm test` e build para o fluxo restaurado.
-- [ ] Publicar no Netlify a restauração do fluxo de torneio por etapas e convites tokenizados.
+- [x] Publicar no Netlify a restauração do fluxo de torneio por etapas e convites tokenizados.
 - [ ] Testar cadastro sem confirmação, login, redefinição de senha e logout.
 - [ ] Testar criação de torneio, convite/aceite de uso único com outra conta e isolamento entre usuários.
 - [ ] Testar sorteio, agenda, classificação, edição de placar, semifinais, final, encerramento e exportações.
@@ -145,7 +145,7 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 
 Em 26/09/2026, além do schema anterior, foi aplicada a migração incremental `20260925220000_convites_tokenizados_uso_unico.sql` no Supabase de produção. A verificação remota confirmou as colunas do token e expiração, o RPC de aceite por token, a remoção do RPC legado por ID, a permissão de execução para usuários autenticados e a impossibilidade de ler o token pela API. Também foi ativado `mailer_autoconfirm`; a URL do site e a lista de redirecionamentos permaneceram inalteradas. SMTP personalizado não está configurado.
 
-A versão restaurada passou no deploy preview do Netlify após corrigir uma asserção do teste automatizado; os testes e o build também passaram localmente. O deploy de produção desta versão ainda está pendente. Cadastro real, redefinição de senha, convite/aceite com duas contas, isolamento ponta a ponta e exportações no navegador ainda precisam de validação funcional; testes estáticos e RLS verificada não substituem esses testes.
+A versão restaurada passou no deploy preview do Netlify após corrigir uma asserção do teste automatizado; `npm test` e `npm run build` também passaram localmente. O commit `5346782` foi publicado em produção pelo Netlify em 26/09/2026. A URL principal, `runtime-config.js`, manifesto PWA, service worker e os módulos do fluxo de torneio responderam HTTP 200; a consulta REST pública do Supabase e a configuração sem chave secreta também foram verificadas. Cadastro real, redefinição de senha, convite/aceite com duas contas, isolamento ponta a ponta e geração visual dos JPEG/PDF ainda precisam de validação funcional pelo responsável; verificações técnicas não substituem esses testes.
 
 ## Direitos autorais e licença
 

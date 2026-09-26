@@ -124,12 +124,13 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 - [x] Rodar build local via Netlify CLI no contexto `production`.
 - [x] Aplicar o schema versionado no projeto Supabase de produção e confirmar tabelas, funções RPC, RLS e permissões por coluna.
 - [x] Configurar Site URL e Redirect URLs no Supabase Auth.
-- [ ] Aplicar a migração incremental de convites tokenizados no Supabase de produção.
-- [ ] Desativar confirmação de e-mail no Supabase Auth e testar cadastro sem confirmação.
+- [x] Aplicar e verificar a migração incremental de convites tokenizados no Supabase de produção; o token não é legível pela API autenticada.
+- [x] Ativar cadastro sem confirmação no Supabase Auth e preservar Site URL/Redirect URLs.
 - [ ] Configurar e testar SMTP personalizado para recuperação de senha pública.
 - [x] Declarar URL e credencial publishable do Supabase, URL base e idioma no `netlify.toml`.
 - [x] Publicar a versão de múltiplos torneios no site de produção pelo fluxo GitHub → Netlify.
 - [x] Verificar em produção o HTML inicial, configuração pública, manifesto PWA e consulta REST de torneios ao vivo.
+- [x] Passar no deploy preview do Netlify, incluindo `npm test` e build para o fluxo restaurado.
 - [ ] Publicar no Netlify a restauração do fluxo de torneio por etapas e convites tokenizados.
 - [ ] Testar cadastro sem confirmação, login, redefinição de senha e logout.
 - [ ] Testar criação de torneio, convite/aceite de uso único com outra conta e isolamento entre usuários.
@@ -142,9 +143,9 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 
 ### Estado desta publicação
 
-Em 26/09/2026, o schema anterior de produção foi aplicado por uma sessão autenticada do Supabase Management API. A verificação remota confirmou as quatro tabelas de torneios/perfis, RLS habilitado, políticas de isolamento e permissões por coluna. Essa publicação antecede a migração incremental tokenizada descrita acima.
+Em 26/09/2026, além do schema anterior, foi aplicada a migração incremental `20260925220000_convites_tokenizados_uso_unico.sql` no Supabase de produção. A verificação remota confirmou as colunas do token e expiração, o RPC de aceite por token, a remoção do RPC legado por ID, a permissão de execução para usuários autenticados e a impossibilidade de ler o token pela API. Também foi ativado `mailer_autoconfirm`; a URL do site e a lista de redirecionamentos permaneceram inalteradas. SMTP personalizado não está configurado.
 
-A publicação atualmente disponível no Netlify é anterior à restauração do fluxo completo de torneios e à migração tokenizada. A build e a URL de produção foram validadas para aquela versão; não se deve considerar esta nova implementação publicada ou validada até a migração, os testes e um novo deploy. O fluxo ponta a ponta com contas distintas e redefinição de senha também requer testes reais; a verificação de SQL/RLS não os substitui.
+A versão restaurada passou no deploy preview do Netlify após corrigir uma asserção do teste automatizado; os testes e o build também passaram localmente. O deploy de produção desta versão ainda está pendente. Cadastro real, redefinição de senha, convite/aceite com duas contas, isolamento ponta a ponta e exportações no navegador ainda precisam de validação funcional; testes estáticos e RLS verificada não substituem esses testes.
 
 ## Direitos autorais e licença
 

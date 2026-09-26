@@ -119,7 +119,7 @@ assert.deepEqual([...heavilySkewedTeams].map((team) => team.members.length), [2,
 assert.equal([...heavilySkewedTeams].map((team) => team.members.reduce((sum, player) => sum + player.skill, 0)).join(','), '6,6,6,6');
 const schedule = engine.createRoundRobinSchedule(4, 3);
 assert.equal(schedule.length, 6);
-assert.equal(new Set(schedule.map((match) => [match.a, match.b].sort().join('-')).size), 6);
+assert.equal(new Set(schedule.map((match) => [match.a, match.b].sort().join('-'))).size, 6);
 assert.equal(engine.validateScore(21, 19), true);
 assert.equal(engine.validateScore(21, 21), false);
 assert.equal(engine.normalize({ schedule: [{ a: 0, b: 1, scoreA: 21, scoreB: 21 }] }).schedule[0].status, 'pending');

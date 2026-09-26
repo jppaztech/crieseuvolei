@@ -138,7 +138,7 @@ As políticas RLS no banco são a autoridade final; as verificações da interfa
 - [ ] Conferir o site publicado em desktop e celular.
 - [ ] Instalar a PWA de produção e confirmar que o shell abre offline; validar que operações exibem estado sem conexão.
 
-`npm test`, `npm run build` e `npm audit` verificam sintaxe, traduções, manifesto/service worker, contratos estáticos de RLS/convite, bloqueio de chaves secretas, build e vulnerabilidades conhecidas. O Netlify usa Node.js 20 e executa `npm test` antes de `npm run build` em cada publicação, bloqueando deploys se os testes falharem. Esses testes não substituem a validação de duas contas no projeto Supabase real.
+`npm test`, `npm run build` e `npm audit` verificam sintaxe, traduções, manifesto/service worker, regras de torneio, contratos estáticos de RLS/convite, bloqueio de chaves secretas, build e vulnerabilidades conhecidas. Em 26/09/2026, após correção de uma asserção no teste do round-robin, `npm test` e `npm run build` passaram localmente em Node.js 24.19.0 para esta alteração; o Netlify executa os mesmos testes com Node.js 20 antes de cada publicação. Esses testes não substituem a validação de duas contas no projeto Supabase real.
 
 ### Estado desta publicação
 
